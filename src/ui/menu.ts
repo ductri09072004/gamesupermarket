@@ -11,10 +11,21 @@ export interface MenuHandlers {
 export function showMainMenu(handlers: MenuHandlers, settings: Settings, onSettings: (s: Settings) => void): () => void {
   const root = h('div', { class: 'main-menu' });
   const close = () => root.remove();
-  const confirmNew = () => {
-    if (handlers.hasSave && !confirm('Bắt đầu game mới sẽ xoá bản lưu hiện tại. Tiếp tục?')) return;
+  const startNew = () => {
     close();
     handlers.onNewGame();
+  };
+  const confirmNew = () => {
+    if (!handlers.hasSave) {
+      startNew();
+      return;
+    }
+    const body = h('div', { class: 'pause-menu' }, [
+      h('p', { text: 'Bắt đầu game mới sẽ xoá bản lưu hiện tại.' }),
+      h('button', { class: 'btn danger block big', text: 'Xoá bản lưu & chơi mới', onClick: () => { m.close(); startNew(); } }),
+      h('button', { class: 'btn block big', text: 'Huỷ', onClick: () => m.close() }),
+    ]);
+    const m = modal('✨ Game mới', body);
   };
   root.append(h('div', { class: 'menu-card' }, [
     h('div', { class: 'logo', text: '🏪' }),
