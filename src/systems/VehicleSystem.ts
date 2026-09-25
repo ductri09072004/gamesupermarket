@@ -56,7 +56,7 @@ export class VehicleSystem {
   buy(type: string, spot: { x: number; z: number; yaw: number }): { ok: boolean; reason?: string; vehicle?: VehicleData } {
     const def = getVehicle(type);
     if (this.owns(type)) return { ok: false, reason: 'Đã có xe này' };
-    if (this.state.data.level < def.levelRequired) return { ok: false, reason: `Cần cấp ${def.levelRequired}` };
+    if (!this.state.levelAtLeast(def.levelRequired)) return { ok: false, reason: `Cần cấp ${def.levelRequired}` };
     if (!this.economy.spend(def.price, `Mua ${def.name}`)) return { ok: false, reason: 'Không đủ tiền' };
     const v: VehicleData = { uid: this.state.newUid('v'), type: def.id, x: spot.x, z: spot.z, yaw: spot.yaw, cargo: [] };
     this.state.data.vehicles.push(v);

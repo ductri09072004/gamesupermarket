@@ -49,7 +49,7 @@ export class ShopSystem {
     if (d.licenses.includes(id)) return 'owned';
     const req = getLicense(id).requires;
     if (req !== null && !d.licenses.includes(req)) return 'locked-prev';
-    if (d.level < getLicense(id).levelRequired) return 'locked-level';
+    if (!this.state.levelAtLeast(getLicense(id).levelRequired)) return 'locked-level';
     return 'available';
   }
 
@@ -99,7 +99,7 @@ export class ShopSystem {
   buyExpansion(): R {
     const p = this.nextPack();
     if (!p) return { ok: false, reason: 'Đã mở rộng tối đa' };
-    if (this.state.data.level < p.levelRequired) return { ok: false, reason: `Cần cấp ${p.levelRequired}` };
+    if (!this.state.levelAtLeast(p.levelRequired)) return { ok: false, reason: `Cần cấp ${p.levelRequired}` };
     if (!this.economy.spend(p.price, 'Mở rộng cửa hàng')) return { ok: false, reason: 'Không đủ tiền' };
     const d = this.state.data;
     d.expansions += 1;
@@ -113,7 +113,7 @@ export class ShopSystem {
   buyWarehouse(): R {
     const d = this.state.data;
     if (d.warehouseUnlocked) return { ok: false, reason: 'Đã có kho' };
-    if (d.level < WAREHOUSE_LEVEL) return { ok: false, reason: `Cần cấp ${WAREHOUSE_LEVEL}` };
+    if (!this.state.levelAtLeast(WAREHOUSE_LEVEL)) return { ok: false, reason: `Cần cấp ${WAREHOUSE_LEVEL}` };
     if (!this.economy.spend(WAREHOUSE_PRICE, 'Mở kho phía sau')) return { ok: false, reason: 'Không đủ tiền' };
     d.warehouseUnlocked = true;
     this.bus.emit('grid:changed', { reason: 'expansion' });

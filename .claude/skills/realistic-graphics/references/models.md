@@ -16,6 +16,25 @@
 5. Chụp ảnh kệ đầy hàng ở góc gần để kiểm tra hàng nằm đúng trên mặt tầng.
 6. Kiểm tra build mode (ghost model), di chuyển kệ (M), bán kệ vẫn hoạt động.
 
+## Kệ & tủ trưng bày — ĐÃ LÀM (lai: GLB + code)
+- Kệ kho: `models/furniture/rack.glb` = Poly Haven `worn_metal_rack` ×2 ghép cạnh nhau (script gltf-transform:
+  thêm node thứ 2 dùng chung mesh, `doubleSided=false`, texture WebP 1K → 530 KB). `GEOM.rack` trong SlotLayout đã
+  chỉnh để mặt tầng khớp model (0.453 / 0.969 / 1.484 m).
+- Kệ gondola / tủ mát / tủ đông: KHÔNG có model CC0 đạt chất lượng (đã rà Poly Haven, Poly Pizza — chỉ có freezer CC-BY
+  thô, itch.io — PSX/voxel/trả phí). Dựng bằng code trong `src/entities/DisplayModels.ts`: khối vát cạnh (`rblock`),
+  thép sơn tĩnh điện dùng normal+roughness ambientCG `Metal028` (slot `powder`), inox là roughness vệt xước vẽ canvas
+  (texture Metal012 của ambientCG có vết loang trông như bẩn → bỏ), mặt kệ lưới = 1 tấm alphaTest.
+- `src/entities/MergeStatic.ts`: gộp mesh tĩnh theo vật liệu, cache theo `def.id` (~8 draw call/kệ thay vì ~30),
+  UV chiếu hộp theo mét cho vật liệu có `userData.tile` → vân texture đều trên mọi khối.
+- Bẫy: nhãn giá đặt ở `zFront - 0.012` → nẹp giá phải nằm SAU mặt đó (trước đây nẹp che mất nhãn trên kệ gondola).
+- Muốn đẹp hơn nữa phải mua bộ kệ/tủ (Sketchfab Store, CGTrader); thả `<id>.glb` vào `models/furniture/` là tự thay.
+
+## Quầy thu ngân & máy tự tính tiền — ĐÃ LÀM (code)
+- `CheckoutCounter.ts`: vỏ tĩnh gộp qua `mergedModel('counter:<id>')` — ốp gỗ sồi (Poly Haven `oak_veneer_01`, slot
+  `wood`), mặt đá nhân tạo, nẹp inox, ray băng chuyền. Phần động (băng chuyền cuộn, laser, LCD, ngăn kéo, POS) giữ
+  riêng vì có animation/raycast; mọi điểm neo (beltStart, scanPoint, drawer...) không đổi.
+- `SelfCheckoutModel.ts`: máy tự tính tiền, màn hình canvas riêng từng máy + đèn gọi nhân viên (material riêng).
+
 ## Nhân vật (khách, nhân viên) — ĐÃ LÀM
 Đang dùng Quaternius *Ultimate Animated Character Pack* (CC0) trong `public/assets/models/characters/`:
 `src/entities/RiggedHuman.ts` (AnimationMixer Idle/Walk/Walk_Carry/PickUp, cùng API với `Human` qua interface

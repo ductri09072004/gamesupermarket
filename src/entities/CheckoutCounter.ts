@@ -3,6 +3,8 @@ import { DENOMINATIONS } from '../config/constants';
 import type { FurnitureDef } from '../config/furniture';
 import { textCanvas } from '../products/LabelTexture';
 import { block, mat } from './FurnitureModels';
+import { plastic, powder, rblock, steel, wood } from './DisplayMaterials';
+import { mergedModel } from './MergeStatic';
 
 export interface CounterParts {
   group: THREE.Group;
@@ -30,16 +32,68 @@ function denomLabel(d: number): string {
   return d >= 1 ? `$${d}` : `${Math.round(d * 100)}¢`;
 }
 
+function counterSign(): THREE.Material {
+  return mat('counterSign', () => {
+    const t = textCanvas(512, 128, (c) => {
+      c.fillStyle = '#1f2a30';
+      c.fillRect(0, 0, 512, 128);
+      c.fillStyle = '#2a9d8f';
+      c.fillRect(0, 118, 512, 10);
+      c.fillStyle = '#ffffff';
+      c.font = '900 64px "Nunito", Arial';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText('MINI MART', 256, 60);
+    });
+    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.35 });
+  });
+}
+
+const scanGlass = () => mat('scanGlass', () => new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.05, metalness: 0.6 }));
+
+/** Vỏ quầy tĩnh (gộp geometry, dùng chung giữa các quầy): thân ốp gỗ, mặt đá nhân tạo, viền inox, ray băng chuyền, máy quét. */
+function counterShell(def: FurnitureDef): THREE.Group {
+  const { w, d, h } = def.size;
+  const g = new THREE.Group();
+  const body = wood();
+  const dark = powder(0x2b3238, 0.55);
+  const top = plastic(0xe7e5e4, 0.22);
+  const back = d / 2 - 0.25;
+  g.add(rblock(dark, -w / 2 + 0.03, w / 2 - 0.03, 0, 0.08, -d / 2 + 0.04, back, 0.006));
+  g.add(rblock(body, -w / 2, w / 2, 0.08, h - 0.04, -d / 2, back, 0.012));
+  g.add(block(counterSign(), -0.4, 0.4, 0.3, 0.5, -d / 2 - 0.004, -d / 2 - 0.001, false));
+  g.add(rblock(plastic(0x2a9d8f, 0.4), -w / 2 + 0.06, w / 2 - 0.06, 0.64, 0.7, -d / 2 - 0.008, -d / 2 + 0.01, 0.004, false));
+  // phía thu ngân: 2 vách đầu + kệ dưới ngăn kéo
+  for (const [a, b] of [[-w / 2, -w / 2 + 0.05], [w / 2 - 0.05, w / 2]]) g.add(rblock(body, a, b, 0, h - 0.04, back, d / 2, 0.008));
+  g.add(rblock(dark, -w / 2 + 0.05, w / 2 - 0.05, 0.08, 0.1, back, d / 2 - 0.03, 0.004));
+  // mặt quầy + nẹp inox mép phía khách
+  g.add(rblock(top, -w / 2, w / 2, h - 0.04, h, -d / 2 - 0.012, d / 2, 0.01));
+  g.add(rblock(steel(), -w / 2, w / 2, h - 0.052, h - 0.034, -d / 2 - 0.02, -d / 2 + 0.004, 0.004, false));
+  // băng chuyền: ray 2 bên + nắp đầu
+  const railMat = steel();
+  g.add(rblock(railMat, -w / 2 + 0.06, 0.05, h, h + 0.05, -d / 2 + 0.02, -d / 2 + 0.05, 0.006, false));
+  g.add(rblock(railMat, -w / 2 + 0.06, 0.05, h, h + 0.05, -d / 2 + 0.4, -d / 2 + 0.43, 0.006, false));
+  g.add(rblock(dark, -w / 2 + 0.03, -w / 2 + 0.07, h, h + 0.035, -d / 2 + 0.03, -d / 2 + 0.42, 0.008, false));
+  // máy quét: mặt kính nằm + tháp quét
+  g.add(rblock(dark, 0.08, 0.38, h, h + 0.012, -d / 2 + 0.06, -d / 2 + 0.4, 0.006, false));
+  g.add(block(scanGlass(), 0.12, 0.34, h + 0.012, h + 0.014, -d / 2 + 0.1, -d / 2 + 0.36, false));
+  g.add(rblock(dark, 0.08, 0.38, h, h + 0.22, -d / 2 + 0.38, -d / 2 + 0.44, 0.02));
+  g.add(block(scanGlass(), 0.12, 0.34, h + 0.05, h + 0.19, -d / 2 + 0.377, -d / 2 + 0.38, false));
+  // khung treo túi
+  for (const x of [0.53, 0.83]) g.add(rblock(railMat, x - 0.008, x + 0.008, h, h + 0.36, -d / 2 + 0.3, -d / 2 + 0.316, 0.004, false));
+  g.add(rblock(railMat, 0.52, 0.84, h + 0.345, h + 0.36, -d / 2 + 0.3, -d / 2 + 0.316, 0.004, false));
+  // máy quẹt thẻ phía khách + cột màn hình
+  g.add(rblock(dark, 0.86, 0.96, h, h + 0.015, -d / 2 + 0.04, -d / 2 + 0.16, 0.005, false));
+  g.add(rblock(plastic(0x15191d, 0.4), 0.875, 0.945, h + 0.015, h + 0.13, -d / 2 + 0.09, -d / 2 + 0.12, 0.008, false));
+  g.add(rblock(dark, 0.905, 0.935, h, h + 0.3, 0.02, 0.05, 0.006));
+  return g;
+}
+
 /** Quầy thu ngân: mặt trước (-Z) phía khách, phía sau (+Z) là thu ngân. */
 export function buildCounter(def: FurnitureDef): CounterParts {
   const { w, d, h } = def.size;
   const g = new THREE.Group();
-  const wood = std('ctrWood', 0x6c8ea4, 0.55);
-  const top = std('ctrTop', 0xe5e7eb, 0.3, 0.2);
-  g.add(block(wood, -w / 2, w / 2, 0, h - 0.04, -d / 2, d / 2 - 0.25));
-  g.add(block(wood, -w / 2, -w / 2 + 0.05, 0, h - 0.04, d / 2 - 0.25, d / 2));
-  g.add(block(wood, w / 2 - 0.05, w / 2, 0, h - 0.04, d / 2 - 0.25, d / 2));
-  g.add(block(top, -w / 2, w / 2, h - 0.04, h, -d / 2, d / 2));
+  g.add(mergedModel(`counter:${def.id}`, () => counterShell(def)));
   // băng chuyền
   const beltTex = textCanvas(64, 64, (c) => {
     c.fillStyle = '#23262b';
@@ -51,11 +105,6 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   beltTex.repeat.set(14, 1);
   const beltMat = new THREE.MeshStandardMaterial({ map: beltTex, roughness: 0.8 });
   g.add(block(beltMat, -w / 2 + 0.06, 0.05, h, h + 0.02, -d / 2 + 0.05, -d / 2 + 0.4, false));
-  g.add(block(std('ctrRail', 0x9ca3af, 0.3, 0.8), -w / 2 + 0.06, 0.05, h, h + 0.05, -d / 2 + 0.02, -d / 2 + 0.05, false));
-  // máy quét
-  g.add(block(std('scanBody', 0x374151, 0.4, 0.3), 0.08, 0.38, h, h + 0.01, -d / 2 + 0.06, -d / 2 + 0.4, false));
-  g.add(block(mat('scanGlass', () => new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.05, metalness: 0.6 })), 0.12, 0.34, h + 0.01, h + 0.013, -d / 2 + 0.1, -d / 2 + 0.36, false));
-  g.add(block(std('scanBody', 0x374151, 0.4, 0.3), 0.08, 0.38, h, h + 0.22, -d / 2 + 0.38, -d / 2 + 0.42));
   const laser = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.004), new THREE.MeshBasicMaterial({ color: 0xff2020, transparent: true, opacity: 0.25 }));
   laser.rotation.x = -Math.PI / 2;
   laser.position.set(0.23, h + 0.016, -d / 2 + 0.23);
@@ -69,7 +118,6 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   g.add(bag);
   // cột màn hình LCD
   const LX = 0.92;
-  g.add(block(std('pole', 0x1f2937, 0.4, 0.5), LX - 0.015, LX + 0.015, h, h + 0.3, 0.02, 0.05));
   const lcdCanvas = document.createElement('canvas');
   lcdCanvas.width = 512;
   lcdCanvas.height = 256;
@@ -77,7 +125,7 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   lcdTex.colorSpace = THREE.SRGBColorSpace;
   const lcdMat = new THREE.MeshBasicMaterial({ map: lcdTex });
   const lcdGroup = new THREE.Group();
-  lcdGroup.add(block(std('lcdCase', 0x111827, 0.4), -0.2, 0.2, -0.11, 0.11, -0.02, 0.02));
+  lcdGroup.add(rblock(powder(0x111827, 0.4), -0.2, 0.2, -0.11, 0.11, -0.02, 0.02, 0.01));
   const lcd = new THREE.Mesh(new THREE.PlaneGeometry(0.37, 0.19), lcdMat);
   lcd.position.z = 0.021;
   const lcdFront = new THREE.Mesh(new THREE.PlaneGeometry(0.37, 0.19), lcdMat);
@@ -117,7 +165,7 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   g.add(drawer);
   // máy POS
   const pos = new THREE.Group();
-  pos.add(block(std('posBody', 0x1f2937, 0.5), -0.07, 0.07, 0, 0.03, -0.11, 0.11));
+  pos.add(rblock(powder(0x1f2937, 0.5), -0.07, 0.07, 0, 0.03, -0.11, 0.11, 0.008));
   const posScreen = block(mat('posScreen', () => new THREE.MeshStandardMaterial({ color: 0x9ef01a, emissive: 0x4a7a10, emissiveIntensity: 0.6 })), -0.055, 0.055, 0.03, 0.033, -0.1, -0.05, false);
   pos.add(posScreen);
   const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', 'back', 'clear', 'enter'];

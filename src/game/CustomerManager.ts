@@ -10,6 +10,8 @@ import { HAIRS, PANTS, SHIRTS, SKINS } from '../entities/Human';
 import { productMesh } from '../products/PackagingFactory';
 import { generateWishlist, SpawnAccumulator, spawnRatePerHour } from '../systems/CustomerSystem';
 import { stockedProductIds } from '../systems/InventorySystem';
+import { chooseCheckout } from '../systems/SelfCheckoutSystem';
+import { interiorLight, lampCoverage, nightAt, storeBrightness } from '../systems/LightingSystem';
 import type { GridPoint } from '../world/Footprint';
 import { furnitureMatrix } from '../world/Placement';
 import { computeQueueTiles } from '../world/Queue';
@@ -35,6 +37,11 @@ export class CustomerManager implements CustomerWorld {
 
   shakeFurniture(uid: string): void {
     this.c.furniture.get(uid)?.shake();
+  }
+
+  brightness(): number {
+    const d = this.s.data;
+    return storeBrightness(nightAt(this.s.time.hour), interiorLight(d.lightsOn, lampCoverage(d.furniture, d.storeW, d.storeH)));
   }
 
   doorBell(): void {
@@ -63,8 +70,12 @@ export class CustomerManager implements CustomerWorld {
     this.c.sound('pop', from, 1.2);
   }
 
+  /** Quầy thu ngân + máy tự tính tiền (đều có hàng chờ). */
   counters(): FurnitureData[] {
-    return this.s.data.furniture.filter((f) => getFurniture(f.type).kind === 'checkout');
+    return this.s.data.furniture.filter((f) => {
+      const k = getFurniture(f.type).kind;
+      return k === 'checkout' || k === 'selfcheckout';
+    });
   }
 
   queueTiles(counter: FurnitureData): GridPoint[] {
@@ -78,18 +89,14 @@ export class CustomerManager implements CustomerWorld {
   }
 
   joinQueue(cu: Customer): boolean {
-    const counters = this.counters();
-    if (!counters.length) return false;
-    let best = counters[0];
-    let bestLen = Infinity;
-    for (const k of counters) {
-      const len = this.queues.get(k.uid)?.length ?? 0;
-      if (len < bestLen) { best = k; bestLen = len; }
-    }
-    const q = this.queues.get(best.uid) ?? [];
+    const best = chooseCheckout(this.counters().map((k) => ({
+      uid: k.uid, queueLen: this.queues.get(k.uid)?.length ?? 0, self: getFurniture(k.type).kind === 'selfcheckout',
+    })));
+    if (!best) return false;
+    const q = this.queues.get(best) ?? [];
     q.push(cu);
-    this.queues.set(best.uid, q);
-    cu.counterUid = best.uid;
+    this.queues.set(best, q);
+    cu.counterUid = best;
     this.assignQueueTiles();
     return true;
   }

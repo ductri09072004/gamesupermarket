@@ -8,7 +8,7 @@ export function renderExpansion(body: HTMLElement, ctx: AppContext): void {
   const next = s.shop.nextPack();
   const cards = h('div', { class: 'card-grid' });
   if (next) {
-    const lockedLevel = d.level < next.levelRequired;
+    const lockedLevel = !s.state.levelAtLeast(next.levelRequired);
     cards.append(h('div', { class: `shop-card ${lockedLevel ? 'locked' : ''}` }, [
       h('div', { class: 'shop-icon', text: '🏗️' }),
       h('b', { text: `Gói mở rộng #${next.index + 1}` }),
@@ -27,7 +27,7 @@ export function renderExpansion(body: HTMLElement, ctx: AppContext): void {
   } else {
     cards.append(h('div', { class: 'shop-card owned' }, [h('div', { class: 'shop-icon', text: '🏬' }), h('b', { text: 'Đã mở rộng tối đa!' })]));
   }
-  const whLocked = d.level < WAREHOUSE_LEVEL;
+  const whLocked = !s.state.levelAtLeast(WAREHOUSE_LEVEL);
   cards.append(h('div', { class: `shop-card ${d.warehouseUnlocked ? 'owned' : whLocked ? 'locked' : ''}` }, [
     h('div', { class: 'shop-icon', text: '🏚️' }),
     h('b', { text: 'Kho phía sau' }),

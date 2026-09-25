@@ -75,6 +75,7 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 .icon-btn { font-size: 18px; border: 2px solid var(--ink); background: #fff; border-radius: 10px; width: 36px; height: 36px; cursor: pointer; }
 .icon-btn:hover { background: #fff4e0; }
 .icon-btn.off { opacity: 0.45; }
+.dev-badge { background: #ffd166; white-space: nowrap; }
 .end-day { margin-left: auto; background: #cdb4db; font-size: 16px; animation: pulse 1.2s infinite; }
 @keyframes pulse { 50% { transform: scale(1.05); } }
 

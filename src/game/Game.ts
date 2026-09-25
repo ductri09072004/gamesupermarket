@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PRODUCTS } from '../config/products';
 import { bus } from '../core/EventBus';
 import { ENV_INTENSITY } from '../config/constants';
-import { createNewState, type SaveData, type Settings } from '../core/GameState';
+import { createDevState, createNewState, type SaveData, type Settings } from '../core/GameState';
 import { SaveSystem } from '../core/SaveSystem';
 import { Services, setServices } from '../core/Services';
 import { Assets } from '../engine/Assets';
@@ -118,12 +118,8 @@ export class Game {
       {
         hasSave: !!saved && !saved.gameOver,
         onContinue: () => this.startSession(this.saves.load() ?? createNewState()),
-        onNewGame: () => {
-          this.saves.clear();
-          const fresh = createNewState();
-          fresh.settings = { ...settings };
-          this.startSession(fresh);
-        },
+        onNewGame: () => this.newGame(createNewState(), settings),
+        onDevGame: () => this.newGame(createDevState(), { ...settings, gameOverEnabled: false }),
       },
       settings,
       (st) => {
@@ -131,6 +127,12 @@ export class Game {
         if (saved) this.saves.save({ ...saved, settings: st });
       },
     );
+  }
+
+  private newGame(fresh: SaveData, settings: Settings): void {
+    this.saves.clear();
+    fresh.settings = { ...settings };
+    this.startSession(fresh);
   }
 
   startSession(data: SaveData): void {

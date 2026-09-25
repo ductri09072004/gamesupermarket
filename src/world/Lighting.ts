@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { CEILING_HEIGHT } from '../config/constants';
+import { ENV_INTENSITY } from '../config/constants';
+import { nightAt } from '../systems/LightingSystem';
 
 interface Sky {
   sky: THREE.Color;
@@ -8,13 +9,18 @@ interface Sky {
   night: number;
 }
 
+const DAWN = new THREE.Color(0xf6c9a0);
 const DAY = new THREE.Color(0x9fd3f2);
 const DUSK = new THREE.Color(0xf4a974);
 const NIGHT = new THREE.Color(0x141c33);
 
-/** Màu trời & mặt trời theo giờ: sáng → vàng chiều → tối xanh. */
+/** Màu trời & mặt trời theo giờ: bình minh hồng cam → trưa → vàng chiều → tối xanh. */
 export function skyAt(hour: number): Sky {
   const c = new THREE.Color();
+  if (hour < 9.5) {
+    const t = Math.max(0, Math.min(1, (hour - 7.5) / 2));
+    return { sky: c.copy(DAWN).lerp(DAY, t), sun: 1.2 + t, sunColor: new THREE.Color(0xffc890).lerp(new THREE.Color(0xfff4e0), t), night: nightAt(hour) };
+  }
   if (hour < 16.5) return { sky: c.copy(DAY), sun: 2.2, sunColor: new THREE.Color(0xfff4e0), night: 0 };
   if (hour < 18.5) {
     const t = (hour - 16.5) / 2;
@@ -28,14 +34,13 @@ export function skyAt(hour: number): Sky {
 }
 
 /**
- * Đèn: 1 đèn trần đổ bóng (giả lập dải huỳnh quang), bán cầu làm ánh sáng nền,
- * mặt trời ngoài trời (không đổ bóng) đổi theo giờ.
+ * Đèn: 1 đèn trần đổ bóng (cường độ theo số đèn trần đang bật), bán cầu làm ánh sáng nền,
+ * mặt trời ngoài trời (không đổ bóng) đổi theo giờ. Đèn cục bộ của từng bóng nằm ở StoreLighting.
  */
 export class Lighting {
   readonly ceiling: THREE.DirectionalLight;
   readonly sun: THREE.DirectionalLight;
   readonly hemi: THREE.HemisphereLight;
-  private fill: THREE.PointLight[] = [];
   night = 0;
 
   constructor(private scene: THREE.Scene) {
@@ -50,11 +55,6 @@ export class Lighting {
     this.sun = new THREE.DirectionalLight(0xfff4e0, 2);
     this.sun.position.set(-20, 30, 40);
     scene.add(this.sun, this.sun.target);
-    for (let i = 0; i < 2; i++) {
-      const p = new THREE.PointLight(0xfff1dc, 2, 10, 1.6);
-      scene.add(p);
-      this.fill.push(p);
-    }
     scene.fog = new THREE.Fog(DAY.clone(), 45, 120);
     scene.background = DAY.clone();
   }
@@ -75,23 +75,25 @@ export class Lighting {
     cam.far = 30;
     cam.updateProjectionMatrix();
     this.sun.target.position.set(cx, 0, D + 4);
-    this.fill[0].position.set(W * 0.3, CEILING_HEIGHT - 0.4, D * 0.4);
-    this.fill[1].position.set(W * 0.72, CEILING_HEIGHT - 0.4, D * 0.6);
   }
 
   dispose(): void {
-    for (const l of [this.ceiling, this.ceiling.target, this.sun, this.sun.target, this.hemi, ...this.fill]) l.removeFromParent();
+    for (const l of [this.ceiling, this.ceiling.target, this.sun, this.sun.target, this.hemi]) l.removeFromParent();
     this.ceiling.shadow.map?.dispose();
   }
 
-  setHour(hour: number): void {
+  /** interior: độ sáng do đèn trần (0 = tắt hết / không có đèn, 1 = phủ kín cửa hàng). */
+  setHour(hour: number, interior = 1): void {
     const s = skyAt(hour);
     this.night = s.night;
+    const day = 1 - s.night;
     (this.scene.background as THREE.Color).copy(s.sky);
     this.scene.fog?.color.copy(s.sky);
     this.sun.intensity = s.sun;
     this.sun.color.copy(s.sunColor);
-    this.hemi.intensity = 0.55 - s.night * 0.25;
+    this.hemi.intensity = 0.06 + day * 0.39 + interior * 0.15;
     this.hemi.color.set(0xfffaf0).lerp(new THREE.Color(0x8090c0), s.night * 0.5);
+    this.ceiling.intensity = 1.15 * interior;
+    this.scene.environmentIntensity = ENV_INTENSITY * (0.14 + day * 0.5 + interior * 0.45);
   }
 }

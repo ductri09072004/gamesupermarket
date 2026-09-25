@@ -38,7 +38,6 @@ export class Store {
   private floorMaps: THREE.Texture[] = [];
   private floorTile = 1.2;
   private wallPbr: Record<string, THREE.Texture[]> = {};
-  private strips: THREE.InstancedMesh;
   private mullions: THREE.InstancedMesh;
   private doorL: THREE.Group;
   private doorR: THREE.Group;
@@ -100,8 +99,6 @@ export class Store {
     }
     this.mullions = new THREE.InstancedMesh(unitBox, frameMat, 64);
     this.group.add(this.mullions);
-    this.strips = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, 0.05, 0.18), this.lightStripMat, 200);
-    this.group.add(this.strips);
     const makeDoor = () => {
       const g = new THREE.Group();
       const inner = new THREE.Mesh(new THREE.BoxGeometry(0.92, DOOR_H - 0.1, 0.06), glassMat);
@@ -161,6 +158,11 @@ export class Store {
     this.whGroup.add(floor, ceil, lamp);
   }
 
+  /** Đèn cố định của kho theo công tắc (đèn cửa hàng là nội thất mua/dời được). */
+  setLightsOn(on: boolean): void {
+    this.lightStripMat.emissiveIntensity = on ? 3 : 0;
+  }
+
   get doorCenter(): THREE.Vector3 {
     return new THREE.Vector3(DOOR_X, 0, this.D);
   }
@@ -211,14 +213,6 @@ export class Store {
     }
     this.mullions.count = n;
     this.mullions.instanceMatrix.needsUpdate = true;
-    // dải đèn trần
-    n = 0;
-    for (let x = 1.6; x < W - 0.6; x += 2.6) for (let z = 1.4; z < D - 0.5; z += 2.2) {
-      m.makeTranslation(x, H - 0.03, z);
-      if (n < 200) this.strips.setMatrixAt(n++, m);
-    }
-    this.strips.count = n;
-    this.strips.instanceMatrix.needsUpdate = true;
     this.whGroup.visible = warehouse;
     this.layoutDoors();
   }

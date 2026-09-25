@@ -48,24 +48,24 @@ def curl_file(url: str, dest: str) -> None:
 def load_manifest(root: str) -> dict:
     p = os.path.join(root, "public/assets/manifest.json")
     try:
-        with open(p) as f:
+        with open(p, encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
         return {"models": []}
 
 
 def save_manifest(root: str, m: dict) -> None:
-    with open(os.path.join(root, "public/assets/manifest.json"), "w") as f:
+    with open(os.path.join(root, "public/assets/manifest.json"), "w", encoding="utf-8") as f:
         json.dump(m, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
 
 def credit(root: str, files: list, asset_id: str) -> None:
     p = os.path.join(root, "public/assets/CREDITS.md")
-    existing = open(p).read() if os.path.exists(p) else "# Credits\n\n| File | Nguồn | License |\n| --- | --- | --- |\n"
+    existing = open(p, encoding="utf-8").read() if os.path.exists(p) else "# Credits\n\n| File | Nguồn | License |\n| --- | --- | --- |\n"
     rows = [f"| `{f}` | Poly Haven — https://polyhaven.com/a/{asset_id} | CC0 |" for f in files if f"`{f}`" not in existing]
     if rows:
-        with open(p, "w") as fh:
+        with open(p, "w", encoding="utf-8") as fh:
             fh.write(existing.rstrip("\n") + "\n" + "\n".join(rows) + "\n")
 
 

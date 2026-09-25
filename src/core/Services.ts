@@ -5,7 +5,7 @@ import { SaveSystem } from './SaveSystem';
 import { NavGrid } from '../world/NavGrid';
 import { PathCache } from '../world/Pathfinding';
 import { footprintCells } from '../world/Footprint';
-import { getFurniture } from '../config/furniture';
+import { getFurniture, isCeiling } from '../config/furniture';
 import { TimeSystem } from '../systems/TimeSystem';
 import { EconomySystem } from '../systems/EconomySystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
@@ -73,7 +73,10 @@ export class Services {
   syncOccupancy(): void {
     const g = this.grid;
     g.clearOccupancy();
-    for (const f of this.data.furniture) g.occupy(footprintCells(getFurniture(f.type), f.gx, f.gy, f.rot), f.uid);
+    for (const f of this.data.furniture) {
+      const def = getFurniture(f.type);
+      if (!isCeiling(def)) g.occupy(footprintCells(def, f.gx, f.gy, f.rot), f.uid);
+    }
   }
 
   save(): boolean {

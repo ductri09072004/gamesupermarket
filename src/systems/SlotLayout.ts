@@ -36,8 +36,10 @@ interface ShelfGeom {
 const GEOM: Record<string, ShelfGeom> = {
   shelf: { side: 0.04, base: 0.12, top: 0.06, board: 0.03, inset: 0.03 },
   fridge: { side: 0.07, base: 0.22, top: 0.2, board: 0.02, inset: 0.06 },
-  freezer: { side: 0.08, base: 0.3, top: 0.05, board: 0, inset: 0.08 },
-  rack: { side: 0.05, base: 0.1, top: 0.05, board: 0.03, inset: 0.03 },
+  // đáy lòng tủ đông cao 0.55m để đứng xa vẫn thấy hàng (lòng tủ sâu ~32cm như tủ đảo thật)
+  freezer: { side: 0.08, base: 0.55, top: 0.05, board: 0, inset: 0.08 },
+  // khớp tầng của model kệ kho worn_metal_rack (mặt tầng 0.453 / 0.969 / 1.484m khi cao 2m)
+  rack: { side: 0.02, base: 0.423, top: 0.03, board: 0.03, inset: 0.03 },
   clothing: { side: 0.04, base: 0.3, top: 0.2, board: 0, inset: 0.04, hang: true },
   electronics: { side: 0.05, base: 0.5, top: 0.12, board: 0.012, inset: 0.05 },
   vending: { side: 0.05, base: 0.4, top: 0.2, board: 0.015, inset: 0.1, panel: 0.28 },

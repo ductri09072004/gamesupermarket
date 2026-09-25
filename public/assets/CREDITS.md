@@ -76,3 +76,9 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `models/city/TrafficCone.glb` | Quaternius — Public Transport Pack (https://quaternius.com/packs/publictransport.html), chuyển FBX→GLB | CC0 |
 | `models/city/TrafficLight.glb` | Quaternius — Public Transport Pack (https://quaternius.com/packs/publictransport.html), chuyển FBX→GLB | CC0 |
 | `textures/buildings/*.png` | Quaternius — Ultimate Textured Building Pack | CC0 |
+| `models/furniture/rack.glb` | Poly Haven — https://polyhaven.com/a/worn_metal_rack (ghép 2 kệ cạnh nhau, texture WebP 1K) | CC0 |
+| `textures/powder_coat/metal028_512_nor_gl.jpg` | ambientCG — https://ambientcg.com/view?id=Metal028 (thu về 512px) | CC0 |
+| `textures/powder_coat/metal028_512_rough.jpg` | ambientCG — https://ambientcg.com/view?id=Metal028 (thu về 512px) | CC0 |
+| `textures/wood/oak_veneer_01_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/oak_veneer_01 | CC0 |
+| `textures/wood/oak_veneer_01_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/oak_veneer_01 | CC0 |
+| `textures/wood/oak_veneer_01_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/oak_veneer_01 | CC0 |

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { FEEL } from '../config/feel';
-import { getFurniture } from '../config/furniture';
+import { getFurniture, isCeiling } from '../config/furniture';
 import { makeFurniture, type FurnitureData } from '../core/GameState';
 import { canPlace } from '../systems/BuildSystem';
 import { BuildPanel } from '../ui/buildPanel';
@@ -105,8 +105,12 @@ export class BuildMode {
     this.refresh();
   }
 
+  /** Click ô: ưu tiên nội thất trên sàn, không có thì nhấc đèn trần phía trên ô đó. */
   private pickUp(cell: GridPoint): void {
-    const uid = this.c.s.grid.occupant(cell.gx, cell.gy);
+    const uid = this.c.s.grid.occupant(cell.gx, cell.gy) ?? this.c.s.data.furniture.find((f) => {
+      const def = getFurniture(f.type);
+      return isCeiling(def) && footprintCells(def, f.gx, f.gy, f.rot).some((p) => p.gx === cell.gx && p.gy === cell.gy);
+    })?.uid;
     if (uid) this.pickUpUid(uid);
   }
 
@@ -148,7 +152,8 @@ export class BuildMode {
     this.ghost = null;
     if (!h) return;
     if (h.from) {
-      this.c.s.grid.occupy(footprintCells(getFurniture(h.from.type), h.from.gx, h.from.gy, h.from.rot), h.from.uid);
+      const def = getFurniture(h.from.type);
+      if (!isCeiling(def)) this.c.s.grid.occupy(footprintCells(def, h.from.gx, h.from.gy, h.from.rot), h.from.uid);
       this.setCarried(h.from.uid, false);
     } else {
       this.c.s.data.furnitureStock.push(h.type);

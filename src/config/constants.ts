@@ -98,6 +98,36 @@ export const STAFF_SCAN_S = 0.9;
 export const STAFF_PAY_S = 2.2;
 export const STAFF_STOCK_S = 0.25;
 export const RESTOCK_THRESHOLD = 0.3;
+/** Nhân viên chăm sóc khách: thời gian hỗ trợ 1 khách ở máy tự tính tiền (s, chia cho tốc độ) */
+export const STAFF_HELP_S = 2.5;
+
+// Máy tự tính tiền
+/** Khách tự quét 1 món (chậm hơn thu ngân) và thanh toán thẻ/tiền tại máy */
+export const SELF_SCAN_S = 2.0;
+export const SELF_PAY_S = 3;
+/** Xác suất khách bí cần hỗ trợ = BASE + PER_ITEM × số món (+ ELDER nếu lớn tuổi), tối đa MAX */
+export const SELF_HELP_BASE = 0.12;
+export const SELF_HELP_PER_ITEM = 0.05;
+export const SELF_HELP_ELDER = 0.25;
+export const SELF_HELP_MAX = 0.6;
+/** Chờ hỗ trợ quá lâu thì bỏ về */
+export const SELF_HELP_PATIENCE_S = 40;
+/** Sau khi được giúp, các món còn lại quét nhanh gấp N lần */
+export const SELF_ASSIST_SPEEDUP = 3;
+/** Khách hơi thích quầy có người: máy tự tính được tính như dài thêm N người khi chọn hàng */
+export const SELF_QUEUE_BIAS = 0.6;
+export const REP_SELF_HELPED = 0.02;
+
+// Đèn & ngày đêm
+/** Số PointLight thật (không đổ bóng) gán cho các đèn trần gần camera — cố định để không phải biên dịch lại shader */
+export const LAMP_POOL = 8;
+/** Độ sáng trong cửa hàng (0..1) dưới mức này thì khách chê tối và bỏ về */
+export const DARK_THRESHOLD = 0.3;
+export const REP_TOO_DARK = -0.02;
+
+// Chế độ developer
+export const DEV_MONEY = 1_000_000;
+export const DEV_MONEY_BONUS = 100_000;
 
 // Kệ
 export const MAX_SLOT_ROWS = 3;
@@ -106,7 +136,7 @@ export const MAX_PRODUCT_INSTANCES = 5000;
 
 // Lưu game
 export const SAVE_KEY = 'minimart-tycoon-3d-save';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 // Thu ngân
 export const DENOMINATIONS = [50, 20, 10, 5, 1, 0.25, 0.1, 0.05, 0.01];

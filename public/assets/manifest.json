@@ -1,5 +1,7 @@
 {
-  "models": [],
+  "models": [
+    "furniture/rack.glb"
+  ],
   "hdri": "hdri/brown_photostudio_02_1k.hdr",
   "textures": {
     "wall": {
@@ -47,6 +49,21 @@
       "maps": {
         "diff": "textures/grass/leafy_grass_1k_diff.jpg",
         "nor_gl": "textures/grass/leafy_grass_1k_nor_gl.jpg"
+      }
+    },
+    "powder": {
+      "id": "Metal028",
+      "maps": {
+        "nor_gl": "textures/powder_coat/metal028_512_nor_gl.jpg",
+        "rough": "textures/powder_coat/metal028_512_rough.jpg"
+      }
+    },
+    "wood": {
+      "id": "oak_veneer_01",
+      "maps": {
+        "diff": "textures/wood/oak_veneer_01_1k_diff.jpg",
+        "nor_gl": "textures/wood/oak_veneer_01_1k_nor_gl.jpg",
+        "rough": "textures/wood/oak_veneer_01_1k_rough.jpg"
       }
     }
   },

@@ -1,7 +1,8 @@
 import {
-  INITIAL_STORE_H, INITIAL_STORE_W, OPEN_MINUTE, SAVE_VERSION, START_MONEY, START_REPUTATION,
+  DEV_MONEY, INITIAL_STORE_H, INITIAL_STORE_W, OPEN_MINUTE, SAVE_VERSION, START_MONEY, START_REPUTATION,
 } from '../config/constants';
 import { getFurniture } from '../config/furniture';
+import { LICENSES } from '../config/licenses';
 import { PRODUCTS } from '../config/products';
 
 export interface SlotData {
@@ -51,7 +52,7 @@ export interface OrderData {
   total: number;
 }
 
-export type StaffRole = 'cashier' | 'stocker';
+export type StaffRole = 'cashier' | 'stocker' | 'helper';
 
 export interface StaffData {
   uid: string;
@@ -131,6 +132,10 @@ export interface SaveData {
   player: { gx: number; gy: number; yaw: number };
   gameOver: boolean;
   vehicles: VehicleData[];
+  /** Công tắc đèn trong cửa hàng */
+  lightsOn: boolean;
+  /** Chế độ developer: nhiều tiền, bỏ qua giới hạn cấp độ */
+  devMode: boolean;
 }
 
 export function emptyStats(rep: number): DayStats {
@@ -160,7 +165,7 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
     ['computer', 0, 5, 1],
     ['trash', 1, 17, 0],
   ];
-  const furniture = layout.map(([type, gx, gy, rot], i) => makeFurniture(`f${i + 1}`, type, gx, gy, rot));
+  const furniture = [...layout.map(([type, gx, gy, rot], i) => makeFurniture(`f${i + 1}`, type, gx, gy, rot)), ...starterLamps()];
   return {
     version: SAVE_VERSION,
     seed,
@@ -195,7 +200,25 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
     player: { gx: 3, gy: 8, yaw: 0 },
     gameOver: false,
     vehicles: [],
+    lightsOn: true,
+    devMode: false,
   };
+}
+
+/** 4 đèn tuýp cơ bản cho cửa hàng mới — muốn sáng hơn thì mua thêm. */
+export function starterLamps(prefix = 'L'): FurnitureData[] {
+  const at: Array<[number, number]> = [[4, 6], [16, 6], [4, 13], [16, 13]];
+  return at.map(([gx, gy], i) => makeFurniture(`${prefix}${i + 1}`, 'lamp_tube', gx, gy, 0));
+}
+
+/** Ván developer: rất nhiều tiền, mọi giấy phép, không giới hạn cấp độ, không phá sản. */
+export function createDevState(seed?: number): SaveData {
+  const d = createNewState(seed);
+  d.devMode = true;
+  d.money = DEV_MONEY;
+  d.licenses = LICENSES.map((l) => l.id);
+  d.settings.gameOverEnabled = false;
+  return d;
 }
 
 /** State trung tâm — nguồn sự thật duy nhất. */
@@ -213,6 +236,11 @@ export class GameState {
 
   box(uid: string): BoxData | undefined {
     return this.data.boxes.find((b) => b.uid === uid);
+  }
+
+  /** Đủ cấp chưa (chế độ developer luôn đủ). */
+  levelAtLeast(level: number): boolean {
+    return this.data.devMode || this.data.level >= level;
   }
 
   hasLicense(id: number): boolean {

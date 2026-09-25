@@ -1,4 +1,4 @@
-import { getFurniture, type FurnitureDef } from '../config/furniture';
+import { getFurniture, isCeiling, type FurnitureDef } from '../config/furniture';
 import type { FurnitureData } from '../core/GameState';
 import { counterTiles, footprintCells, type GridPoint } from '../world/Footprint';
 import type { NavGrid, WalkGrid } from '../world/NavGrid';
@@ -32,6 +32,7 @@ export function requiredTargets(furniture: FurnitureData[], ignoreUid: string | 
       const t = counterTiles(def, f.gx, f.gy, f.rot);
       out.push([t.staff], [t.customer]);
     }
+    if (def.kind === 'selfcheckout') out.push([counterTiles(def, f.gx, f.gy, f.rot).customer]);
   }
   return out;
 }
@@ -47,6 +48,7 @@ export function canPlace(
   extraBlocked: GridPoint[] = [],
 ): PlaceCheck {
   const cells = footprintCells(def, gx, gy, rot);
+  if (isCeiling(def)) return canPlaceCeiling(grid, cells, furniture, ignoreUid);
   for (const c of cells) {
     const inStore = grid.isStoreInterior(c.gx, c.gy);
     const inWarehouse = grid.isWarehouseInterior(c.gx, c.gy);
@@ -70,6 +72,7 @@ export function canPlace(
     const t = counterTiles(def, gx, gy, rot);
     targets.push([t.staff], [t.customer]);
   }
+  if (def.kind === 'selfcheckout') targets.push([counterTiles(def, gx, gy, rot).customer]);
   const start = grid.doorInside;
   for (const tg of targets) {
     if (!findPath(overlay, start, tg)) return { ok: false, reason: 'Sẽ chặn đường từ cửa tới quầy thu ngân' };
@@ -77,5 +80,20 @@ export function canPlace(
   if (grid.warehouse && !findPath(overlay, start, { gx: grid.warehouseDoor.gx, gy: 0 })) {
     return { ok: false, reason: 'Sẽ chặn đường vào kho' };
   }
+  return { ok: true };
+}
+
+/** Đèn trần: nằm trong cửa hàng/kho, không chồng lên đèn khác (không chiếm sàn, không chặn đường). */
+function canPlaceCeiling(grid: NavGrid, cells: GridPoint[], furniture: FurnitureData[], ignoreUid: string | null): PlaceCheck {
+  for (const c of cells) {
+    if (!grid.isStoreInterior(c.gx, c.gy) && !grid.isWarehouseInterior(c.gx, c.gy)) return { ok: false, reason: 'Phải gắn trên trần cửa hàng' };
+  }
+  const taken = new Set<string>();
+  for (const f of furniture) {
+    if (f.uid === ignoreUid) continue;
+    const d = getFurniture(f.type);
+    if (isCeiling(d)) for (const p of footprintCells(d, f.gx, f.gy, f.rot)) taken.add(`${p.gx},${p.gy}`);
+  }
+  if (cells.some((c) => taken.has(`${c.gx},${c.gy}`))) return { ok: false, reason: 'Trùng chỗ đèn khác' };
   return { ok: true };
 }

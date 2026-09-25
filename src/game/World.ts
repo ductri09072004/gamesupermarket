@@ -30,6 +30,8 @@ import { Effects } from './Effects';
 import { FurnitureManager } from './FurnitureManager';
 import { Driving } from './Driving';
 import { StaffManager } from './StaffManager';
+import { SelfCheckoutManager } from './SelfCheckoutManager';
+import { StoreLighting } from './StoreLighting';
 import { VehicleManager } from './VehicleManager';
 import { TutorialArrow } from './TutorialArrow';
 
@@ -55,6 +57,8 @@ export class World implements GameCtx {
   readonly customers: CustomerManager;
   readonly staff: StaffManager;
   readonly checkout: CheckoutController;
+  readonly selfCheckout: SelfCheckoutManager;
+  readonly lights: StoreLighting;
   readonly build: BuildMode;
   readonly sign = new OpenSign();
   readonly arrow = new TutorialArrow();
@@ -78,6 +82,7 @@ export class World implements GameCtx {
     this.cityDepth = d.storeH;
     this.decor.build(d.storeW, d.storeH);
     this.lighting.fit(d.storeW, d.storeH);
+    this.lights = new StoreLighting(this);
     this.furniture = new FurnitureManager(s, assets, audio);
     this.boxes = new BoxManager(s);
     this.products = new ProductInstances(this.root as unknown as THREE.Scene, furnitureMatrix);
@@ -90,7 +95,8 @@ export class World implements GameCtx {
     this.tween = new CameraTween(this.camera);
     this.actions = new Actions(this);
     this.customers = new CustomerManager(this);
-    this.staff = new StaffManager(this, this.customers);
+    this.selfCheckout = new SelfCheckoutManager(this, this.customers);
+    this.staff = new StaffManager(this, this.customers, this.selfCheckout);
     this.checkout = new CheckoutController(this, this.customers, this.staff);
     this.vehicles = new VehicleManager(s, () => this.city.layout.lotSpots);
     this.driving = new Driving(this);
@@ -100,7 +106,7 @@ export class World implements GameCtx {
     this.sign.group.position.set(sp.x, 0, sp.z - 0.45);
     this.sign.set(d.storeOpen, false);
     this.root.add(this.store.group, this.exterior.group, this.city.group, this.decor.group, this.furniture.group, this.boxes.group, this.effects.group,
-      this.customers.group, this.staff.group, this.sign.group, this.arrow.group, this.vehicles.group);
+      this.customers.group, this.staff.group, this.sign.group, this.arrow.group, this.vehicles.group, this.lights.lightSwitch.group);
     this.scene.add(this.root);
     this.setInteractionRoots();
     this.store.onDoorOpen = () => this.sound('door', this.store.doorCenter.clone().setY(1.2), 0.9);
@@ -141,7 +147,7 @@ export class World implements GameCtx {
 
   private setInteractionRoots(): void {
     const kiosk = this.city.kioskObject;
-    this.interaction.roots = [this.furniture.group, this.boxes.group, this.sign.group, this.vehicles.group, ...(kiosk ? [kiosk] : [])];
+    this.interaction.roots = [this.furniture.group, this.boxes.group, this.sign.group, this.vehicles.group, this.lights.lightSwitch.group, ...(kiosk ? [kiosk] : [])];
   }
 
   private peopleCells() {
@@ -164,6 +170,7 @@ export class World implements GameCtx {
       this.lighting.fit(this.s.data.storeW, this.s.data.storeH);
       const sp = this.s.grid.signPosition;
       this.sign.group.position.set(sp.x, 0, sp.z - 0.45);
+      this.lights.layout();
       this.sound('thud');
     }
     this.colliderCache = null;
@@ -196,6 +203,7 @@ export class World implements GameCtx {
       }
     }
     this.customers.update(sim, dt);
+    this.selfCheckout.update(sim, dt);
     this.staff.update(sim, dt);
     this.checkout.update(dt);
     this.build.update(dt);
@@ -206,7 +214,8 @@ export class World implements GameCtx {
     this.sign.update(dt);
     const people = [{ x: this.player.x, z: this.player.z }, ...this.customers.customers.map((c) => ({ x: c.x, z: c.z })), ...this.staff.all().map((n) => ({ x: n.x, z: n.z }))];
     this.store.update(dt, people);
-    this.lighting.setHour(s.time.hour);
+    this.lights.update(dt);
+    this.lighting.setHour(s.time.hour, this.lights.interior);
     this.exterior.setNight(this.lighting.night);
     this.city.setNight(this.lighting.night);
     this.vehicles.setHeadlights(this.lighting.night);
@@ -273,6 +282,7 @@ export class World implements GameCtx {
     this.driving.destroy();
     this.vehicles.destroy();
     this.customers.clear();
+    this.selfCheckout.clear();
     this.staff.destroy();
     this.furniture.destroy();
     this.boxes.destroy();
@@ -280,6 +290,7 @@ export class World implements GameCtx {
     this.held.hold(null);
     this.root.removeFromParent();
     this.lighting.dispose();
+    this.lights.dispose();
     this.r.post.outline.selectedObjects = [];
   }
 }

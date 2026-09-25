@@ -1,7 +1,7 @@
 import { CELL, MAX_SLOT_ROWS } from './constants';
 
 export type StorageType = 'shelf' | 'fridge' | 'freezer' | 'clothing' | 'electronics';
-export type FurnitureKind = 'display' | 'checkout' | 'trash' | 'computer' | 'rack';
+export type FurnitureKind = 'display' | 'checkout' | 'selfcheckout' | 'trash' | 'computer' | 'rack' | 'lamp';
 
 export interface FurnitureDef {
   id: string;
@@ -33,6 +33,8 @@ export interface FurnitureDef {
   /** Số hàng sâu tối đa / số lớp chồng tối đa trong 1 ngăn */
   maxRows: number;
   maxStack: number;
+  /** Đèn trần: diện tích chiếu sáng (m²) và màu ánh sáng */
+  light?: { area: number; color: number };
 }
 
 type Base = Omit<FurnitureDef, 'id' | 'name' | 'icon' | 'kind' | 'size' | 'footprint' | 'price' | 'slots' | 'color' | 'model'>;
@@ -60,12 +62,20 @@ export const FURNITURE: FurnitureDef[] = [
   def({ id: 'electronics_case', name: 'Tủ kính điện tử', icon: '📱', kind: 'display', size: { w: 1.6, d: 0.6, h: 1.9 }, price: 650, tiers: 4, columns: 2, storage: 'electronics', licenseRequired: 6, electricity: 5, maxRows: 3, maxStack: 1, color: 0x1f2937 }),
   def({ id: 'vending', name: 'Máy bán hàng tự động', icon: '🥤', kind: 'display', size: { w: 1, d: 0.8, h: 1.9 }, price: 900, tiers: 4, columns: 4, storage: 'shelf', accepts: ['shelf', 'fridge'], vending: true, electricity: 6, maxRows: 8, maxStack: 1, color: 0xe63946 }),
   def({ id: 'checkout', name: 'Quầy thu ngân', icon: '🧾', kind: 'checkout', size: { w: 2, d: 0.8, h: 0.9 }, price: 350, electricity: 2, color: 0x6c8ea4 }),
+  def({ id: 'self_checkout', name: 'Máy tự tính tiền', icon: '🖥️', kind: 'selfcheckout', size: { w: 1, d: 0.8, h: 1 }, price: 1200, licenseRequired: 1, electricity: 4, color: 0x2f3e46 }),
+  def({ id: 'lamp_tube', name: 'Đèn LED tuýp', icon: '💡', kind: 'lamp', size: { w: 1.5, d: 0.5, h: 0.08 }, price: 45, electricity: 1, light: { area: 10, color: 0xf4f8ff }, color: 0xffffff }),
+  def({ id: 'lamp_pendant', name: 'Đèn thả trần', icon: '🏮', kind: 'lamp', size: { w: 0.5, d: 0.5, h: 0.7 }, price: 80, electricity: 1, light: { area: 6, color: 0xffd9a8 }, color: 0x2b2d42 }),
   def({ id: 'trash', name: 'Thùng rác', icon: '🗑️', kind: 'trash', size: { w: 0.5, d: 0.5, h: 0.8 }, price: 40, color: 0x4f7a38 }),
   def({ id: 'rack', name: 'Kệ kho', icon: '📦', kind: 'rack', size: { w: 2, d: 0.6, h: 2.0 }, price: 180, tiers: 3, columns: 2, warehouseOnly: true, color: 0x5c6b7a }),
   def({ id: 'computer', name: 'Bàn máy tính', icon: '💻', kind: 'computer', size: { w: 1.2, d: 0.6, h: 0.75 }, price: 0, buyable: false, sellable: false, electricity: 1, color: 0x8d6e63 }),
 ];
 
 const byId = new Map(FURNITURE.map((f) => [f.id, f]));
+
+/** Nội thất gắn trần (đèn): không chiếm ô sàn, không chặn đường, không va chạm. */
+export function isCeiling(def: Pick<FurnitureDef, 'kind'>): boolean {
+  return def.kind === 'lamp';
+}
 
 export function getFurniture(id: string): FurnitureDef {
   const f = byId.get(id);

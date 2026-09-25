@@ -1,5 +1,5 @@
 import { SAVE_KEY, SAVE_VERSION } from '../config/constants';
-import { createNewState, type SaveData } from './GameState';
+import { createNewState, starterLamps, type FurnitureData, type SaveData } from './GameState';
 
 export interface StorageLike {
   getItem(key: string): string | null;
@@ -13,7 +13,14 @@ type Migration = (data: Record<string, unknown>) => Record<string, unknown>;
 export const MIN_COMPATIBLE_VERSION = 3;
 
 /** migrations[v] nâng dữ liệu từ version v lên v+1 */
-const migrations: Record<number, Migration> = {};
+const migrations: Record<number, Migration> = {
+  // v4: dải đèn trần cố định → đèn là nội thất mua/dời được; bản lưu cũ được tặng 4 đèn cơ bản
+  3: (d) => {
+    const furniture = (d.furniture as FurnitureData[] | undefined) ?? [];
+    const hasLamp = furniture.some((f) => f.type.startsWith('lamp_'));
+    return { ...d, lightsOn: true, furniture: hasLamp ? furniture : [...furniture, ...starterLamps('L')] };
+  },
+};
 
 export function migrate(raw: Record<string, unknown>): SaveData {
   let data = raw;

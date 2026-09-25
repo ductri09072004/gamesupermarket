@@ -3,6 +3,7 @@ import type { Services } from '../core/Services';
 import { xpNeeded } from '../systems/ProgressionSystem';
 import { formatClock } from '../systems/TimeSystem';
 import { h, money, uiRoot } from './dom';
+import { DEV_MONEY_BONUS } from '../config/constants';
 
 export interface HudActions {
   onSave(): void;
@@ -65,6 +66,10 @@ export class Hud {
         h('button', { class: 'icon-btn', text: '🔨', title: 'Xây dựng (B)', onClick: actions.onBuild }),
         h('button', { class: 'icon-btn', text: '💾', title: 'Lưu game', onClick: actions.onSave }),
         h('button', { class: 'icon-btn', text: '☰', title: 'Menu', onClick: actions.onMenu }),
+        d.devMode ? h('button', {
+          class: 'btn small dev-badge', text: '🛠️ DEV · +$100k',
+          onClick: () => s.economy.addMoney(DEV_MONEY_BONUS, 'Developer'),
+        }) : null,
       ]),
       this.endBtn,
     ]);

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getFurniture } from '../config/furniture';
+import { getFurniture, isCeiling } from '../config/furniture';
 import { getProduct } from '../config/products';
 import type { Services } from '../core/Services';
 import type { Assets } from '../engine/Assets';
@@ -71,6 +71,7 @@ export class FurnitureManager {
       const v = this.views.get(f.uid);
       if (v && !v.root.visible) continue;
       const def = getFurniture(f.type);
+      if (isCeiling(def)) continue;
       const c = furnitureCenter(f);
       const rs = rotatedSize(def, f.rot);
       const sw = rs.w === def.footprint.w ? def.size.w : def.size.d;

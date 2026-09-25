@@ -12,7 +12,9 @@ export function renderFurniture(body: HTMLElement, ctx: AppContext): void {
     const locked = !s.state.hasLicense(def.licenseRequired) || (def.warehouseOnly && !s.data.warehouseUnlocked);
     const detail = def.kind === 'display'
       ? `${def.tiers} tầng × ${def.columns} ngăn`
-      : def.kind === 'rack' ? `Chứa ${def.slots} thùng · chỉ đặt trong kho` : def.kind === 'checkout' ? 'Khách xếp hàng thanh toán' : 'Vứt thùng rỗng';
+      : def.kind === 'rack' ? `Chứa ${def.slots} thùng · chỉ đặt trong kho` : def.kind === 'checkout' ? 'Khách xếp hàng thanh toán'
+        : def.kind === 'selfcheckout' ? 'Khách tự quét & trả tiền · có khách cần hỗ trợ'
+          : def.kind === 'lamp' ? `Gắn trần · chiếu sáng ~${def.light?.area ?? 0} m²` : 'Vứt thùng rỗng';
     grid.append(h('div', { class: `shop-card ${locked ? 'locked' : ''}` }, [
       h('div', { class: 'shop-icon', text: def.icon }),
       h('b', { text: def.name }),

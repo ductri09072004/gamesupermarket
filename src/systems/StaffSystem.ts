@@ -31,13 +31,14 @@ export class StaffSystem {
   }
 
   get unlocked(): boolean {
-    return this.state.data.level >= STAFF_UNLOCK_LEVEL;
+    return this.state.levelAtLeast(STAFF_UNLOCK_LEVEL);
   }
 
   refreshCandidates(): void {
     this.candidates = [
       generateCandidate('cashier', this.rng), generateCandidate('cashier', this.rng),
       generateCandidate('stocker', this.rng), generateCandidate('stocker', this.rng),
+      generateCandidate('helper', this.rng),
     ];
   }
 

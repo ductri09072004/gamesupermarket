@@ -11,6 +11,7 @@ import { slotBox } from '../systems/SlotLayout';
 import { furnitureMatrix } from '../world/Placement';
 import { buildCounter, type CounterParts } from './CheckoutCounter';
 import { buildFurnitureModel } from './FurnitureModels';
+import { buildSelfCheckout, type KioskParts } from './SelfCheckoutModel';
 import { drawLcd } from '../game/CheckoutProps';
 
 export interface PriceInfo {
@@ -33,6 +34,7 @@ export class FurnitureView {
   private tagCanvases: HTMLCanvasElement[] = [];
   private tagKeys: string[] = [];
   counter: CounterParts | null = null;
+  kiosk: KioskParts | null = null;
   screen: THREE.Mesh | null = null;
   private shakeT = 0;
   private flips = new Map<number, number>();
@@ -45,6 +47,9 @@ export class FurnitureView {
       this.model = this.counter.group;
       drawLcd(this.counter.lcd.canvas, ['MINI MART', 'Xin chào quý khách'], 0);
       this.counter.lcd.tex.needsUpdate = true;
+    } else if (def.kind === 'selfcheckout') {
+      this.kiosk = buildSelfCheckout(def);
+      this.model = this.kiosk.group;
     } else {
       const glb = assets?.model(def.model);
       if (glb) this.model = normalizeModel(glb, def.size);
@@ -59,7 +64,7 @@ export class FurnitureView {
     });
     this.root.add(this.model);
     const round = def.kind === 'trash';
-    this.root.add(contactShadow(def.size.w, def.size.d, round ? 0.5 : CONTACT_SHADOW_OPACITY, round));
+    if (def.kind !== 'lamp') this.root.add(contactShadow(def.size.w, def.size.d, round ? 0.5 : CONTACT_SHADOW_OPACITY, round));
     this.hit = new THREE.Mesh(unit, hitMat);
     const bb = new THREE.Box3().setFromObject(this.model);
     const size = bb.getSize(new THREE.Vector3());

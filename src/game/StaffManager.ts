@@ -6,6 +6,7 @@ import { StaffNpc, type StaffWorld } from '../entities/Staff';
 import { productMesh } from '../products/PackagingFactory';
 import type { GameCtx } from './Ctx';
 import type { CustomerManager } from './CustomerManager';
+import type { KioskHelpApi } from '../entities/StaffHelper';
 
 export class StaffManager implements StaffWorld {
   readonly group = new THREE.Group();
@@ -14,7 +15,7 @@ export class StaffManager implements StaffWorld {
   playerCounter: string | null = null;
   private off: () => void;
 
-  constructor(private c: GameCtx, private customers: CustomerManager) {
+  constructor(private c: GameCtx, private customers: CustomerManager, readonly kiosks: KioskHelpApi) {
     this.off = c.s.bus.on('staff:changed', () => this.sync());
     this.sync();
   }

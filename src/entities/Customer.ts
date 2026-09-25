@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  CUSTOMER_SPEED, PICK_TIME_S, QUEUE_PATIENCE_S, REP_OUT_OF_STOCK, REP_TOO_EXPENSIVE, REP_WALKOUT,
+  CUSTOMER_SPEED, DARK_THRESHOLD, PICK_TIME_S, QUEUE_PATIENCE_S, REP_OUT_OF_STOCK, REP_TOO_DARK, REP_TOO_EXPENSIVE, REP_WALKOUT,
 } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
@@ -28,6 +28,8 @@ export interface CustomerWorld {
   /** Món bay từ kệ vào giỏ */
   pickFx(c: Customer, furn: FurnitureData, productId: string): void;
   doorBell(): void;
+  /** Độ sáng trong cửa hàng 0..1 (ánh ngày + đèn) */
+  brightness(): number;
 }
 
 let nextId = 1;
@@ -48,11 +50,14 @@ export class Customer extends Walker {
   carryingBag = false;
   /** Số món đã mua ở máy bán hàng tự động (đã trả tiền tại máy) */
   private vended = 0;
+  /** Khách lớn tuổi (model OldClassy) — dễ bí khi dùng máy tự tính tiền */
+  readonly elder: boolean;
 
   constructor(private world: CustomerWorld, look: HumanLook, spawn: GridPoint, private exit: GridPoint, private wishes: Wish[]) {
     super(world.s, look, cellCenter(spawn.gx, spawn.gy).x, cellCenter(spawn.gx, spawn.gy).z);
     this.human.handL.add(this.basket.group);
     this.human.holding = true;
+    this.elder = !!look.model?.startsWith('Old');
     this.walkTo(world.s.grid.doorInside);
   }
 
@@ -75,6 +80,11 @@ export class Customer extends Walker {
       case 'enter':
         if (!this.s.data.storeOpen) {
           this.say('Đóng cửa rồi à... 😕');
+          this.leave();
+        } else if (this.world.brightness() < DARK_THRESHOLD) {
+          this.say('😨 Tối om vậy, thôi về...', 2000);
+          this.s.data.stats.walkouts += 1;
+          this.s.progression.changeReputation(REP_TOO_DARK);
           this.leave();
         } else this.state = 'browse';
         break;
@@ -239,8 +249,18 @@ export class Customer extends Walker {
     this.leave();
   }
 
-  private walkout(): void {
-    this.say('😠 Chờ lâu quá!', 2200);
+  /** Đang đứng ở máy tự tính tiền mà bí → bong bóng xin giúp (giữ tới khi được giúp). */
+  askHelp(): void {
+    this.bubble.show('🙋 Máy này dùng sao đây?', 0);
+    this.human.reach();
+  }
+
+  thankHelp(): void {
+    this.say('😊 Cảm ơn nha!', 1400);
+  }
+
+  walkout(message = '😠 Chờ lâu quá!'): void {
+    this.say(message, 2200);
     this.s.data.stats.walkouts += 1;
     this.s.progression.changeReputation(REP_WALKOUT);
     this.leave();

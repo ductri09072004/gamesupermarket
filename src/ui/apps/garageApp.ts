@@ -7,7 +7,7 @@ export function renderGarage(body: HTMLElement, ctx: AppContext): void {
   const { s } = ctx;
   const cards = VEHICLES.map((def) => {
     const owned = s.data.vehicles.find((v) => v.type === def.id);
-    const lockedLevel = s.data.level < def.levelRequired;
+    const lockedLevel = !s.state.levelAtLeast(def.levelRequired);
     const cap = def.countBySize ? `${def.capacity} suất (thùng cồng kềnh = 2)` : `${def.capacity} thùng`;
     const action = owned
       ? h('button', {

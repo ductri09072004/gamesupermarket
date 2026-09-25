@@ -65,6 +65,10 @@ export class PlayInput {
       this.ui.openPc('wholesale');
       return;
     }
+    if (t.kind === 'switch') {
+      w.toast(w.lights.toggle() ? '💡 Đã bật đèn cửa hàng' : '🌑 Đã tắt đèn cửa hàng', 'info');
+      return;
+    }
     if (t.kind === 'sign') {
       const d = w.s.data;
       d.storeOpen = !d.storeOpen;
@@ -90,6 +94,10 @@ export class PlayInput {
       case 'checkout':
         if (held) w.toast('Hãy đặt thùng xuống (Q) trước khi vào quầy', 'error');
         else w.checkout.enter(f.uid);
+        break;
+      case 'selfcheckout':
+        if (w.selfCheckout.assist(f.uid)) w.toast('🤝 Đã hướng dẫn khách — máy chạy tiếp', 'success');
+        else w.toast('Máy đang hoạt động bình thường', 'info');
         break;
       case 'trash':
         if (held) w.actions.trash(f.uid);
@@ -184,6 +192,7 @@ export class PlayInput {
         break;
       }
       case 'sign': out.push(`<kbd>E</kbd> ${w.s.data.storeOpen ? 'Đóng cửa' : 'Mở cửa'}`); break;
+      case 'switch': out.push(`<kbd>E</kbd> ${w.s.data.lightsOn ? 'Tắt' : 'Bật'} đèn cửa hàng`); break;
       case 'vehicle': {
         const v = t.uid ? w.s.vehicles.get(t.uid) : undefined;
         if (!v) break;
@@ -206,6 +215,8 @@ export class PlayInput {
         const def = getFurniture(f.type);
         if (def.kind === 'computer') out.push('<kbd>E</kbd> Dùng máy tính');
         if (def.kind === 'checkout') out.push(held ? 'Đặt thùng xuống trước (Q)' : '<kbd>E</kbd> Vào quầy thu ngân');
+        if (def.kind === 'selfcheckout') out.push(w.selfCheckout.hint(f.uid));
+        if (def.kind === 'lamp') out.push(`${def.icon} ${def.name} · ${w.s.data.lightsOn ? 'đang bật' : 'đang tắt'}`);
         if (def.kind === 'trash' && held) out.push(held.qty === 0 ? '<kbd>E</kbd> Gập & vứt thùng rỗng' : 'Thùng còn hàng!');
         if (def.kind === 'rack') out.push(held ? '<kbd>E</kbd> Cất thùng lên kệ kho' : f.boxes.length ? '<kbd>E</kbd> Lấy thùng' : 'Kệ kho trống');
         if (def.kind === 'display' && !held) out.push(`<kbd>E</kbd> Đặt giá ${def.name}`);

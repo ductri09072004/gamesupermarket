@@ -14,6 +14,7 @@ import type { Customer } from './Customer';
 import { STAFF_MODELS } from '../config/characters';
 import { HAIRS, SKINS } from './Human';
 import { Walker } from './Walker';
+import { HelperBrain, type KioskHelpApi } from './StaffHelper';
 
 export interface StaffWorld {
   s: Services;
@@ -23,6 +24,7 @@ export interface StaffWorld {
   shakeFurniture(uid: string): void;
   stockFx(furnUid: string, slot: number, from: THREE.Vector3): void;
   saleFx(amount: number, at: THREE.Vector3): void;
+  kiosks: KioskHelpApi;
 }
 
 type State = 'idle' | 'toBox' | 'toShelf' | 'stocking' | 'toTrash';
@@ -40,13 +42,15 @@ export class StaffNpc extends Walker {
   private boxModel: BoxModel | null = null;
   private target: RestockTarget | null = null;
   private status = '';
+  private helper: HelperBrain | null = null;
 
   constructor(private world: StaffWorld, public data: StaffData, start: GridPoint) {
     super(world.s, { ...UNIFORM, skin: SKINS[data.shirt % SKINS.length], hair: HAIRS[data.shirt % HAIRS.length], female: data.shirt % 2 === 0, model: STAFF_MODELS[data.shirt % 2 === 0 ? 1 : 0] },
       cellCenter(start.gx, start.gy).x, cellCenter(start.gx, start.gy).z);
+    if (data.role === 'helper') this.helper = new HelperBrain(this, world.kiosks);
   }
 
-  private setStatus(text: string): void {
+  setStatus(text: string): void {
     if (text === this.status) return;
     this.status = text;
     this.bubble.show(text, 0);
@@ -58,6 +62,7 @@ export class StaffNpc extends Walker {
     this.boxModel?.update(dt);
     if (moving || sim <= 0) return;
     if (this.data.role === 'cashier') this.cashier(sim);
+    else if (this.helper) this.helper.tick(sim);
     else this.stocker(sim);
   }
 
@@ -281,6 +286,7 @@ export class StaffNpc extends Walker {
   }
 
   destroy(): void {
+    this.helper?.destroy();
     this.customer?.cancelService();
     this.dropBox();
     this.dispose();
