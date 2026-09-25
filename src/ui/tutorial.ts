@@ -5,10 +5,10 @@ const STEPS: Array<[string, string]> = [
   ['pc', 'Mở máy tính (E)'],
   ['order', 'Đặt hàng trong app Market'],
   ['pickup', 'Nhặt thùng ở vỉa hè (E)'],
-  ['stock', 'Mở thùng (F) & xếp kệ (giữ E)'],
-  ['price', 'Đặt giá (click vào kệ)'],
-  ['open', 'Mở cửa (E ở biển cạnh cửa)'],
-  ['checkout', 'Tính tiền ở quầy thu ngân'],
+  ['stock', 'Mở thùng (F), nhìn ngăn kệ & click trái'],
+  ['price', 'Đặt giá (nhìn nhãn giá + E)'],
+  ['open', 'Lật biển Mở cửa cạnh cửa ra vào (E)'],
+  ['checkout', 'Vào quầy (E) & tính tiền cho khách'],
 ];
 
 /** Checklist hướng dẫn ngày đầu ở góc phải. */

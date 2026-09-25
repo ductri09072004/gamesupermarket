@@ -11,12 +11,12 @@ export function renderFurniture(body: HTMLElement, ctx: AppContext): void {
     const owned = s.data.furnitureStock.filter((t) => t === def.id).length;
     const locked = !s.state.hasLicense(def.licenseRequired) || (def.warehouseOnly && !s.data.warehouseUnlocked);
     const detail = def.kind === 'display'
-      ? `${def.slots} slot × ${def.slotCapacity} món`
+      ? `${def.tiers} tầng × ${def.columns} ngăn`
       : def.kind === 'rack' ? `Chứa ${def.slots} thùng · chỉ đặt trong kho` : def.kind === 'checkout' ? 'Khách xếp hàng thanh toán' : 'Vứt thùng rỗng';
     grid.append(h('div', { class: `shop-card ${locked ? 'locked' : ''}` }, [
       h('div', { class: 'shop-icon', text: def.icon }),
       h('b', { text: def.name }),
-      h('div', { class: 'muted small', text: `${def.footprint.w}×${def.footprint.h} ô · ${detail}` }),
+      h('div', { class: 'muted small', text: `${def.size.w}×${def.size.d}m · ${detail}` }),
       def.electricity > 0 ? h('div', { class: 'muted small', text: `⚡ ${money(def.electricity)}/ngày` }) : null,
       locked ? h('div', { class: 'muted small', text: def.warehouseOnly && !s.data.warehouseUnlocked ? '🔒 Cần mở kho' : `🔒 Cần giấy phép ${getLicense(def.licenseRequired).name}` }) : null,
       owned ? h('div', { class: 'tag', text: `Trong kho: ${owned}` }) : null,

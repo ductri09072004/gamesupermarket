@@ -1,4 +1,4 @@
-import { DEBT_DAYS_GAME_OVER, ELECTRICITY_BASE, RENT_PER_TILE } from '../config/constants';
+import { DEBT_DAYS_GAME_OVER, ELECTRICITY_BASE, RENT_PER_TILE, WAREHOUSE } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import type { SaveData } from '../core/GameState';
 import { round2 } from '../core/Random';
@@ -32,7 +32,7 @@ export interface DayReport {
 }
 
 export function computeExpenses(d: SaveData): Expenses {
-  const warehouseTiles = d.warehouseUnlocked ? 25 : 0;
+  const warehouseTiles = d.warehouseUnlocked ? WAREHOUSE.w * WAREHOUSE.d : 0;
   const rent = round2((d.storeW * d.storeH + warehouseTiles) * RENT_PER_TILE);
   const electricity = round2(ELECTRICITY_BASE + d.furniture.reduce((a, f) => a + getFurniture(f.type).electricity, 0));
   return { rent, electricity, wages: round2(totalWages(d.staff)) };

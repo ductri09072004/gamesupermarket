@@ -1,5 +1,8 @@
 import type { Settings } from '../core/GameState';
 import { h, modal, uiRoot } from './dom';
+import { showSettings } from './settings';
+
+export { showSettings };
 
 export interface MenuHandlers {
   hasSave: boolean;
@@ -29,37 +32,20 @@ export function showMainMenu(handlers: MenuHandlers, settings: Settings, onSetti
   };
   root.append(h('div', { class: 'menu-card' }, [
     h('div', { class: 'logo', text: '🏪' }),
-    h('h1', { text: 'Mini Mart Tycoon' }),
-    h('p', { class: 'muted', text: 'Giả lập siêu thị isometric 2D' }),
+    h('h1', { text: 'Mini Mart Tycoon 3D' }),
+    h('p', { class: 'muted', text: 'Giả lập siêu thị góc nhìn thứ nhất' }),
     h('button', { class: 'btn primary block big', text: '▶ Tiếp tục', disabled: !handlers.hasSave, onClick: () => { close(); handlers.onContinue(); } }),
     h('button', { class: 'btn block big', text: '✨ Game mới', onClick: confirmNew }),
     h('button', { class: 'btn block big', text: '⚙️ Cài đặt', onClick: () => showSettings(settings, onSettings) }),
-    h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> di chuyển · <kbd>E</kbd> tương tác · <kbd>Q</kbd> đặt thùng · <kbd>F</kbd> mở thùng · <kbd>B</kbd> xây dựng · <kbd>1-3</kbd> tốc độ · <kbd>F3</kbd> debug' }),
+    h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Ctrl</kbd> ngồi · <kbd>E</kbd> tương tác · <kbd>Chuột trái</kbd> đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>B</kbd> xây dựng · <kbd>1-3</kbd> tốc độ · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
   ]));
   uiRoot().append(root);
   return close;
 }
 
-export function showSettings(settings: Settings, onChange: (s: Settings) => void, onClose?: () => void): void {
-  const toggle = (key: keyof Settings, label: string) => {
-    const input = h('input', { attrs: { type: 'checkbox' } });
-    input.checked = settings[key];
-    input.addEventListener('change', () => {
-      settings[key] = input.checked;
-      onChange(settings);
-    });
-    return h('label', { class: 'setting' }, [input, h('span', { text: label })]);
-  };
-  const body = h('div', { class: 'settings' }, [
-    toggle('muted', 'Tắt tiếng'),
-    toggle('music', 'Nhạc nền lofi'),
-    toggle('cameraFollow', 'Camera theo người chơi'),
-    toggle('gameOverEnabled', 'Game Over khi nợ quá 3 ngày'),
-  ]);
-  modal('⚙️ Cài đặt', body, { onClose });
-}
-
 export interface PauseHandlers {
+  canEndDay?: boolean;
+  onEndDay?(): void;
   onResume(): void;
   onSave(): void;
   onSettings(): void;
@@ -75,6 +61,7 @@ export function showPauseMenu(h2: PauseHandlers): void {
   };
   const body = h('div', { class: 'pause-menu' }, [
     h('button', { class: 'btn primary block big', text: '▶ Tiếp tục chơi', onClick: act(() => {}) }),
+    h2.canEndDay ? h('button', { class: 'btn block big', text: '🌙 Kết thúc ngày', onClick: act(() => h2.onEndDay?.(), false) }) : null,
     h('button', { class: 'btn block big', text: '💾 Lưu game', onClick: act(h2.onSave) }),
     h('button', { class: 'btn block big', text: '⚙️ Cài đặt', onClick: act(h2.onSettings, false) }),
     h('button', { class: 'btn block big danger', text: '🚪 Về menu chính', onClick: act(h2.onQuit, false) }),

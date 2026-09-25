@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { findPath, PathCache } from '../src/iso/Pathfinding';
-import type { WalkGrid } from '../src/iso/IsoGrid';
-import { IsoGrid } from '../src/iso/IsoGrid';
+import { findPath, PathCache } from '../src/world/Pathfinding';
+import type { WalkGrid } from '../src/world/NavGrid';
+import { NavGrid } from '../src/world/NavGrid';
 
 function gridFrom(rows: string[]): WalkGrid {
   return {
@@ -44,21 +44,33 @@ describe('Pathfinding', () => {
   });
 
   it('cache trả kết quả giống và bị xoá khi version đổi', () => {
-    const grid = new IsoGrid(12, 10, false);
+    const grid = new NavGrid(12, 10, false);
     const cache = new PathCache(grid);
-    const a = cache.find(grid.doorOutside, { gx: 5, gy: 5 });
-    const b = cache.find(grid.doorOutside, { gx: 5, gy: 5 });
+    const a = cache.find(grid.doorOutside, { gx: 10, gy: 10 });
+    const b = cache.find(grid.doorOutside, { gx: 10, gy: 10 });
     expect(a).toEqual(b);
     expect(cache.hits).toBe(1);
-    grid.occupy([{ gx: 4, gy: 5 }], 'x');
-    cache.find(grid.doorOutside, { gx: 5, gy: 5 });
+    grid.occupy([{ gx: 8, gy: 10 }], 'x');
+    cache.find(grid.doorOutside, { gx: 10, gy: 10 });
     expect(cache.hits).toBe(1);
   });
 
   it('khách đi từ vỉa hè vào cửa tới ô trong cửa hàng', () => {
-    const grid = new IsoGrid(12, 10, false);
-    const p = findPath(grid, grid.spawnPoints()[0], { gx: 8, gy: 3 })!;
+    const grid = new NavGrid(12, 10, false);
+    const p = findPath(grid, grid.spawnPoints()[0], { gx: 16, gy: 6 })!;
     expect(p).not.toBeNull();
-    expect(p.some((q) => q.gx === grid.doorTile.gx && q.gy === grid.doorTile.gy)).toBe(true);
+    expect(p.some((q) => q.gy === grid.sd)).toBe(true);
+  });
+});
+
+describe('Làm mượt đường', () => {
+  it('bỏ điểm trung gian khi nhìn thẳng được', async () => {
+    const { smoothPath, findPath } = await import('../src/world/Pathfinding');
+    const g: WalkGrid = { version: 1, isWalkable: (x, y) => x >= 0 && y >= 0 && x < 20 && y < 20 };
+    const p = findPath(g, { gx: 1, gy: 1 }, { gx: 15, gy: 6 })!;
+    const s = smoothPath(g, p);
+    expect(s.length).toBeLessThan(p.length);
+    expect(s[0]).toEqual(p[0]);
+    expect(s[s.length - 1]).toEqual(p[p.length - 1]);
   });
 });

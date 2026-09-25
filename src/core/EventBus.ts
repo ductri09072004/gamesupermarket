@@ -1,7 +1,8 @@
 import type { DayReport } from '../systems/DayReport';
 
 export type SoundName =
-  | 'beep' | 'ching' | 'door' | 'click' | 'error' | 'pop' | 'place' | 'levelup' | 'whoosh' | 'coin';
+  | 'beep' | 'ching' | 'door' | 'doorbell' | 'click' | 'error' | 'pop' | 'place' | 'levelup' | 'whoosh' | 'coin'
+  | 'tock' | 'footstep' | 'truck' | 'drawerOpen' | 'drawerClose' | 'fold' | 'thud' | 'scan' | 'paper';
 
 export interface GameEvents {
   'money:changed': { money: number; delta: number; reason: string };
@@ -27,17 +28,21 @@ export interface GameEvents {
   'staff:changed': Record<string, never>;
   'customer:checkout': { customerId: string; amount: number };
   'customer:count': { count: number };
+  /** gx/gy: toạ độ world X/Z (m) */
   'sale': { amount: number; gx: number; gy: number };
   'float:text': { text: string; gx: number; gy: number; color?: string };
+  'delivery:truck': Record<string, never>;
   'toast': { message: string; kind?: 'info' | 'error' | 'success' };
   'ui:modal': { name: string; open: boolean };
   'ui:openPc': { app?: string };
-  'ui:openPrice': { furnitureUid: string | null };
+  'ui:openPrice': { furnitureUid: string | null; slot?: number };
+  'ui:pointerLock': { locked: boolean };
+  'player:interact': { kind: string };
   'checkout:mode': { active: boolean; counterUid: string | null };
   'build:mode': { active: boolean };
   'build:hold': { furnitureId: string };
   'tutorial:done': { step: string };
-  'sound': { name: SoundName };
+  'sound': { name: SoundName; pos?: { x: number; y: number; z: number }; pitch?: number; volume?: number };
   'settings:changed': Record<string, never>;
   'game:over': Record<string, never>;
   'game:save': Record<string, never>;

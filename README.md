@@ -1,63 +1,59 @@
-# 🏪 Mini Mart Tycoon
+# 🏪 Mini Mart Tycoon 3D
 
-Game giả lập vận hành siêu thị 2D isometric chạy trên trình duyệt — **Phaser 3 + TypeScript (strict) + Vite**, logic được unit test bằng **Vitest**. Toàn bộ đồ hoạ được vẽ bằng code (không dùng file ảnh), âm thanh và nhạc nền lofi tổng hợp bằng WebAudio.
+Game giả lập siêu thị **góc nhìn thứ nhất** chạy trên trình duyệt — **Three.js + TypeScript (strict) + Vite**, logic được unit test bằng **Vitest**. Bản 2D isometric (Phaser) nằm ở nhánh `claude/zealous-wozniak-1us62r`.
 
-Spec đầy đủ nằm trong [`CLAUDE.md`](./CLAUDE.md).
+Spec đầy đủ: [`CLAUDE.md`](./CLAUDE.md).
 
 ## Chạy game
 
 ```bash
 npm install
-npm run dev      # mở http://localhost:5173
+npm run dev      # http://localhost:5173
 npm run build    # type-check + build production vào dist/
 npm test         # unit test (vitest)
-npm run lint     # tsc --noEmit
 ```
 
-## Cách chơi
-
-Vòng lặp: **Đặt hàng → Nhận thùng → Xếp kệ → Đặt giá → Mở cửa → Tính tiền → Mở rộng**.
+## Điều khiển
 
 | Phím | Chức năng |
 | --- | --- |
-| `W A S D` / mũi tên | Di chuyển (xoay theo trục isometric) |
-| `E` | Tương tác vật phía trước (nhặt thùng, xếp kệ — giữ để xếp liên tục, máy tính, quầy, biển mở cửa…) |
-| `Shift + E` | Lấy hàng từ kệ trở lại thùng đang cầm |
-| `Q` | Đặt thùng xuống |
-| `F` | Mở / đóng thùng |
-| Click trái vào kệ | Bảng đặt giá |
-| `B` | Chế độ xây dựng (`R` xoay, `Delete` bán lại 50%, `Esc` huỷ) |
-| `1` `2` `3` | Tốc độ thời gian |
-| `C` | Bật/tắt camera theo người chơi |
-| Cuộn chuột / kéo chuột phải | Zoom / pan camera |
-| `Space`, số, `Enter` | Ở quầy thu ngân: quét món, gõ máy POS, xác nhận |
-| `Esc` | Rời quầy / đóng máy tính / menu tạm dừng |
-| `F3` | Debug: toạ độ lưới, đường đi của khách, depth, FPS |
+| `W A S D` | Đi · `Shift` chạy · `Ctrl` (hoặc `C`) ngồi xổm để nhìn tầng kệ thấp |
+| Chuột | Nhìn (click vào màn hình để khoá chuột) |
+| `E` | Nhặt thùng · dùng máy tính · vào quầy thu ngân · bật/tắt biển Mở cửa · đặt giá (nhìn nhãn giá hoặc ngăn kệ) |
+| Chuột trái / phải | Cầm thùng đã mở, nhìn vào ngăn kệ: đặt 1 món (giữ để đặt liên tục) / lấy lại 1 món |
+| `F` · `Q` | Mở/đóng thùng · thả thùng (thả lên nóc thùng khác để xếp chồng) |
+| `Tab` | Mở app Pricing chỉnh giá nhanh |
+| `B` | Build mode: camera nhìn từ trên, `R` xoay, click đặt/nhấc, `Delete` bán lại 50% |
+| `1` `2` `3` | Tốc độ thời gian · `N` kết thúc ngày (sau 22:00) |
+| Ở quầy | Click món trên băng chuyền (hoặc `Space`) để quét · click khay tiền để thối · bấm phím máy POS hoặc gõ số + `Enter` |
+| `Esc` · `F3` · `F4` | Menu · debug (FPS, draw calls, triangles, đường đi khách) · Product Gallery |
 
-## Tính năng
+## Điểm chính
 
-- Lưới isometric 2:1, depth sort cho vật nhiều ô, tường chỉ vẽ ở 2 cạnh sau, cửa kính phía trước.
-- Máy tính giả lập desktop: Market, Pricing, Furniture, Licenses, Expansion, Staff, Bank.
-- Thùng hàng giao tới vỉa hè sau 10–20 giây, xếp kệ theo luật storage (kệ / tủ lạnh / tủ đông).
-- Khách hàng AI (state machine + A* 8 hướng) theo giờ cao điểm × danh tiếng × diện tích, phản ứng giá "Đắt quá!", "Hết hàng :(", xếp hàng, bỏ về sau 60 giây.
-- Quầy thu ngân: băng chuyền, quét món, thối tiền mặt bằng ngăn kéo, máy POS cho thẻ.
-- Báo cáo cuối ngày (doanh thu, giá vốn, tiền thuê, điện, lương…), XP / cấp độ, giấy phép, Game Over khi nợ quá 3 ngày.
-- Build mode (ghost xanh/đỏ, kiểm tra A* không chặn đường tới quầy), mở rộng tới 24×20, kho phía sau với kệ kho.
-- Nhân viên thu ngân & xếp kệ (NPC tự động), ánh sáng theo giờ, tutorial ngày 1, lưu game localStorage có `version` để migrate.
+- **Sản phẩm sinh bằng code**: 7 kiểu bao bì (hộp bo góc, lon, chai, hũ, túi phồng, hộp sữa mái nhà, tuýp) với kích thước thật; nhãn canvas có tên hãng hư cấu, hoạ tiết, dung tích và mã vạch **EAN-13 đúng chuẩn**. Hiển thị trên kệ bằng `InstancedMesh` (1 mesh / sản phẩm).
+- **Kệ theo tầng & ngăn**: mỗi ngăn tự tính lưới vị trí theo kích thước sản phẩm; khung highlight + bóng mờ món kế tiếp; món bay vào kệ với tween, lắc nhẹ, tiếng "tộc" đổi cao độ.
+- **Quầy thu ngân 3D**: khách đặt từng món lên băng chuyền, món bay qua máy quét (laser nháy, bíp), màn hình LCD canvas, ngăn kéo tiền trượt ra với các khay mệnh giá, tiền thối xếp trên quầy, máy POS có phím bấm được.
+- **Không khí**: tone mapping ACES, bóng đổ, môi trường phòng (PMREM), dải đèn trần phát sáng + bloom, cửa kính trượt tự động, ánh sáng ngoài trời đổi theo giờ, đèn đường & biển hiệu sáng ban đêm, âm thanh 3D (tiếng máy lạnh tủ đông, chuông cửa, bước chân, nhạc nền, tiếng đám đông).
+- Logic cũ (tiền, giá, khách, kho, thời gian, lưu game) được giữ lại trong `src/systems` — không import Three.
+
+## Asset
+
+Môi trường build không truy cập được kenney.nl / polyhaven nên **mọi model, texture, âm thanh đều sinh bằng code**. Muốn dùng model GLB thật (CC0), đặt file vào `public/assets/models/` và khai báo trong `public/assets/manifest.json` — xem `public/assets/CREDITS.md`. `normalizeModel()` sẽ tự scale về kích thước thật, đặt gốc giữa đáy, mặt trước hướng -Z.
 
 ## Cấu trúc
 
 ```
 src/
-  config/     # constants, products, furniture, licenses, staff — mọi số cân bằng game
-  core/       # EventBus có kiểu, GameState, SaveSystem, Services, Input, Audio
-  iso/        # IsoMath, IsoGrid, Footprint, DepthSort, Pathfinding (A*)
-  systems/    # logic thuần (không phụ thuộc Phaser) — được unit test
-  entities/   # Player, Customer, Staff, Box, Shelf (FurnitureView), Checkout
-  render/     # vẽ texture placeholder bằng Graphics → generateTexture
-  scenes/     # Boot, Preload, Game (+ game/ controllers), UI
-  ui/         # DOM overlay: HUD, máy tính & apps, bảng giá, quầy thu ngân, báo cáo, menu
-tests/        # vitest
+  config/     constants, feel (game feel), products (shape/size/brand/label), furniture (size/tầng/ngăn), licenses, staff
+  core/       EventBus, GameState, SaveSystem (version 3), Services, Random
+  systems/    logic thuần: Time, Economy, Inventory, SlotLayout, Order, Pricing, Checkout, Customer, Staff, Build, Shop, Day
+  engine/     Renderer (ACES, shadow), Post (Outline, Bloom, GTAO, SMAA/FXAA), Loop (fixed-step 60Hz), Input (pointer lock), Audio, SoundBank, Assets
+  world/      NavGrid (0.5m), Pathfinding (A* + string-pulling), Colliders (AABB), Store, Exterior, Decor, Lighting, Queue
+  products/   PackagingFactory, LabelTexture, Ean13, ProductInstances, Gallery
+  player/     PlayerController, Interaction (raycast), HeldItem, CameraTween
+  entities/   Shelf (FurnitureView), FurnitureModels, CheckoutCounter, Box, Human, Walker, Customer, Staff, Basket, Bubble, OpenSign
+  game/       Game, World, GameUI, PlayInput, Actions, Checkout, CashDrawer, Customer/Staff/Furniture/Box managers, Effects
+  build/      BuildMode
+  ui/         DOM overlay: HUD, máy tính & apps, bảng giá nổi, thanh thu ngân, báo cáo ngày, menu, cài đặt, tutorial
+tests/        vitest
 ```
-
-Muốn thay placeholder bằng ảnh PNG: nạp ảnh trong `PreloadScene` với cùng texture key (ví dụ `tile_floor_a`, `furn_shelf_large_0`, `char_…`) — các hàm vẽ sẽ bỏ qua key đã tồn tại.

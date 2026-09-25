@@ -48,7 +48,7 @@ export class Hud {
     }));
     this.muteBtn = h('button', { class: 'icon-btn', title: 'Tắt/bật âm thanh', onClick: actions.onToggleMute });
     this.musicBtn = h('button', { class: 'icon-btn', title: 'Nhạc nền', onClick: actions.onToggleMusic });
-    this.endBtn = h('button', { class: 'btn end-day', text: '🌙 Kết thúc ngày', onClick: actions.onEndDay });
+    this.endBtn = h('button', { class: 'btn end-day', text: '🌙 Kết thúc ngày (N)', onClick: actions.onEndDay });
     this.endBtn.style.display = 'none';
     this.root = h('div', { class: 'hud' }, [
       h('div', { class: 'hud-card' }, [this.moneyEl, h('div', { class: 'hud-sub' }, [this.custEl, this.storeEl])]),

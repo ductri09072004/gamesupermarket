@@ -1,0 +1,106 @@
+import { MAX_SLOT_CAPACITY, MAX_SLOT_ROWS } from '../config/constants';
+import { getFurniture, type FurnitureDef } from '../config/furniture';
+import { getProduct, type ProductDef } from '../config/products';
+
+/** Hộp slot trong toạ độ cục bộ của nội thất (gốc giữa đáy, mặt trước hướng -Z). */
+export interface SlotBox {
+  x0: number; // mép trái
+  width: number;
+  y: number; // mặt đỡ
+  height: number; // khoảng trống phía trên
+  zFront: number;
+  depth: number;
+}
+
+export interface ItemLayout {
+  cols: number;
+  rows: number;
+  stacks: number;
+  capacity: number;
+  pitchX: number;
+  pitchZ: number;
+}
+
+interface ShelfGeom {
+  side: number;
+  base: number;
+  top: number;
+  board: number;
+  inset: number;
+}
+
+const GEOM: Record<string, ShelfGeom> = {
+  shelf: { side: 0.04, base: 0.12, top: 0.06, board: 0.03, inset: 0.03 },
+  fridge: { side: 0.07, base: 0.22, top: 0.2, board: 0.02, inset: 0.06 },
+  freezer: { side: 0.08, base: 0.3, top: 0.05, board: 0, inset: 0.08 },
+  rack: { side: 0.05, base: 0.1, top: 0.05, board: 0.03, inset: 0.03 },
+};
+
+export function shelfGeom(def: FurnitureDef): ShelfGeom {
+  if (def.kind === 'rack') return GEOM.rack;
+  return GEOM[def.storage ?? 'shelf'];
+}
+
+/** Độ cao mặt đỡ của từng tầng. */
+export function tierHeights(def: FurnitureDef): number[] {
+  const g = shelfGeom(def);
+  const spacing = (def.size.h - g.base - g.top) / def.tiers;
+  return Array.from({ length: def.tiers }, (_, i) => g.base + i * spacing);
+}
+
+/** Slot i = tầng (i / columns) × cột (i % columns). Tầng 0 là tầng dưới cùng. */
+export function slotBox(def: FurnitureDef, index: number): SlotBox {
+  const g = shelfGeom(def);
+  const tier = Math.floor(index / def.columns);
+  const col = index % def.columns;
+  const innerW = def.size.w - g.side * 2;
+  const cw = innerW / def.columns;
+  const spacing = (def.size.h - g.base - g.top) / def.tiers;
+  const y = g.base + tier * spacing + g.board;
+  return {
+    x0: -innerW / 2 + col * cw,
+    width: cw,
+    y,
+    height: spacing - g.board - 0.02,
+    zFront: -def.size.d / 2 + g.inset,
+    depth: def.size.d - g.inset * 2,
+  };
+}
+
+export function itemLayout(def: FurnitureDef, p: ProductDef): ItemLayout {
+  const box = slotBox(def, 0);
+  const [pw, ph, pd] = p.size;
+  const pitchX = pw * 1.08;
+  const pitchZ = pd * 1.08;
+  const cols = Math.max(1, Math.floor((box.width - 0.02) / pitchX));
+  const rows = Math.max(1, Math.min(MAX_SLOT_ROWS, Math.floor(box.depth / pitchZ)));
+  const maxStack = def.storage === 'freezer' ? 3 : 2;
+  const stacks = Math.max(1, Math.min(maxStack, Math.floor(box.height / ph)));
+  return { cols, rows, stacks, capacity: Math.min(MAX_SLOT_CAPACITY, cols * rows * stacks), pitchX, pitchZ };
+}
+
+/** Sức chứa của 1 slot cho sản phẩm (phụ thuộc kích thước sản phẩm). */
+export function slotCapacity(furnType: string, productId: string): number {
+  const def = getFurniture(furnType);
+  if (def.kind !== 'display') return 0;
+  return itemLayout(def, getProduct(productId)).capacity;
+}
+
+/**
+ * Vị trí (cục bộ) của món thứ i trong slot. Lấp hàng trước (sát mép) trước, trái → phải, rồi lùi vào trong, rồi chồng lên.
+ */
+export function itemPosition(def: FurnitureDef, slotIndex: number, p: ProductDef, i: number): { x: number; y: number; z: number } {
+  const box = slotBox(def, slotIndex);
+  const l = itemLayout(def, p);
+  const perLayer = l.cols * l.rows;
+  const layer = Math.floor(i / perLayer);
+  const j = i % perLayer;
+  const row = Math.floor(j / l.cols);
+  const col = j % l.cols;
+  const usedW = l.cols * l.pitchX;
+  return {
+    x: box.x0 + (box.width - usedW) / 2 + (col + 0.5) * l.pitchX,
+    y: box.y + layer * p.size[1],
+    z: box.zFront + (row + 0.5) * l.pitchZ,
+  };
+}

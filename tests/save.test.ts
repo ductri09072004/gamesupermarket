@@ -18,7 +18,9 @@ describe('SaveSystem', () => {
     s.licenses.push(1);
     s.prices.noodles = 0.99;
     s.furniture[0].slots[0] = { productId: 'noodles', qty: 7 };
-    s.boxes.push({ uid: 'b1', productId: 'water', qty: 3, open: true, gx: 4.5, gy: 11.5, location: 'floor', holderId: null });
+    s.boxes.push({ uid: 'b1', productId: 'water', qty: 3, open: true, gx: 4.8, gy: 10.9, location: 'floor', holderId: null });
+    s.furniture.push({ uid: 'f9', type: 'shelf_small', gx: 14, gy: 8, rot: 2, slots: [{ productId: 'candy', qty: 5 }, { productId: null, qty: 0 }, { productId: null, qty: 0 }, { productId: null, qty: 0 }], boxes: [] });
+    s.player = { gx: 2.3, gy: 7.1, yaw: 1.2 };
     s.staff.push({ uid: 's1', name: 'Lê An', role: 'stocker', wage: 50, speed: 1.1, shirt: 2 });
     s.settings.muted = true;
     const store = new MemStorage();
@@ -30,15 +32,23 @@ describe('SaveSystem', () => {
     expect(deserialize(serialize(s))).toEqual(s);
   });
 
-  it('migrate từ version cũ', () => {
+  it('bản lưu 2D cũ không tương thích → coi như không có bản lưu', () => {
     const old = createNewState(5) as unknown as Record<string, unknown>;
-    old.version = 1;
-    delete old.furnitureStock;
-    delete old.tutorial;
-    const m = migrate(old);
+    old.version = 2;
+    expect(() => migrate(old)).toThrow();
+    const store = new MemStorage();
+    store.setItem('k', JSON.stringify(old));
+    const saves = new SaveSystem(store, 'k');
+    expect(saves.load()).toBeNull();
+    expect(saves.hasSave()).toBe(false);
+  });
+
+  it('bổ sung trường thiếu bằng mặc định', () => {
+    const cur = createNewState(5) as unknown as Record<string, unknown>;
+    delete cur.furnitureStock;
+    const m = migrate(cur);
     expect(m.version).toBe(SAVE_VERSION);
     expect(m.furnitureStock).toEqual([]);
-    expect(m.tutorial).toEqual({});
   });
 
   it('dữ liệu hỏng → null', () => {

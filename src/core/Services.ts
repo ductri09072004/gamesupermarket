@@ -2,9 +2,9 @@ import { bus, type EventBus, type GameEvents } from './EventBus';
 import { GameState, type SaveData } from './GameState';
 import { mulberry32, type Rng } from './Random';
 import { SaveSystem } from './SaveSystem';
-import { IsoGrid } from '../iso/IsoGrid';
-import { PathCache } from '../iso/Pathfinding';
-import { footprintCells } from '../iso/Footprint';
+import { NavGrid } from '../world/NavGrid';
+import { PathCache } from '../world/Pathfinding';
+import { footprintCells } from '../world/Footprint';
 import { getFurniture } from '../config/furniture';
 import { TimeSystem } from '../systems/TimeSystem';
 import { EconomySystem } from '../systems/EconomySystem';
@@ -21,7 +21,7 @@ export class Services {
   readonly state: GameState;
   readonly bus: EventBus<GameEvents> = bus;
   readonly rng: Rng;
-  readonly grid: IsoGrid;
+  readonly grid: NavGrid;
   readonly paths: PathCache;
   readonly time: TimeSystem;
   readonly economy: EconomySystem;
@@ -38,14 +38,14 @@ export class Services {
   constructor(data: SaveData) {
     this.state = new GameState(data);
     this.rng = mulberry32(data.seed + data.day * 7919);
-    this.grid = new IsoGrid(data.storeW, data.storeH, data.warehouseUnlocked);
+    this.grid = new NavGrid(data.storeW, data.storeH, data.warehouseUnlocked);
     this.syncOccupancy();
     this.paths = new PathCache(this.grid);
     this.time = new TimeSystem(this.state, this.bus);
     this.economy = new EconomySystem(this.state, this.bus);
     this.progression = new ProgressionSystem(this.state, this.bus);
     this.inventory = new InventorySystem(this.state, this.bus);
-    this.orders = new OrderSystem(this.state, this.bus, this.economy, this.inventory, this.rng, () => this.grid.deliveryTiles());
+    this.orders = new OrderSystem(this.state, this.bus, this.economy, this.inventory, this.rng, () => this.grid.deliverySpots());
     this.staff = new StaffSystem(this.state, this.bus, this.rng);
     this.shop = new ShopSystem(this.state, this.bus, this.economy);
     this.day = new DaySystem(this);
@@ -67,7 +67,7 @@ export class Services {
 
   syncOccupancy(): void {
     const g = this.grid;
-    g.forEach((_x, _y, t) => { t.occupiedBy = null; });
+    g.clearOccupancy();
     for (const f of this.data.furniture) g.occupy(footprintCells(getFurniture(f.type), f.gx, f.gy, f.rot), f.uid);
   }
 

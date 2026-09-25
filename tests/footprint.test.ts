@@ -1,57 +1,82 @@
 import { describe, expect, it } from 'vitest';
-import { getFurniture } from '../src/config/furniture';
-import { adjacentTiles, counterTiles, footprintCells, rotatedSize } from '../src/iso/Footprint';
-import { footprintDepth } from '../src/iso/DepthSort';
-import { IsoGrid } from '../src/iso/IsoGrid';
+import { FURNITURE, getFurniture } from '../src/config/furniture';
+import { adjacentTiles, counterTiles, footprintCells, frontTiles, rotatedSize, rotationY } from '../src/world/Footprint';
+import { cellCenter, NavGrid, worldToCell } from '../src/world/NavGrid';
 
-describe('Footprint', () => {
+describe('Footprint (ô 0.5m)', () => {
   const large = getFurniture('shelf_large');
 
-  it('xoay footprint 2x1', () => {
-    expect(rotatedSize(large, 0)).toEqual({ w: 2, h: 1 });
-    expect(rotatedSize(large, 1)).toEqual({ w: 1, h: 2 });
-    expect(footprintCells(large, 3, 4, 0)).toEqual([{ gx: 3, gy: 4 }, { gx: 4, gy: 4 }]);
-    expect(footprintCells(large, 3, 4, 1)).toEqual([{ gx: 3, gy: 4 }, { gx: 3, gy: 5 }]);
-    expect(footprintCells(large, 3, 4, 2)).toHaveLength(2);
+  it('footprint suy ra từ kích thước thật', () => {
+    expect(large.footprint).toEqual({ w: 4, h: 1 });
+    expect(getFurniture('fridge').footprint).toEqual({ w: 4, h: 2 });
+    expect(getFurniture('trash').footprint).toEqual({ w: 1, h: 1 });
+    for (const f of FURNITURE) expect(f.slots).toBe(f.tiers * f.columns);
   });
 
-  it('ô kề quanh footprint', () => {
-    const adj = adjacentTiles(footprintCells(large, 0, 0, 0));
-    expect(adj).toHaveLength(6);
+  it('xoay footprint', () => {
+    expect(rotatedSize(large, 1)).toEqual({ w: 1, h: 4 });
+    expect(footprintCells(large, 3, 4, 0)).toHaveLength(4);
+    expect(footprintCells(large, 3, 4, 1).every((c) => c.gx === 3)).toBe(true);
   });
 
-  it('ô quầy thu ngân theo hướng', () => {
-    expect(counterTiles(5, 5, 0)).toMatchObject({ staff: { gx: 5, gy: 4 }, customer: { gx: 5, gy: 6 } });
-    expect(counterTiles(5, 5, 1)).toMatchObject({ staff: { gx: 4, gy: 5 }, customer: { gx: 6, gy: 5 } });
+  it('mặt trước model (-Z) quay đúng hướng', () => {
+    for (let r = 0; r < 4; r++) {
+      const a = rotationY(r);
+      const fx = -Math.sin(a);
+      const fz = -Math.cos(a);
+      const expected = [[0, 1], [1, 0], [0, -1], [-1, 0]][r];
+      expect(fx).toBeCloseTo(expected[0]);
+      expect(fz).toBeCloseTo(expected[1]);
+    }
   });
 
-  it('depth vật nhiều ô dùng ô có gx+gy lớn nhất', () => {
-    const d = footprintDepth(footprintCells(large, 2, 2, 0));
-    expect(d).toBe((3 + 2 + 1) * 10);
+  it('ô phía trước & ô kề', () => {
+    expect(frontTiles(large, 2, 2, 0)).toEqual([{ gx: 2, gy: 3 }, { gx: 3, gy: 3 }, { gx: 4, gy: 3 }, { gx: 5, gy: 3 }]);
+    expect(frontTiles(large, 2, 2, 3).every((t) => t.gx === 1)).toBe(true);
+    expect(adjacentTiles(footprintCells(large, 0, 0, 0))).toHaveLength(10);
   });
 
-  it('nội thất chiếm ô → không walkable, giải phóng lại được', () => {
-    const g = new IsoGrid(12, 10, false);
-    const cells = footprintCells(large, 2, 2, 0);
-    expect(g.isWalkable(2, 2)).toBe(true);
-    g.occupy(cells, 'f1');
-    expect(g.isWalkable(2, 2)).toBe(false);
+  it('ô quầy thu ngân nằm ngoài footprint, hai phía đối diện', () => {
+    const c = getFurniture('checkout');
+    for (let r = 0; r < 4; r++) {
+      const cells = footprintCells(c, 5, 5, r);
+      const t = counterTiles(c, 5, 5, r);
+      for (const p of [t.staff, t.customer]) expect(cells.some((q) => q.gx === p.gx && q.gy === p.gy)).toBe(false);
+      expect(Math.sign(t.customer.gx - t.staff.gx)).toBe(Math.sign(t.dir.gx));
+      expect(Math.sign(t.customer.gy - t.staff.gy)).toBe(Math.sign(t.dir.gy));
+    }
+  });
+});
+
+describe('NavGrid', () => {
+  it('cửa hàng 12×10m = 24×20 ô, tường bao quanh, cửa phía trước', () => {
+    const g = new NavGrid(12, 10, false);
+    expect(g.sw).toBe(24);
+    expect(g.sd).toBe(20);
+    expect(g.isWalkable(-1, 5)).toBe(false);
+    expect(g.isWalkable(24, 5)).toBe(false);
+    expect(g.isWalkable(10, -1)).toBe(false);
+    expect(g.isWalkable(10, 20)).toBe(false);
+    for (const d of g.doorCells) expect(g.isWalkable(d.gx, d.gy)).toBe(true);
+    expect(g.isWalkable(10, 21)).toBe(true);
+    expect(g.isWalkable(5, -5)).toBe(false);
+    g.rebuild(12, 10, true);
+    expect(g.isWalkable(5, -5)).toBe(true);
+    expect(g.isWalkable(g.warehouseDoor.gx, g.warehouseDoor.gy)).toBe(true);
+  });
+
+  it('chiếm ô & giải phóng', () => {
+    const g = new NavGrid(12, 10, false);
+    g.occupy(footprintCells(getFurniture('shelf_large'), 2, 2, 0), 'f1');
     expect(g.isWalkable(3, 2)).toBe(false);
-    expect(g.occupant(3, 2)).toBe('f1');
+    expect(g.occupant(5, 2)).toBe('f1');
     g.free('f1');
     expect(g.isWalkable(3, 2)).toBe(true);
   });
 
-  it('bản đồ: tường, cửa, vỉa hè', () => {
-    const g = new IsoGrid(12, 10, false);
-    expect(g.isWalkable(-1, 3)).toBe(false);
-    expect(g.isWalkable(5, -1)).toBe(false);
-    expect(g.isWalkable(g.doorTile.gx, g.doorTile.gy)).toBe(true);
-    expect(g.isWalkable(5, 10)).toBe(false);
-    expect(g.isWalkable(5, 11)).toBe(true);
-    expect(g.isWalkable(-3, 2)).toBe(false);
-    g.rebuild(12, 10, true);
-    expect(g.isWalkable(-3, 2)).toBe(true);
-    expect(g.isWalkable(-1, 2)).toBe(true);
+  it('chuyển đổi ô ↔ mét', () => {
+    expect(cellCenter(0, 0)).toEqual({ x: 0.25, z: 0.25 });
+    expect(worldToCell(3.1, 9.99)).toEqual({ gx: 6, gy: 19 });
+    expect(worldToCell(-0.1, 0)).toEqual({ gx: -1, gy: 0 });
   });
 });

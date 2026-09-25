@@ -9,14 +9,16 @@ export interface StorageLike {
 
 type Migration = (data: Record<string, unknown>) => Record<string, unknown>;
 
+/** Bản lưu cũ hơn phiên bản này (2D) không tương thích. */
+export const MIN_COMPATIBLE_VERSION = 3;
+
 /** migrations[v] nâng dữ liệu từ version v lên v+1 */
-const migrations: Record<number, Migration> = {
-  1: (d) => ({ ...d, furnitureStock: d.furnitureStock ?? [], tutorial: d.tutorial ?? {}, version: 2 }),
-};
+const migrations: Record<number, Migration> = {};
 
 export function migrate(raw: Record<string, unknown>): SaveData {
   let data = raw;
   let v = typeof data.version === 'number' ? data.version : 1;
+  if (v < MIN_COMPATIBLE_VERSION) throw new Error(`Save version ${v} is not compatible`);
   while (v < SAVE_VERSION) {
     const m = migrations[v];
     if (!m) throw new Error(`No migration from version ${v}`);
@@ -53,11 +55,7 @@ export class SaveSystem {
   constructor(private storage: StorageLike | null = defaultStorage(), private key = SAVE_KEY) {}
 
   hasSave(): boolean {
-    try {
-      return !!this.storage?.getItem(this.key);
-    } catch {
-      return false;
-    }
+    return this.load() !== null;
   }
 
   save(data: SaveData): boolean {

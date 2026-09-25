@@ -1,143 +1,181 @@
-import Phaser from 'phaser';
+import * as THREE from 'three';
 import { getFurniture, type FurnitureDef } from '../config/furniture';
 import { getProduct } from '../config/products';
 import type { FurnitureData } from '../core/GameState';
-import { footprintCells, rotatedSize } from '../iso/Footprint';
-import { footprintDepth } from '../iso/DepthSort';
-import { gridToScreen, type GridPoint } from '../iso/IsoMath';
-import { furnitureTexture } from '../render/FurnitureArt';
-import { drawMiniCube, hexToInt } from '../render/IsoDraw';
+import type { Assets } from '../engine/Assets';
+import { normalizeModel } from '../engine/Assets';
+import { FEEL } from '../config/feel';
+import { slotBox } from '../systems/SlotLayout';
+import { furnitureMatrix } from '../world/Placement';
+import { buildCounter, type CounterParts } from './CheckoutCounter';
+import { buildFurnitureModel } from './FurnitureModels';
+import { drawLcd } from '../game/CheckoutProps';
 
-/** Hiển thị một món nội thất (kệ, tủ, quầy...) và hàng hoá trên đó. */
+export interface PriceInfo {
+  price: number;
+  market: number;
+  cost: number;
+}
+
+const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+const unit = new THREE.BoxGeometry(1, 1, 1);
+
+/** Hiển thị 1 món nội thất: model, vùng raycast (cả khối + từng slot), nhãn giá 3D. */
 export class FurnitureView {
   readonly def: FurnitureDef;
-  readonly sprite: Phaser.GameObjects.Image;
-  private items: Phaser.GameObjects.Graphics;
-  private labels: Phaser.GameObjects.Text[] = [];
-  private shaking = false;
-  cells: GridPoint[] = [];
+  readonly root = new THREE.Group();
+  readonly model: THREE.Group;
+  readonly hit: THREE.Mesh;
+  readonly slotHits: THREE.Mesh[] = [];
+  readonly tags: THREE.Mesh[] = [];
+  private tagCanvases: HTMLCanvasElement[] = [];
+  private tagKeys: string[] = [];
+  counter: CounterParts | null = null;
+  screen: THREE.Mesh | null = null;
+  private shakeT = 0;
+  private flips = new Map<number, number>();
 
-  constructor(private scene: Phaser.Scene, public data: FurnitureData, private priceOf: (id: string) => number) {
+  constructor(public data: FurnitureData, assets: Assets | null, private priceInfo: (productId: string) => PriceInfo) {
     this.def = getFurniture(data.type);
-    this.sprite = scene.add.image(0, 0, '__DEFAULT');
-    this.items = scene.add.graphics();
-    if (this.def.kind === 'display') {
-      for (let i = 0; i < this.def.slots; i++) {
-        this.labels.push(scene.add.text(0, 0, '', {
-          fontFamily: 'Nunito, sans-serif', fontSize: '9px', color: '#3d3551', backgroundColor: '#fffbe8',
-          padding: { x: 2, y: 0 }, fontStyle: 'bold',
-        }).setOrigin(0.5).setResolution(2));
+    const def = this.def;
+    if (def.kind === 'checkout') {
+      this.counter = buildCounter(def);
+      this.model = this.counter.group;
+      drawLcd(this.counter.lcd.canvas, ['MINI MART', 'Xin chào quý khách'], 0);
+      this.counter.lcd.tex.needsUpdate = true;
+    } else {
+      const glb = assets?.model(def.model);
+      if (glb) this.model = normalizeModel(glb, def.size);
+      else {
+        const b = buildFurnitureModel(def);
+        this.model = b.group;
+        this.screen = b.screen ?? null;
       }
     }
+    this.model.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh && !(o.userData.kind)) o.userData.owner = data.uid;
+    });
+    this.root.add(this.model);
+    this.hit = new THREE.Mesh(unit, hitMat);
+    const bb = new THREE.Box3().setFromObject(this.model);
+    const size = bb.getSize(new THREE.Vector3());
+    const center = bb.getCenter(new THREE.Vector3());
+    this.hit.scale.set(Math.max(size.x, 0.2), Math.max(size.y, 0.2), Math.max(size.z, 0.2));
+    this.hit.position.copy(center);
+    this.hit.userData = { kind: 'furniture', uid: data.uid };
+    // kệ trưng bày: raycast vào từng slot / nhãn giá / model, không dùng hộp bao (sẽ che slot)
+    if (def.kind !== 'display') this.root.add(this.hit);
+    if (def.kind === 'display') this.buildSlots();
     this.refresh();
   }
 
-  get depth(): number {
-    return this.sprite.depth;
-  }
-
-  refresh(): void {
-    const d = this.data;
-    const tex = furnitureTexture(this.scene, this.def, d.rot);
-    const p = gridToScreen(d.gx, d.gy);
-    this.sprite.setTexture(tex.key).setOrigin(tex.anchorX / tex.width, tex.anchorY / tex.height);
-    this.sprite.setPosition(p.x, p.y).setFlipX(false);
-    this.cells = footprintCells(this.def, d.gx, d.gy, d.rot);
-    const depth = footprintDepth(this.cells);
-    this.sprite.setDepth(depth);
-    this.items.setDepth(depth + 0.5);
-    this.labels.forEach((l) => l.setDepth(depth + 0.6));
-    this.drawItems();
-  }
-
-  /** Vị trí (lưới cục bộ) tâm của slot i. */
-  slotCenter(i: number): { a: number; b: number } {
-    const { w, h } = rotatedSize(this.def, this.data.rot);
-    const n = Math.max(1, this.def.slots);
-    if (w >= h) return { a: ((i + 0.5) * w) / n, b: h / 2 };
-    return { a: w / 2, b: ((i + 0.5) * h) / n };
-  }
-
-  drawItems(): void {
-    const g = this.items;
-    g.clear();
-    if (this.def.kind !== 'display') return;
-    const { w, h } = rotatedSize(this.def, this.data.rot);
-    const n = this.def.slots;
-    const alongX = w >= h;
-    const slotLen = (alongX ? w : h) / n;
-    const short = alongX ? h : w;
-    const H = this.def.height;
-    const cubes: Array<{ a: number; b: number; z: number; color: number }> = [];
-    this.data.slots.forEach((s, i) => {
-      if (!s.productId || s.qty <= 0) return;
-      const color = hexToInt(getProduct(s.productId).color);
-      for (let k = 0; k < Math.min(s.qty, 12); k++) {
-        const layer = Math.floor(k / 6);
-        const idx = k % 6;
-        const u = (i + (idx % 2 === 0 ? 0.3 : 0.7)) * slotLen;
-        const v = [0.22, 0.5, 0.78][Math.floor(idx / 2)] * short;
-        cubes.push({ a: alongX ? u : v, b: alongX ? v : u, z: H + layer * 6, color });
-      }
-    });
-    cubes.sort((p, q) => p.z - q.z || p.a + p.b - (q.a + q.b));
-    for (const c of cubes) {
-      const p = gridToScreen(this.data.gx + c.a, this.data.gy + c.b);
-      drawMiniCube(g, p.x, p.y - c.z + 3, 5, 6, c.color);
+  private buildSlots(): void {
+    const def = this.def;
+    for (let i = 0; i < def.slots; i++) {
+      const b = slotBox(def, i);
+      const hit = new THREE.Mesh(unit, hitMat);
+      hit.scale.set(b.width, Math.max(0.05, b.height - 0.01), b.depth);
+      hit.position.set(b.x0 + b.width / 2, b.y + b.height / 2, b.zFront + b.depth / 2);
+      hit.userData = { kind: 'slot', uid: this.data.uid, slot: i };
+      this.root.add(hit);
+      this.slotHits.push(hit);
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 64;
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.05), new THREE.MeshStandardMaterial({
+        map: tex, roughness: 0.4, polygonOffset: true, polygonOffsetFactor: -2,
+      }));
+      const freezer = def.storage === 'freezer';
+      tag.position.set(b.x0 + b.width / 2, freezer ? def.size.h * 0.6 : b.y - 0.025, (freezer ? -def.size.d / 2 : b.zFront) - 0.012);
+      tag.rotation.y = Math.PI;
+      tag.userData = { kind: 'tag', uid: this.data.uid, slot: i };
+      this.root.add(tag);
+      this.tags.push(tag);
+      this.tagCanvases.push(canvas);
+      this.tagKeys.push('');
     }
-    this.updateLabels(1);
   }
 
-  updateLabels(zoom: number): void {
-    const { w, h } = rotatedSize(this.def, this.data.rot);
+  /** Cập nhật vị trí (sau khi di chuyển) và nhãn giá. */
+  refresh(): void {
+    this.root.matrixAutoUpdate = false;
+    this.root.matrix.copy(furnitureMatrix(this.data));
+    this.root.updateMatrixWorld(true);
+    this.updateTags();
+  }
+
+  updateTags(): void {
     this.data.slots.forEach((s, i) => {
-      const label = this.labels[i];
-      if (!label) return;
-      if (!s.productId || zoom < 1) {
-        label.setVisible(false);
+      const tag = this.tags[i];
+      if (!tag) return;
+      if (!s.productId) {
+        tag.visible = false;
         return;
       }
-      const c = this.slotCenter(i);
-      const front = w >= h ? { a: c.a, b: h } : { a: w, b: c.b };
-      const p = gridToScreen(this.data.gx + front.a, this.data.gy + front.b);
-      label.setText(`$${this.priceOf(s.productId).toFixed(2)}`).setPosition(p.x, p.y - this.def.height * 0.45).setVisible(true);
-      label.setAlpha(s.qty > 0 ? 1 : 0.55);
+      tag.visible = true;
+      const info = this.priceInfo(s.productId);
+      const key = `${s.productId}:${info.price}:${info.market}:${s.qty > 0}`;
+      if (key === this.tagKeys[i]) return;
+      const changed = this.tagKeys[i] !== '' && this.tagKeys[i].split(':')[1] !== String(info.price);
+      this.tagKeys[i] = key;
+      const loss = info.price < info.cost;
+      const high = info.price > info.market * 1.2;
+      const g = this.tagCanvases[i].getContext('2d')!;
+      g.fillStyle = loss ? '#e63946' : high ? '#ffd166' : '#ffffff';
+      g.fillRect(0, 0, 128, 64);
+      g.fillStyle = loss ? '#ffffff' : '#1f2937';
+      g.font = '900 34px "Nunito", Arial';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(`$${info.price.toFixed(2)}`, 64, 26);
+      g.font = '700 14px "Nunito", Arial';
+      g.fillText(getProduct(s.productId).name, 64, 52);
+      g.fillStyle = '#2a9d8f';
+      g.fillRect(0, 0, 6, 64);
+      ((tag.material as THREE.MeshStandardMaterial).map as THREE.CanvasTexture).needsUpdate = true;
+      if (changed) this.flips.set(i, 0);
     });
   }
 
   shake(): void {
-    if (this.shaking) return;
-    this.shaking = true;
-    const x = this.sprite.x;
-    this.scene.tweens.add({
-      targets: [this.sprite, this.items],
-      x: { from: x - 1.5, to: x + 1.5 },
-      duration: 40,
-      yoyo: true,
-      repeat: 1,
-      onComplete: () => {
-        this.sprite.x = x;
-        this.items.x = 0;
-        this.shaking = false;
-      },
-    });
+    this.shakeT = 0.18;
   }
 
-  setAlpha(a: number): void {
-    this.sprite.setAlpha(a);
-    this.items.setAlpha(a);
-    this.labels.forEach((l) => l.setAlpha(a));
+  /** Hiệu ứng rung kệ & lật nhãn giá. */
+  update(dt: number): void {
+    if (this.shakeT > 0) {
+      this.shakeT = Math.max(0, this.shakeT - dt);
+      this.model.position.x = Math.sin(this.shakeT * 90) * 0.004 * (this.shakeT / 0.18);
+    }
+    for (const [i, t] of this.flips) {
+      const nt = t + dt;
+      const k = Math.min(1, nt / FEEL.flipTagS);
+      this.tags[i].rotation.x = Math.sin(k * Math.PI) * Math.PI * (1 - k) * 2;
+      if (k >= 1) {
+        this.tags[i].rotation.x = 0;
+        this.flips.delete(i);
+      } else this.flips.set(i, nt);
+    }
+    if (this.counter) this.counter.beltTex.offset.x -= dt * 0.15;
+  }
+
+  /** Điểm cục bộ → world. */
+  toWorld(v: THREE.Vector3): THREE.Vector3 {
+    return v.clone().applyMatrix4(this.root.matrix);
   }
 
   setVisible(v: boolean): void {
-    this.sprite.setVisible(v);
-    this.items.setVisible(v);
-    if (!v) this.labels.forEach((l) => l.setVisible(false));
+    this.root.visible = v;
   }
 
-  destroy(): void {
-    this.sprite.destroy();
-    this.items.destroy();
-    this.labels.forEach((l) => l.destroy());
+  dispose(): void {
+    this.root.removeFromParent();
+    this.tags.forEach((t) => {
+      const m = t.material as THREE.MeshStandardMaterial;
+      m.map?.dispose();
+      m.dispose();
+    });
   }
 }

@@ -4,7 +4,7 @@ import type { EventBus, GameEvents } from '../core/EventBus';
 import type { GameState, OrderData } from '../core/GameState';
 import type { Rng } from '../core/Random';
 import { round2 } from '../core/Random';
-import type { GridPoint } from '../iso/IsoMath';
+import type { GridPoint } from '../world/Footprint';
 import type { EconomySystem } from './EconomySystem';
 import type { InventorySystem } from './InventorySystem';
 
@@ -20,12 +20,12 @@ export function cartBoxes(cart: Cart): number {
   return Object.values(cart).reduce((a, b) => a + b, 0);
 }
 
-/** Chọn vị trí đặt thùng: ô giao hàng còn ít thùng nhất (tối đa DELIVERY_STACK / ô). */
+/** Chọn điểm giao hàng (m) còn ít thùng nhất (tối đa DELIVERY_STACK thùng chồng / điểm). */
 export function pickDeliveryTile(tiles: GridPoint[], counts: Map<string, number>): GridPoint {
   let best = tiles[0];
   let bestN = Infinity;
   for (const t of tiles) {
-    const n = counts.get(`${t.gx},${t.gy}`) ?? 0;
+    const n = counts.get(`${t.gx.toFixed(2)},${t.gy.toFixed(2)}`) ?? 0;
     if (n < DELIVERY_STACK && n < bestN) {
       best = t;
       bestN = n;
@@ -33,7 +33,7 @@ export function pickDeliveryTile(tiles: GridPoint[], counts: Map<string, number>
   }
   if (bestN === Infinity) {
     for (const t of tiles) {
-      const n = counts.get(`${t.gx},${t.gy}`) ?? 0;
+      const n = counts.get(`${t.gx.toFixed(2)},${t.gy.toFixed(2)}`) ?? 0;
       if (n < bestN) { best = t; bestN = n; }
     }
   }
@@ -89,7 +89,7 @@ export class OrderSystem {
     const counts = new Map<string, number>();
     for (const b of this.state.data.boxes) {
       if (b.location !== 'floor') continue;
-      const k = `${Math.floor(b.gx)},${Math.floor(b.gy)}`;
+      const k = `${b.gx.toFixed(2)},${b.gy.toFixed(2)}`;
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
     const uids: string[] = [];
@@ -97,9 +97,9 @@ export class OrderSystem {
       const p = getProduct(it.productId);
       for (let i = 0; i < it.boxes; i++) {
         const t = pickDeliveryTile(tiles, counts);
-        const k = `${t.gx},${t.gy}`;
+        const k = `${t.gx.toFixed(2)},${t.gy.toFixed(2)}`;
         counts.set(k, (counts.get(k) ?? 0) + 1);
-        uids.push(this.inventory.createBox(p.id, p.unitsPerBox, t.gx + 0.5, t.gy + 0.5).uid);
+        uids.push(this.inventory.createBox(p.id, p.unitsPerBox, t.gx, t.gy).uid);
       }
     }
     this.bus.emit('order:arrived', { orderId: order.id, boxUids: uids });

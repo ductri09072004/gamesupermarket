@@ -22,6 +22,7 @@ export interface FurnitureData {
 
 export type BoxLocation = 'floor' | 'held' | 'rack' | 'staff';
 
+/** Thùng hàng. gx/gy là toạ độ world (m) theo X/Z. */
 export interface BoxData {
   uid: string;
   productId: string;
@@ -71,11 +72,21 @@ export interface DayStats {
   xpGained: number;
 }
 
+export type Quality = 'low' | 'medium' | 'high';
+
 export interface Settings {
   muted: boolean;
   music: boolean;
   gameOverEnabled: boolean;
   cameraFollow: boolean;
+  quality: Quality;
+  fov: number;
+  sensitivity: number;
+  headbob: boolean;
+  volMaster: number;
+  volSfx: number;
+  volMusic: number;
+  volAmbient: number;
 }
 
 export interface SaveData {
@@ -106,7 +117,8 @@ export interface SaveData {
   stats: DayStats;
   settings: Settings;
   tutorial: Record<string, boolean>;
-  player: { gx: number; gy: number };
+  /** Vị trí người chơi (m) và hướng nhìn */
+  player: { gx: number; gy: number; yaw: number };
   gameOver: boolean;
 }
 
@@ -128,12 +140,14 @@ export function makeFurniture(uid: string, type: string, gx: number, gy: number,
 export function createNewState(seed = Date.now() % 1_000_000): SaveData {
   const prices: Record<string, number> = {};
   for (const p of PRODUCTS) prices[p.id] = p.marketPrice;
+  // Toạ độ theo ô NavGrid 0.5m. Cửa hàng 12m × 10m = 24 × 20 ô, cửa ở x = 4..7, z = 20.
   const layout: Array<[string, number, number, number]> = [
-    ['shelf_large', 3, 2, 0],
-    ['shelf_large', 7, 2, 0],
-    ['checkout', 6, 7, 0],
-    ['computer', 10, 0, 0],
-    ['trash', 0, 8, 0],
+    ['shelf_large', 3, 1, 0],
+    ['shelf_large', 10, 1, 0],
+    ['fridge', 22, 5, 3],
+    ['checkout', 9, 13, 0],
+    ['computer', 0, 5, 1],
+    ['trash', 1, 17, 0],
   ];
   const furniture = layout.map(([type, gx, gy, rot], i) => makeFurniture(`f${i + 1}`, type, gx, gy, rot));
   return {
@@ -162,9 +176,12 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
     transactions: [],
     debtDays: 0,
     stats: emptyStats(START_REPUTATION),
-    settings: { muted: false, music: true, gameOverEnabled: true, cameraFollow: true },
+    settings: {
+      muted: false, music: true, gameOverEnabled: true, cameraFollow: true, quality: 'medium', fov: 70, sensitivity: 1,
+      headbob: true, volMaster: 0.8, volSfx: 1, volMusic: 0.5, volAmbient: 0.6,
+    },
     tutorial: {},
-    player: { gx: 5.5, gy: 5.5 },
+    player: { gx: 3, gy: 8, yaw: 0 },
     gameOver: false,
   };
 }

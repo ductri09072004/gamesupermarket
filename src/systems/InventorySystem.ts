@@ -2,6 +2,7 @@ import { getFurniture, type StorageType } from '../config/furniture';
 import { getProduct } from '../config/products';
 import type { EventBus, GameEvents } from '../core/EventBus';
 import type { BoxData, FurnitureData, GameState } from '../core/GameState';
+import { slotCapacity } from './SlotLayout';
 
 export type Result<T = number> = { ok: true; value: T } | { ok: false; reason: string };
 
@@ -19,7 +20,8 @@ export function findStockSlot(furn: FurnitureData, productId: string): Result {
   if (product.storage !== def.storage) {
     return { ok: false, reason: `${product.name} phải đặt trong ${STORAGE_NAMES[product.storage]}` };
   }
-  const same = furn.slots.findIndex((s) => s.productId === productId && s.qty > 0 && s.qty < def.slotCapacity);
+  const cap = slotCapacity(furn.type, productId);
+  const same = furn.slots.findIndex((s) => s.productId === productId && s.qty > 0 && s.qty < cap);
   if (same >= 0) return { ok: true, value: same };
   const labeled = furn.slots.findIndex((s) => s.qty === 0 && s.productId === productId);
   if (labeled >= 0) return { ok: true, value: labeled };
@@ -31,26 +33,42 @@ export function findStockSlot(furn: FurnitureData, productId: string): Result {
   return { ok: false, reason: 'Không còn slot trống cho sản phẩm này' };
 }
 
-/** Xếp 1 món từ thùng lên kệ. */
-export function stockOne(box: BoxData, furn: FurnitureData): Result {
+/** Kiểm tra 1 slot cụ thể có nhận được sản phẩm không. */
+export function canStockSlot(furn: FurnitureData, slot: number, productId: string): Result {
+  const def = getFurniture(furn.type);
+  if (def.kind !== 'display') return { ok: false, reason: 'Không thể xếp hàng lên đây' };
+  const product = getProduct(productId);
+  if (product.storage !== def.storage) {
+    return { ok: false, reason: `${product.name} phải đặt trong ${STORAGE_NAMES[product.storage]}` };
+  }
+  const s = furn.slots[slot];
+  if (!s) return { ok: false, reason: 'Slot không tồn tại' };
+  if (s.qty > 0 && s.productId !== productId) return { ok: false, reason: 'Slot này đang bày sản phẩm khác' };
+  if (s.qty >= slotCapacity(furn.type, productId)) return { ok: false, reason: 'Slot đã đầy' };
+  return { ok: true, value: slot };
+}
+
+/** Xếp 1 món từ thùng lên kệ (slot chỉ định hoặc tự tìm). */
+export function stockOne(box: BoxData, furn: FurnitureData, slot?: number): Result {
   if (!box.open) return { ok: false, reason: 'Thùng đang đóng — nhấn F để mở' };
   if (box.qty <= 0) return { ok: false, reason: 'Thùng đã hết hàng' };
-  const r = findStockSlot(furn, box.productId);
+  const r = slot === undefined ? findStockSlot(furn, box.productId) : canStockSlot(furn, slot, box.productId);
   if (!r.ok) return r;
-  const slot = furn.slots[r.value];
-  slot.productId = box.productId;
-  slot.qty += 1;
+  const target = furn.slots[r.value];
+  target.productId = box.productId;
+  target.qty += 1;
   box.qty -= 1;
   return r;
 }
 
-/** Lấy lại 1 món từ kệ vào thùng đang cầm (Shift+E). */
-export function takeBackOne(box: BoxData, furn: FurnitureData): Result {
+/** Lấy lại 1 món từ kệ vào thùng đang cầm (chuột phải). */
+export function takeBackOne(box: BoxData, furn: FurnitureData, slotIndex?: number): Result {
   const def = getFurniture(furn.type);
   if (def.kind !== 'display') return { ok: false, reason: 'Không thể lấy hàng từ đây' };
   if (!box.open) return { ok: false, reason: 'Thùng đang đóng — nhấn F để mở' };
-  let idx = furn.slots.findIndex((s) => s.productId === box.productId && s.qty > 0);
-  if (idx < 0 && box.qty === 0) idx = furn.slots.findIndex((s) => s.qty > 0);
+  const ok = (i: number) => furn.slots[i]?.qty > 0 && (furn.slots[i].productId === box.productId || box.qty === 0);
+  let idx = slotIndex !== undefined ? (ok(slotIndex) ? slotIndex : -1) : furn.slots.findIndex((s) => s.productId === box.productId && s.qty > 0);
+  if (idx < 0 && slotIndex === undefined && box.qty === 0) idx = furn.slots.findIndex((s) => s.qty > 0);
   if (idx < 0) return { ok: false, reason: 'Kệ không có sản phẩm phù hợp với thùng' };
   const slot = furn.slots[idx];
   const productId = slot.productId!;
@@ -104,7 +122,7 @@ export function restockTargets(list: FurnitureData[], threshold: number): Restoc
     if (def.kind !== 'display') continue;
     f.slots.forEach((s, i) => {
       if (!s.productId) return;
-      const fill = s.qty / def.slotCapacity;
+      const fill = s.qty / slotCapacity(f.type, s.productId);
       if (fill < threshold) out.push({ furn: f, slot: i, productId: s.productId, fill });
     });
   }
@@ -138,8 +156,8 @@ export class InventorySystem {
     this.bus.emit('boxes:changed', {});
   }
 
-  stock(box: BoxData, furn: FurnitureData): Result {
-    const r = stockOne(box, furn);
+  stock(box: BoxData, furn: FurnitureData, slot?: number): Result {
+    const r = stockOne(box, furn, slot);
     if (r.ok) {
       this.bus.emit('inventory:changed', { furnitureUid: furn.uid });
       this.bus.emit('boxes:changed', {});
@@ -147,8 +165,8 @@ export class InventorySystem {
     return r;
   }
 
-  takeBack(box: BoxData, furn: FurnitureData): Result {
-    const r = takeBackOne(box, furn);
+  takeBack(box: BoxData, furn: FurnitureData, slot?: number): Result {
+    const r = takeBackOne(box, furn, slot);
     if (r.ok) {
       this.bus.emit('inventory:changed', { furnitureUid: furn.uid });
       this.bus.emit('boxes:changed', {});

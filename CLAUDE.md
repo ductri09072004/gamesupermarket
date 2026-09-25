@@ -1,305 +1,135 @@
-# Project: "Mini Mart Tycoon" — 2D isometric supermarket simulator
+# Project: "Mini Mart Tycoon 3D" — first-person supermarket simulator (web)
 
 ## 1. Tầm nhìn
+Game giả lập vận hành siêu thị góc nhìn thứ nhất trên trình duyệt, cảm giác gần với Supermarket Simulator:
+người chơi tự tay bê thùng, xếp từng món lên kệ, dán giá, quét mã và thối tiền cho khách.
+Ưu tiên số 1 là CẢM GIÁC CHẠM (tactile feel): mọi hành động phải có phản hồi hình, tiếng và chuyển động.
+Ưu tiên số 2 là VẺ CHÂN THỰC ẤM CÚNG: ánh sáng đẹp, sản phẩm có nhãn rõ ràng, cửa hàng có không khí.
+Vòng lặp cốt lõi giữ nguyên: ĐẶT HÀNG → NHẬN THÙNG → XẾP KỆ → ĐẶT GIÁ → KHÁCH MUA → THU NGÂN → MỞ RỘNG.
 
-Game giả lập vận hành siêu thị (lấy cảm hứng từ Supermarket Simulator) ở dạng 2D isometric, chạy trên trình duyệt.
+## 2. Tech stack
+- Three.js (bản mới nhất) + TypeScript strict + Vite. Vitest cho logic.
+- Loader: GLTFLoader (+ DRACOLoader nếu model nén), RGBELoader cho HDRI.
+- Điều khiển: PointerLockControls. Va chạm: AABB tự viết (mọi nội thất đặt thẳng trục, xoay 90°), KHÔNG dùng engine vật lý ở giai đoạn đầu.
+- Hậu kỳ: EffectComposer với RenderPass, OutlinePass (viền vật đang nhìn), SMAA/FXAA; tuỳ chọn SSAO và bloom nhẹ (tắt được).
+- UI: DOM overlay (HTML + CSS thuần) cho HUD, menu PC, báo cáo ngày. Font "Nunito".
+- Âm thanh: Three.js AudioListener/PositionalAudio cho âm 3D, file âm thanh trong public/assets/audio.
 
-Người chơi điều khiển một nhân vật chủ tiệm: đặt hàng qua máy tính, bê thùng hàng lên kệ, đặt giá bán,
+## 3. Tái sử dụng code cũ
+- GIỮ NGUYÊN (chỉ sửa nếu cần): src/core (EventBus, GameState, SaveSystem), src/config, src/systems
+  (Time, Economy, Inventory, Order, Pricing, Checkout, Staff), toàn bộ tests/.
+- GIỮ VÀ CHUYỂN ĐỔI: Pathfinding A* trên lưới sàn (mỗi ô = 0.5m), dùng cho khách và nhân viên.
+- XOÁ: mọi code Phaser, thư mục iso/, scenes/ cũ, texture vẽ bằng Graphics.
+- Save cũ không cần tương thích; tăng SAVE_VERSION.
 
-tính tiền cho khách ở quầy thu ngân, mở rộng cửa hàng và thuê nhân viên.
-
-Vòng lặp cốt lõi: ĐẶT HÀNG → NHẬN THÙNG → XẾP KỆ → ĐẶT GIÁ → KHÁCH MUA → THU NGÂN → CÓ TIỀN → MỞ RỘNG.
-
-## 2. Tech stack (bắt buộc)
-
-- Phaser 3 (bản 3.x mới nhất) + TypeScript (strict mode) + Vite.
-
-- Vitest cho unit test phần logic (economy, pricing, pathfinding, inventory).
-
-- UI menu phức tạp (máy tính đặt hàng, bảng giá, báo cáo cuối ngày) làm bằng DOM overlay (HTML + CSS thuần,
-
-  không React) đặt đè lên canvas. HUD đơn giản (tiền, giờ, ngày) cũng làm bằng DOM.
-
-- KHÔNG dùng asset ảnh bên ngoài ở giai đoạn đầu: mọi sprite được vẽ bằng code (Phaser Graphics →
-
-  generateTexture) trong PreloadScene. Thiết kế sao cho sau này thay bằng file PNG chỉ cần sửa 1 chỗ (texture key).
-
-- Lưu game bằng localStorage (JSON, có trường `version` để migrate).
-
-## 3. Kiến trúc & quy ước code
-
-Cấu trúc thư mục:
-
+## 4. Kiến trúc thư mục mới
 src/
-
-  main.ts                 # khởi tạo Phaser game
-
-  config/
-
-    constants.ts          # TILE_W=64, TILE_H=32, tốc độ, giờ mở cửa... (mọi con số cân bằng game để ở đây)
-
-    products.ts           # dữ liệu sản phẩm
-
-    furniture.ts          # dữ liệu nội thất (kệ, tủ lạnh, quầy...)
-
-    licenses.ts           # giấy phép mở khoá sản phẩm
-
-  core/
-
-    EventBus.ts           # event emitter toàn cục (typed events)
-
-    GameState.ts          # state trung tâm, serializable, là nguồn sự thật duy nhất
-
-    SaveSystem.ts
-
-  iso/
-
-    IsoMath.ts            # chuyển đổi toạ độ grid <-> screen
-
-    IsoGrid.ts            # lưới ô, trạng thái walkable/occupied
-
-    DepthSort.ts
-
-    Pathfinding.ts        # A* trên lưới
-
-  systems/
-
-    TimeSystem.ts         # giờ trong ngày, ngày, tốc độ thời gian
-
-    EconomySystem.ts      # tiền, giao dịch, hoá đơn
-
-    InventorySystem.ts    # hàng trên kệ, hàng trong kho, thùng hàng
-
-    OrderSystem.ts        # đặt hàng, giao hàng
-
-    CustomerSystem.ts     # sinh khách, AI khách
-
-    PricingSystem.ts      # logic khách chấp nhận giá
-
-    CheckoutSystem.ts     # quét hàng, thanh toán, thối tiền
-
-    StaffSystem.ts        # nhân viên
-
-    BuildSystem.ts        # chế độ xây dựng/đặt nội thất
-
-  entities/
-
-    Player.ts  Customer.ts  Box.ts  Shelf.ts  Checkout.ts  Staff.ts
-
-  scenes/
-
-    BootScene.ts  PreloadScene.ts  GameScene.ts  UIScene.ts
-
-  ui/                     # DOM overlay
-
-    hud.ts  computer.ts  pricePanel.ts  checkoutPanel.ts  dayReport.ts  styles.css
-
-tests/                    # vitest
-
-Quy tắc:
-
-- Logic game (systems) KHÔNG phụ thuộc Phaser nếu có thể → dễ unit test. Entity/scene chỉ hiển thị và gọi system.
-
-- Giao tiếp giữa system/UI qua EventBus với tên event có kiểu (ví dụ 'money:changed', 'customer:checkout').
-
-- Không hard-code số cân bằng game trong logic; lấy từ config/.
-
-- Mỗi file < 300 dòng; tách nhỏ khi vượt.
-
-- Sau mỗi thay đổi: chạy `npm run build` và `npm test`, sửa hết lỗi TypeScript trước khi báo xong.
-
-- Không xoá tính năng đã có khi làm phase mới. Nếu cần refactor lớn, hỏi trước.
-
-## 4. Hệ toạ độ isometric
-
-- Ô hình thoi tỉ lệ 2:1: TILE_W = 64, TILE_H = 32.
-
-- gridToScreen(gx, gy): x = (gx - gy) * TILE_W/2 + originX ; y = (gx + gy) * TILE_H/2 + originY
-
-- screenToGrid(sx, sy): dùng công thức nghịch đảo rồi Math.floor; phải tính theo world coords (có camera scroll/zoom).
-
-- Depth sort: depth = (gx + gy) * 10 + layerOffset; vật thể nhiều ô dùng ô "xa camera nhất" (gx+gy lớn nhất) của footprint.
-
-  Nhân vật di chuyển giữa các ô dùng toạ độ thực (float) để depth mượt.
-
-- Di chuyển bằng WASD phải được xoay theo trục isometric: W = lên màn hình (gx-1, gy-1), S = xuống,
-
-  A = trái (gx-1, gy+1), D = phải (gx+1, gy-1); chuẩn hoá vector để đi chéo không nhanh hơn.
-
-- Camera: kéo chuột phải/giữa để pan, cuộn chuột để zoom (0.5x–2x), camera follow người chơi (có thể tắt).
-
-- Tường chỉ vẽ ở 2 cạnh phía sau (cạnh trên-trái và trên-phải) để không che tầm nhìn; cửa ra vào ở cạnh trước.
-
-## 5. Bản đồ
-
-- Khu cửa hàng ban đầu: lưới 12x10 ô bên trong tường. Có thể mở rộng lên tối đa 24x20 qua các gói "Mở rộng".
-
-- Bên ngoài: vỉa hè phía trước (nơi khách đi vào và thùng hàng được giao tới), khu kho nhỏ phía sau (mở khoá sau).
-
-- Mỗi ô có: floorType, occupiedBy (id nội thất | null), walkable.
-
-## 6. Người chơi
-
-- Di chuyển WASD, tốc độ 3 ô/giây, animation 4 hướng (placeholder: hình khối người đơn giản khác màu theo hướng).
-
-- Phím E: tương tác với vật gần nhất trong bán kính 1.5 ô phía trước mặt (hiện gợi ý "[E] Nhặt thùng" ...).
-
-- Có thể cầm tối đa 1 thùng hàng. Khi cầm thùng, đứng cạnh kệ phù hợp và nhấn E (hoặc giữ E) để xếp từng món lên kệ.
-
-- Phím Q: đặt thùng xuống đất. Phím F: mở/đóng thùng (thùng rỗng có thể vứt vào thùng rác).
-
-- Chuột trái click vào kệ: mở bảng đặt giá cho sản phẩm trên kệ đó.
-
-## 7. Sản phẩm (config/products.ts)
-
-Mỗi sản phẩm: { id, name, category, storage: 'shelf'|'fridge'|'freezer', unitsPerBox, costPerUnit,
-
-marketPrice, licenseId, color (cho placeholder) }.
-
-Dữ liệu khởi đầu (giá USD, có thể đổi đơn vị tiền trong constants):
-
-- Nhóm Cơ bản (license 0): Mì gói, Nước suối, Bánh quy, Nước ngọt lon, Gạo túi 1kg, Dầu ăn, Snack khoai tây, Kẹo.
-
-- Nhóm Sữa & Lạnh (license 1): Sữa tươi, Sữa chua, Phô mai, Trứng (fridge).
-
-- Nhóm Đông lạnh (license 2): Kem, Há cảo, Xúc xích, Thịt đông lạnh (freezer).
-
-- Nhóm Hoá phẩm (license 3): Dầu gội, Kem đánh răng, Bột giặt, Giấy vệ sinh.
-
-- Nhóm Đồ uống cao cấp (license 4): Cà phê, Trà, Nước ép, Bia.
-
-Hãy điền số liệu hợp lý: costPerUnit 0.5–8$, marketPrice ≈ cost × 1.3–1.6, unitsPerBox 6–24.
-
-Market price dao động ±5% mỗi ngày (ngẫu nhiên có seed).
-
-## 8. Nội thất (config/furniture.ts)
-
-Mỗi loại: { id, name, footprint {w,h}, price, capacity (số "slot" sản phẩm), storage type, licenseRequired }.
-
-- Kệ nhỏ 1x1 (2 slot), Kệ lớn 2x1 (4 slot), Tủ lạnh 2x1 (fridge, 3 slot), Tủ đông 2x1 (freezer, 3 slot),
-
-  Quầy thu ngân 2x1, Thùng rác 1x1, Kệ kho 2x1 (chỉ đặt trong kho, chứa thùng).
-
-- Mỗi slot chứa 1 loại sản phẩm, tối đa N món (ví dụ 12). Slot trống có thể nhận bất kỳ sản phẩm đúng loại storage.
-
-- Nội thất xoay được 4 hướng (phím R trong Build mode); với placeholder chỉ cần 2 hình (lật ngang).
-
-## 9. Đặt hàng & giao hàng
-
-- Máy tính trên bàn trong cửa hàng (tương tác E) mở giao diện "PC" dạng desktop giả lập với các app:
-
-  1) Market: danh sách sản phẩm đã mở khoá, giỏ hàng, số thùng, tổng tiền, nút Mua.
-
-  2) Furniture: mua nội thất (mua xong vào Build mode để đặt).
-
-  3) Licenses: mua giấy phép mở khoá nhóm hàng (yêu cầu cấp độ cửa hàng).
-
-  4) Expansion: mua mở rộng diện tích.
-
-  5) Staff: thuê/sa thải nhân viên.
-
-  6) Bank: xem số dư, lịch sử giao dịch, vay (tuỳ chọn).
-
-- Đơn hàng giao sau 10–20 giây thực, thùng xuất hiện xếp chồng ở ô giao hàng trên vỉa hè.
-
-  Thùng hiển thị màu + nhãn sản phẩm; hover hiện tooltip "Mì gói ×20".
-
-## 10. Giá bán & khách hàng
-
-- PricingSystem: ratio = sellPrice / marketPrice.
-
-  ratio ≤ 1.0 → xác suất mua 100%; 1.0 < ratio ≤ 1.5 → xác suất giảm tuyến tính từ 100% xuống 20%;
-
-  ratio > 1.5 → 0% và khách hiện bong bóng "Đắt quá!" (-1 danh tiếng nhỏ).
-
-  Giá quá thấp (< cost) vẫn bán được nhưng lỗ — hiển thị cảnh báo đỏ trong bảng giá.
-
-- Khách sinh ra theo nhịp phụ thuộc giờ trong ngày (cao điểm 11–13h và 17–20h) × danh tiếng × diện tích.
-
-- AI khách (state machine): ENTER → BROWSE (chọn 1–6 món từ danh sách mong muốn, chỉ gồm sản phẩm đã mở khoá)
-
-  → đi tới kệ chứa món đó (A*) → nếu kệ hết hàng: bong bóng "Hết hàng :(" và bỏ qua → nếu giá chấp nhận: lấy hàng
-
-  → QUEUE ở quầy thu ngân (xếp hàng theo ô định sẵn) → CHECKOUT → LEAVE.
-
-  Nếu chờ quá 60 giây ở hàng đợi: bỏ về, giảm danh tiếng.
-
-- Mỗi khách có sprite placeholder ngẫu nhiên (màu áo/tóc), bong bóng suy nghĩ hiện icon sản phẩm đang tìm.
-
-- Tránh va chạm đơn giản: khách không đi xuyên nhau khi đứng yên trong hàng; khi di chuyển cho phép chồng nhẹ.
-
-## 11. Thu ngân (phần "cảm giác" quan trọng nhất)
-
-- Người chơi đứng vào ô sau quầy và nhấn E → chuyển sang chế độ thu ngân: mở checkoutPanel (DOM) ở dưới màn hình.
-
-- Các món của khách hiện trên băng chuyền; click từng món để "quét" (tiếng bíp, món bay vào túi, tổng tiền cộng dần).
-
-- Sau khi quét hết, khách chọn thanh toán:
-
-  a) Tiền mặt: khách đưa số tiền (ví dụ tổng 13.40$, đưa 20$). Người chơi click các tờ tiền/đồng xu
-
-     trong ngăn kéo để thối (hiện "Đã thối: x / Cần thối: y"), bấm Xác nhận. Thối sai → mất khoản chênh lệch hoặc khách phàn nàn.
-
-  b) Thẻ: bàn phím POS, người chơi gõ đúng số tiền rồi Enter. Gõ sai → báo lỗi, gõ lại.
-
-- Thưởng tốc độ: thanh toán nhanh → khách vui (+danh tiếng).
-
-- Nhấn Esc để rời quầy.
-
-## 12. Thời gian, ngày & kinh tế
-
-- 1 giây thực = 1 phút trong game. Cửa hàng mở 8:00–22:00. Nút tốc độ 1x / 2x / 3x (chỉ khi không ở quầy thu ngân).
-
-- Người chơi bật/tắt biển "Mở cửa" ở cửa ra vào. Sau 22:00 không có khách mới; khi khách cuối rời đi → nút "Kết thúc ngày".
-
-- Báo cáo cuối ngày (DOM modal): doanh thu, giá vốn, lợi nhuận gộp, số khách, khách bỏ về, chi phí (tiền điện
-
-  theo số tủ lạnh/đông, lương nhân viên, tiền thuê theo diện tích), lợi nhuận ròng, thay đổi danh tiếng, XP.
-
-- Tiền khởi đầu: 1500$. Hết tiền và nợ quá 3 ngày → Game Over (có thể tắt trong settings).
-
-- Cấp độ cửa hàng (Store Level) tăng theo XP (XP = doanh thu/10). Level mở khoá license và mở rộng.
-
-## 13. Nhân viên (mở khoá ở Level 5+)
-
-- Thu ngân: ngồi quầy tự động tính tiền (chậm hơn người chơi khá giỏi), lương/ngày.
-
-- Nhân viên xếp kệ: tự lấy thùng từ kho/vỉa hè và châm hàng vào kệ còn dưới 30%.
-
-- Hiển thị trạng thái nhân viên, có thể sa thải.
-
-## 14. Build mode
-
-- Phím B bật/tắt. Hiện lưới, nội thất đang cầm đi theo chuột ở dạng "ghost": xanh = đặt được, đỏ = không.
-
-- Click trái đặt, R xoay, click vào nội thất có sẵn để nhấc lên di chuyển, Delete để bán lại (hoàn 50%).
-
-- Không được chặn hoàn toàn đường đi từ cửa vào tới quầy thu ngân (kiểm tra bằng A* trước khi cho đặt).
-
-- Không cho nhấc kệ đang có hàng (hoặc hàng tự vào thùng).
-
-## 15. Hình ảnh & cảm giác (juice)
-
-- Palette pastel sáng, nền sàn gạch caro 2 màu, tường màu kem, viền đậm 2px cho vật thể.
-
-- Placeholder: kệ = hộp isometric (vẽ 3 mặt với 3 sắc độ), sản phẩm = ô vuông nhỏ màu theo product.color xếp trên kệ.
-
-- Tween: tiền bay lên "+$4.20" khi bán, thùng nảy nhẹ khi đặt xuống, kệ rung nhẹ khi xếp hàng.
-
-- Âm thanh tổng hợp bằng WebAudio (không file): bíp quét mã, tiếng "ching" tiền, tiếng cửa mở. Có nút tắt tiếng.
-
-- Font: dùng Google Font "Nunito" cho UI.
-
-## 16. Lưu game
-
-- Auto-save cuối mỗi ngày + nút Save thủ công. Lưu: tiền, ngày, level, XP, danh tiếng, license, layout nội thất,
-
-  hàng trên kệ, thùng đang nằm trên sàn, giá bán, nhân viên, settings.
-
-- Main menu: Tiếp tục / Game mới / Cài đặt.
-
-## 17. Definition of Done cho mỗi phase
-
-- `npm run build` không lỗi, `npm test` pass, không có lỗi console khi chơi 3 phút.
-
-- Tóm tắt ngắn: đã làm gì, file nào thay đổi, cách test thủ công.
+  main.ts
+  engine/
+    Renderer.ts        # WebGLRenderer, shadow, tone mapping ACESFilmic, sRGB, resize, pixel ratio ≤ 2
+    Post.ts            # EffectComposer + các pass, bật/tắt theo Settings
+    Assets.ts          # nạp & cache GLB/texture/audio, màn hình loading có thanh %
+    Input.ts           # bàn phím/chuột, pointer lock, trạng thái "đang ở UI"
+    Audio.ts
+    Loop.ts            # vòng lặp fixed-step cho logic (60Hz) + render theo requestAnimationFrame
+  world/
+    Store.ts           # dựng sàn/tường/trần/cửa/đèn theo kích thước cửa hàng, hỗ trợ mở rộng
+    Lighting.ts        # đèn trần, ánh sáng theo giờ, cửa sổ
+    Colliders.ts       # danh sách AABB, hàm resolve va chạm cho capsule người chơi
+    NavGrid.ts         # lưới đi lại cho A*, cập nhật khi đặt/nhấc nội thất
+  products/
+    PackagingFactory.ts  # sinh mesh sản phẩm theo shape + nhãn canvas
+    LabelTexture.ts      # vẽ nhãn: nền, tên hãng, tên SP, dung tích, mã vạch, logo hình học
+    ProductInstances.ts  # InstancedMesh cho toàn bộ sản phẩm trên kệ
+  player/
+    PlayerController.ts  # di chuyển, headbob, ngồi xổm
+    Interaction.ts       # raycast từ tâm màn hình, highlight, gợi ý phím
+    HeldItem.ts          # vật đang cầm (thùng / món hàng / súng dán giá) hiển thị trước camera
+  entities/  Shelf.ts  Box.ts  CheckoutCounter.ts  Customer.ts  Staff.ts  Computer.ts
+  build/     BuildMode.ts
+  ui/        hud.ts crosshair.ts computer/*.ts checkoutPanel.ts dayReport.ts settings.ts styles.css
+Quy tắc: logic trong systems/ không import three. Entity 3D chỉ đọc state và gọi system. Mọi số cân bằng nằm trong config/.
+Mỗi file < 300 dòng. Sau mỗi phase: `npm run build` + `npm test` sạch lỗi.
+
+## 5. Đơn vị & không gian
+- 1 đơn vị = 1 mét. Trục Y hướng lên. Tầm mắt người chơi 1.65m, bán kính capsule 0.3m, tốc độ đi 3.2 m/s, chạy (Shift) 5 m/s.
+- Cửa hàng khởi đầu 12m × 10m, cao trần 3.2m; mở rộng từng nấc 2m theo chiều ngang hoặc sâu, tối đa 24m × 20m.
+- Phía trước: vỉa hè + khu giao hàng. Phía sau (mở khoá sau): kho 6m × 10m.
+- Mọi model nạp vào phải được chuẩn hoá: tính bounding box, scale về kích thước thật cấu hình trong furniture.ts,
+  đặt gốc ở giữa đáy, xoay để mặt trước hướng -Z. Viết helper normalizeModel() dùng chung.
+
+## 6. Sản phẩm chân thực bằng code (quan trọng)
+config/products.ts mở rộng mỗi sản phẩm với:
+{ shape: 'box'|'can'|'bottle'|'jar'|'bag'|'carton'|'tube', size: [w,h,d] (mét, kích thước thật),
+  brand, label: { bg, accent, text, pattern: 'stripes'|'dots'|'wave'|'solid' }, volumeText: '500ml' }
+- PackagingFactory tạo geometry theo shape:
+  box = BoxGeometry bo góc nhẹ; can = CylinderGeometry có viền nắp; bottle = LatheGeometry (thân, cổ, nắp riêng màu);
+  jar = cylinder + nắp; bag = box bị "phồng" (dịch đỉnh bằng noise) + mép răng cưa; carton = hộp sữa mái nhà; tube = kem đánh răng.
+- LabelTexture vẽ lên canvas 512×512: nền theo bg, hoạ tiết pattern, tên hãng lớn, tên sản phẩm, dung tích,
+  mã vạch EAN-13 giả (vẽ đúng dạng vạch từ id), logo hình học đơn giản. UV map nhãn quanh thân lon/chai, mặt trước hộp.
+- Vật liệu: MeshStandardMaterial; lon kim loại (metalness 0.8, roughness 0.3), chai nhựa (roughness 0.2, trong suốt nhẹ nếu là nước),
+  giấy/carton (roughness 0.8). Cache texture theo productId.
+- Hiển thị trên kệ bằng InstancedMesh: 1 InstancedMesh cho mỗi sản phẩm, tối đa 5000 món toàn cửa hàng, vẫn 60fps.
+- Có trang "Product Gallery" (debug, phím F4) xoay xem tất cả sản phẩm để kiểm tra nhãn.
+
+## 7. Kệ & xếp hàng
+- Mỗi kệ có nhiều tầng; mỗi tầng chia "slot"; mỗi slot tự tính lưới vị trí (cột × hàng sâu × chồng) theo size sản phẩm.
+- Xếp hàng: người chơi cầm thùng đã mở, nhìn vào slot (slot được highlight khung trắng mờ), click trái đặt 1 món.
+  Món bay từ thùng vào vị trí trống kế tiếp với tween 0.12s (ease-out), tiếng "tộc" nhẹ; giữ chuột để đặt liên tục.
+  Click phải lấy 1 món từ slot về thùng.
+- Slot trống nhận bất kỳ sản phẩm đúng loại storage; slot đã có hàng chỉ nhận cùng sản phẩm. Sai thì hiện thông báo ngắn giữa màn hình.
+- Nhãn giá (price tag) 3D nhỏ ở mép tầng trước mỗi slot, text vẽ canvas; đổi màu vàng nếu giá > thị trường 20%, đỏ nếu lỗ.
+
+## 8. Tương tác người chơi
+- Crosshair chấm nhỏ; raycast từ tâm màn hình, tầm với 2.5m. Vật tương tác được có OutlinePass trắng + gợi ý phím dưới crosshair.
+- Phím: WASD đi, Shift chạy, Ctrl ngồi (nhìn tầng kệ thấp), E nhặt/tương tác, Q thả thùng, F mở/đóng thùng,
+  Chuột trái đặt hàng/dùng, Chuột phải lấy lại, Tab mở máy tính bảng giá nhanh, Esc menu.
+- Vật đang cầm vẽ ở layer riêng trước camera (không xuyên tường), có sway nhẹ khi đi và nhìn.
+- Headbob nhẹ khi đi (tắt được), tiếng bước chân theo nhịp. FOV 70, chỉnh được trong Settings.
+- Thùng hàng: mesh carton có băng keo, nhãn in tên + icon sản phẩm + số lượng. Thùng đặt xuống sàn/kệ kho, xếp chồng được (snap trên nóc thùng khác).
+  Thùng rỗng: gập lại, vứt vào thùng rác (E) có animation.
+
+## 9. Máy tính, đặt hàng, giá
+- Màn hình máy tính là DOM overlay mô phỏng hệ điều hành (giữ các app Market, Furniture, Licenses, Expansion, Staff, Bank, Pricing như bản 2D).
+  Khi tương tác: camera tween sát vào màn hình máy tính rồi hiện DOM, thoát thì tween ngược lại.
+- Hàng giao: xe tải nhỏ dừng ngoài cửa (có thể chỉ là âm thanh + thùng rơi xuống ô giao hàng), thùng xuất hiện chồng với tween.
+- PricingSystem giữ nguyên công thức ratio. Đặt giá bằng "súng dán giá": nhìn vào nhãn giá trên kệ + E → bảng nhập giá nhỏ nổi cạnh crosshair.
+
+## 10. Khách hàng 3D
+- Model nhân vật GLB có AnimationMixer với clip Idle / Walk (+ Pick nếu có); tốc độ animation khớp tốc độ di chuyển.
+  Ngẫu nhiên hoá màu áo/quần bằng cách clone material và đổi color.
+- State machine giữ nguyên như bản 2D. Đi theo A* trên NavGrid, làm mượt đường (string-pulling), xoay người mượt về hướng đi.
+- Khi lấy hàng: dừng trước kệ, quay vào kệ, animation với tay, món biến mất khỏi kệ và xuất hiện trong giỏ trên tay khách.
+- Bong bóng suy nghĩ billboard (sprite) phía trên đầu: icon sản phẩm đang tìm, "Đắt quá!", "Hết hàng".
+- Tối đa 25 khách; model dùng chung geometry (SkeletonUtils.clone), tắt animation của khách ở xa > 25m.
+
+## 11. Thu ngân 3D (trải nghiệm quan trọng nhất)
+- Người chơi đi vào sau quầy + E → camera khoá vào góc nhìn quầy (vẫn xoay nhẹ được), hiện chuột.
+- Khách đặt từng món lên băng chuyền (animation). Người chơi click từng món: món bay qua máy quét, tia laser đỏ nháy, tiếng bíp,
+  màn hình LCD 3D trên quầy (canvas texture) hiện tên món + tổng tiền cập nhật, món rơi vào túi.
+- Tiền mặt: khách đưa tiền (mesh tờ tiền trên quầy), ngăn kéo 3D trượt ra với các khay mệnh giá; click khay để lấy tiền thối,
+  tiền thối hiện xếp trên quầy, click để bỏ bớt; nút xác nhận. Màn hình hiện "Cần thối / Đã thối".
+- Thẻ: khách đưa thẻ, máy POS 3D với phím bấm được (raycast), gõ số tiền rồi OK; bàn phím số cũng dùng được.
+- Hoàn tất: tiếng ngăn kéo đóng + "ching", số tiền nổi lên, khách cầm túi đi ra, khách sau tiến lên.
+
+## 12. Ánh sáng & không khí
+- Renderer: toneMapping ACESFilmic, exposure 1.0, outputColorSpace sRGB, shadowMap PCFSoft.
+- scene.environment từ HDRI trong nhà (PMREM). Đèn trần: dải đèn huỳnh quang (mesh emissive) + vài RectAreaLight hoặc SpotLight;
+  chỉ 1–2 đèn đổ bóng để giữ hiệu năng.
+- Cửa kính phía trước nhìn ra đường; ánh sáng ngoài đổi theo giờ (sáng → vàng chiều → tối xanh); đèn biển hiệu bật lúc tối.
+- Sàn gạch có roughness thấp để phản chiếu mờ ánh đèn. Tường có chân tường, biển tên khu vực ("Đồ uống", "Đông lạnh").
+- Âm thanh nền: nhạc siêu thị nhẹ, tiếng máy lạnh tủ đông (positional), chuông cửa khi khách vào.
+
+## 13. Build mode 3D
+- Phím B: camera chuyển sang nhìn từ trên xuống (orthographic hoặc perspective cao), hiện lưới 0.5m.
+- Ghost model xanh/đỏ theo chuột, R xoay 90°, click đặt, click nhấc, Delete bán 50%.
+- Kiểm tra A* từ cửa tới quầy trước khi cho đặt. Không nhấc kệ đang có hàng.
+
+## 14. Hiệu năng (bắt buộc)
+- Mục tiêu 60fps trên laptop tích hợp GPU với 25 khách và 3000 món trên kệ.
+- InstancedMesh cho sản phẩm, merge geometry tĩnh của tường/sàn, frustum culling mặc định, giới hạn đèn đổ bóng.
+- Settings chất lượng Thấp/Trung/Cao (shadow map size, SSAO, pixel ratio, bloom).
+- Debug F3: hiển thị FPS, draw calls, triangles (renderer.info).
+
+## 15. Definition of Done mỗi phase
+Build + test sạch, không lỗi console khi chơi 3 phút, FPS ≥ 55 ở chất lượng Trung, tóm tắt thay đổi + cách test.

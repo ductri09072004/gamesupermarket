@@ -1,130 +1,133 @@
-import type Phaser from 'phaser';
+import * as THREE from 'three';
 import { RESTOCK_THRESHOLD, STAFF_PAY_S, STAFF_SCAN_S, STAFF_SPEED, STAFF_STOCK_S } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import type { BoxData, StaffData } from '../core/GameState';
 import type { Services } from '../core/Services';
-import { adjacentTiles, counterTiles, footprintCells } from '../iso/Footprint';
-import type { GridPoint } from '../iso/IsoMath';
 import { customerCashPayment, itemsTotal, optimalChange, sumCents } from '../systems/CheckoutSystem';
 import { restockTargets, type RestockTarget } from '../systems/InventorySystem';
 import { completeSale } from '../systems/SalesSystem';
-import { HAIRS, SHIRTS, SKINS } from '../render/CharacterArt';
-import { boxTextureFor } from './Box';
-import { CharacterView, PathFollower } from './Character';
+import { adjacentTiles, counterTiles, footprintCells, frontTiles, type GridPoint } from '../world/Footprint';
+import { cellCenter, worldToCell } from '../world/NavGrid';
+import { furnitureCenter } from '../world/Placement';
+import { BoxModel } from './Box';
 import type { Customer } from './Customer';
+import { HAIRS, SKINS } from './Human';
+import { Walker } from './Walker';
 
 export interface StaffWorld {
   s: Services;
-  scene: Phaser.Scene;
   frontCustomer(counterUid: string): Customer | null;
   isPlayerAtCounter(counterUid: string): boolean;
   reserved: Set<string>;
   shakeFurniture(uid: string): void;
+  stockFx(furnUid: string, slot: number, from: THREE.Vector3): void;
+  saleFx(amount: number, at: THREE.Vector3): void;
 }
 
-type State = 'idle' | 'walk' | 'toBox' | 'toShelf' | 'stocking' | 'toTrash';
+type State = 'idle' | 'toBox' | 'toShelf' | 'stocking' | 'toTrash';
 
-export class StaffNpc {
-  readonly view: CharacterView;
+/** Đồng phục cửa hàng: áo xanh ngọc, tạp dề vàng. */
+const UNIFORM = { shirt: 0x1f7a6d, pants: 0x2b2d42, apron: 0xffd166 };
+
+export class StaffNpc extends Walker {
   counterUid: string | null = null;
-  private follower = new PathFollower();
   private state: State = 'idle';
   private timer = 0;
   private customer: Customer | null = null;
   private serviceTotal = 0;
   private box: BoxData | null = null;
+  private boxModel: BoxModel | null = null;
   private target: RestockTarget | null = null;
+  private status = '';
 
   constructor(private world: StaffWorld, public data: StaffData, start: GridPoint) {
-    const look = { shirt: SHIRTS[data.shirt % SHIRTS.length], hair: HAIRS[data.shirt % HAIRS.length], skin: SKINS[data.shirt % SKINS.length], apron: 0x2a9d8f };
-    this.view = new CharacterView(world.scene, look, start.gx + 0.5, start.gy + 0.5);
+    super(world.s, { ...UNIFORM, skin: SKINS[data.shirt % SKINS.length], hair: HAIRS[data.shirt % HAIRS.length], female: data.shirt % 2 === 0 },
+      cellCenter(start.gx, start.gy).x, cellCenter(start.gx, start.gy).z);
   }
 
-  get gx(): number { return this.view.gx; }
-  get gy(): number { return this.view.gy; }
-
-  private walkTo(goals: GridPoint | GridPoint[]): boolean {
-    const path = this.world.s.paths.find(this.view.tile, goals);
-    this.follower.setPath(path);
-    return !!path;
+  private setStatus(text: string): void {
+    if (text === this.status) return;
+    this.status = text;
+    this.bubble.show(text, 0);
   }
 
-  private move(sim: number): boolean {
-    if (this.follower.done || sim <= 0) return !this.follower.done;
-    const r = this.follower.step(this.gx, this.gy, STAFF_SPEED * this.data.speed * sim);
-    this.view.face(r.dx, r.dy);
-    this.view.setPosition(r.gx, r.gy);
-    return !r.arrived;
-  }
-
-  update(sim: number, dtMs: number): void {
-    const moving = this.move(sim);
-    this.view.animate(sim > 0 ? dtMs : 0, moving);
+  tick(sim: number, dt: number): void {
+    const moving = this.step(STAFF_SPEED * this.data.speed * sim, sim > 0 ? dt : 0);
+    if (this.boxModel) {
+      this.human.setCarrying(true);
+      this.boxModel.update(dt);
+    }
     if (moving || sim <= 0) return;
-    if (this.data.role === 'cashier') this.updateCashier(sim);
-    else this.updateStocker(sim);
+    if (this.data.role === 'cashier') this.cashier(sim);
+    else this.stocker(sim);
   }
 
   // ---------- Thu ngân ----------
-  private updateCashier(sim: number): void {
+  private cashier(sim: number): void {
     const s = this.world.s;
     const counter = this.counterUid ? s.state.furniture(this.counterUid) : undefined;
     if (!counter) {
-      this.view.setStatus('😴 Rảnh');
+      this.setStatus('😴 Rảnh');
       return;
     }
-    const staffTile = counterTiles(counter.gx, counter.gy, counter.rot).staff;
-    const t = this.view.tile;
-    const atPost = t.gx === staffTile.gx && t.gy === staffTile.gy;
+    const def = getFurniture(counter.type);
+    const t = counterTiles(def, counter.gx, counter.gy, counter.rot);
+    const here = this.cell;
+    const atPost = here.gx === t.staff.gx && here.gy === t.staff.gy;
     if (this.world.isPlayerAtCounter(counter.uid)) {
       if (this.customer) { this.customer.cancelService(); this.customer = null; }
       if (atPost) {
-        const spots = adjacentTiles([staffTile]).filter((p) => s.grid.isWalkable(p.gx, p.gy));
+        const spots = adjacentTiles([t.staff]).flatMap((p) => adjacentTiles([p])).filter((p) => s.grid.isWalkable(p.gx, p.gy) && !(p.gx === t.staff.gx && p.gy === t.staff.gy));
         if (spots.length) this.walkTo(spots);
       }
-      this.view.setStatus('🙇 Nhường quầy');
+      this.setStatus('🙇 Nhường quầy');
       return;
     }
     if (!atPost) {
-      this.view.setStatus('🚶 Tới quầy');
-      if (!this.walkTo(staffTile)) this.view.setStatus('😴 Rảnh');
+      this.setStatus('🚶 Tới quầy');
+      if (!this.walkTo(t.staff)) this.setStatus('😴 Rảnh');
       return;
     }
-    this.view.face(counter.gx + 0.5 - this.gx, counter.gy + 0.5 - this.gy);
+    const cc = furnitureCenter(counter);
+    this.face(cc.x, cc.z);
     if (!this.customer) {
-      const c = this.world.frontCustomer(counter.uid);
-      if (!c || c.state === 'served') {
-        this.view.setStatus('😴 Rảnh');
+      const cu = this.world.frontCustomer(counter.uid);
+      if (!cu || cu.state === 'served') {
+        this.setStatus('😴 Rảnh');
         return;
       }
-      c.beginService();
-      this.customer = c;
-      this.serviceTotal = (c.basket.length * STAFF_SCAN_S + STAFF_PAY_S) / this.data.speed;
+      cu.beginService(cc);
+      this.customer = cu;
+      this.serviceTotal = (cu.basketItems.length * STAFF_SCAN_S + STAFF_PAY_S) / this.data.speed;
       this.timer = this.serviceTotal;
-      this.view.setStatus('🧾 Đang tính tiền');
+      this.setStatus('🧾 Đang tính tiền');
     }
     this.timer -= sim;
-    if (this.timer > 0) {
-      if (Math.random() < sim * 2) s.bus.emit('sound', { name: 'beep' });
-      return;
+    const cu = this.customer;
+    if (this.timer > STAFF_PAY_S / this.data.speed && Math.floor((this.timer + sim) / STAFF_SCAN_S) !== Math.floor(this.timer / STAFF_SCAN_S)) {
+      cu.basket.takeOut()?.mesh.removeFromParent();
+      s.bus.emit('sound', { name: 'beep', pos: { x: cc.x, y: 1, z: cc.z } });
     }
-    const c = this.customer;
+    if (this.timer > 0) return;
     this.customer = null;
-    const total = itemsTotal(c.basket);
+    const total = itemsTotal(cu.basketItems);
     const cash = s.rng() < 0.6;
     const paid = cash ? customerCashPayment(total, s.rng) : total;
     const change = cash ? sumCents(optimalChange(Math.round(paid * 100) - Math.round(total * 100))) : 0;
-    const tile = counterTiles(counter.gx, counter.gy, counter.rot).customer;
-    completeSale(s, c.id, c.basket, cash ? 'cash' : 'card', paid, change, Math.max(20, this.serviceTotal), { gx: tile.gx + 0.5, gy: tile.gy + 0.5 });
-    c.finishCheckout(true);
+    const r = completeSale(s, cu.id, cu.basketItems, cash ? 'cash' : 'card', paid, change, Math.max(25, this.serviceTotal), { gx: cc.x, gy: cc.z });
+    this.world.saleFx(r.revenue, new THREE.Vector3(cc.x, 1.5, cc.z));
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.3, 0.16), new THREE.MeshStandardMaterial({ color: 0xc8a27a, roughness: 0.9 }));
+    const g = new THREE.Group();
+    bag.position.y = -0.15;
+    g.add(bag);
+    cu.finishCheckout(true, g);
   }
 
   // ---------- Xếp kệ ----------
-  private updateStocker(sim: number): void {
+  private stocker(sim: number): void {
     const s = this.world.s;
     switch (this.state) {
       case 'idle':
-      case 'walk':
         this.timer -= sim;
         if (this.timer > 0) return;
         this.timer = 1.5;
@@ -136,6 +139,10 @@ export class StaffNpc {
       case 'toShelf':
         this.state = 'stocking';
         this.timer = STAFF_STOCK_S / this.data.speed;
+        if (this.target) {
+          const c = furnitureCenter(this.target.furn);
+          this.face(c.x, c.z);
+        }
         return;
       case 'stocking': {
         this.timer -= sim;
@@ -146,19 +153,18 @@ export class StaffNpc {
         const furn = target ? s.state.furniture(target.furn.uid) : undefined;
         if (!box || !furn || !target) { this.finishBox(); return; }
         const slot = furn.slots[target.slot];
-        const cap = getFurniture(furn.type).slotCapacity;
-        if (!slot || (slot.productId !== box.productId && slot.qty > 0) || slot.qty >= cap) { this.finishBox(); return; }
-        const r = s.inventory.stock(box, furn);
+        if (!slot || (slot.productId !== box.productId && slot.qty > 0)) { this.finishBox(); return; }
+        const r = s.inventory.stock(box, furn, target.slot);
         if (!r.ok) { this.finishBox(); return; }
-        this.world.shakeFurniture(furn.uid);
-        this.view.setHeld(boxTextureFor(this.world.scene, box));
+        this.world.stockFx(furn.uid, target.slot, this.human.handR.getWorldPosition(new THREE.Vector3()));
+        this.human.reach();
+        this.boxModel?.setContents(box.productId, box.qty);
         if (box.qty <= 0) this.finishBox();
         return;
       }
       case 'toTrash':
         if (this.box) s.inventory.removeBox(this.box.uid);
-        this.box = null;
-        this.view.setHeld(null);
+        this.releaseBox();
         this.state = 'idle';
         return;
     }
@@ -166,11 +172,10 @@ export class StaffNpc {
 
   private findJob(): void {
     const s = this.world.s;
-    const targets = restockTargets(s.data.furniture, RESTOCK_THRESHOLD);
-    for (const t of targets) {
+    for (const t of restockTargets(s.data.furniture, RESTOCK_THRESHOLD)) {
       const sources = s.data.boxes.filter((b) => b.productId === t.productId && b.qty > 0
         && (b.location === 'floor' || b.location === 'rack') && !this.world.reserved.has(b.uid));
-      sources.sort((a, b) => Math.hypot(a.gx - this.gx, a.gy - this.gy) - Math.hypot(b.gx - this.gx, b.gy - this.gy));
+      sources.sort((a, b) => Math.hypot(a.gx - this.x, a.gy - this.z) - Math.hypot(b.gx - this.x, b.gy - this.z));
       for (const b of sources) {
         const goals = this.boxGoals(b);
         if (goals.length && this.walkTo(goals)) {
@@ -178,18 +183,12 @@ export class StaffNpc {
           this.box = b;
           this.target = t;
           this.state = 'toBox';
-          this.view.setStatus('📦 Đi lấy hàng');
+          this.setStatus('📦 Đi lấy hàng');
           return;
         }
       }
     }
-    this.view.setStatus('😴 Rảnh');
-    if (this.state === 'idle' && Math.random() < 0.3) {
-      // đi dạo quanh cửa hàng
-      const g = s.grid;
-      const p = { gx: Math.floor(Math.random() * g.storeW), gy: Math.floor(Math.random() * g.storeH) };
-      if (g.isWalkable(p.gx, p.gy)) this.walkTo(p);
-    }
+    this.setStatus('😴 Rảnh');
   }
 
   private boxGoals(b: BoxData): GridPoint[] {
@@ -197,11 +196,11 @@ export class StaffNpc {
     if (b.location === 'rack' && b.holderId) {
       const rack = this.world.s.state.furniture(b.holderId);
       if (!rack) return [];
-      return adjacentTiles(footprintCells(getFurniture(rack.type), rack.gx, rack.gy, rack.rot)).filter((p) => g.isWalkable(p.gx, p.gy));
+      return frontTiles(getFurniture(rack.type), rack.gx, rack.gy, rack.rot).filter((p) => g.isWalkable(p.gx, p.gy));
     }
-    const t = { gx: Math.floor(b.gx), gy: Math.floor(b.gy) };
-    if (g.isWalkable(t.gx, t.gy)) return [t];
-    return adjacentTiles([t]).filter((p) => g.isWalkable(p.gx, p.gy));
+    const t = worldToCell(b.gx, b.gy);
+    const around = [t, ...adjacentTiles([t])];
+    return around.filter((p) => g.isWalkable(p.gx, p.gy));
   }
 
   private pickUpBox(): void {
@@ -209,7 +208,8 @@ export class StaffNpc {
     const box = this.box;
     const target = this.target;
     if (!box || !target || !s.state.box(box.uid) || (box.location !== 'floor' && box.location !== 'rack')) {
-      this.release();
+      this.releaseBox();
+      this.state = 'idle';
       return;
     }
     if (box.location === 'rack' && box.holderId) {
@@ -220,37 +220,38 @@ export class StaffNpc {
     box.holderId = this.data.uid;
     box.open = true;
     s.bus.emit('boxes:changed', {});
-    this.view.setHeld(boxTextureFor(this.world.scene, box));
+    this.boxModel = new BoxModel(box.productId);
+    this.boxModel.setOpen(true, true);
+    this.boxModel.setContents(box.productId, box.qty);
+    this.boxModel.group.scale.setScalar(0.85);
+    this.boxModel.group.position.set(0, 0.95, -0.35);
+    this.human.root.add(this.boxModel.group);
     const furn = s.state.furniture(target.furn.uid);
-    const goals = furn
-      ? adjacentTiles(footprintCells(getFurniture(furn.type), furn.gx, furn.gy, furn.rot)).filter((p) => s.grid.isWalkable(p.gx, p.gy))
-      : [];
+    const goals = furn ? frontTiles(getFurniture(furn.type), furn.gx, furn.gy, furn.rot).filter((p) => s.grid.isWalkable(p.gx, p.gy)) : [];
     if (!goals.length || !this.walkTo(goals)) {
       this.finishBox();
       return;
     }
     this.state = 'toShelf';
-    this.view.setStatus('🧺 Đang xếp kệ');
+    this.setStatus('🧺 Đang xếp kệ');
   }
 
   private finishBox(): void {
     const s = this.world.s;
     const box = this.box;
     this.target = null;
-    if (!box) { this.release(); return; }
+    if (!box) { this.releaseBox(); this.state = 'idle'; return; }
     if (box.qty <= 0) {
       const trash = s.data.furniture.find((f) => getFurniture(f.type).kind === 'trash');
-      const goals = trash
-        ? adjacentTiles(footprintCells(getFurniture(trash.type), trash.gx, trash.gy, trash.rot)).filter((p) => s.grid.isWalkable(p.gx, p.gy))
-        : [];
+      const goals = trash ? adjacentTiles(footprintCells(getFurniture(trash.type), trash.gx, trash.gy, trash.rot)).filter((p) => s.grid.isWalkable(p.gx, p.gy)) : [];
       if (goals.length && this.walkTo(goals)) {
         this.state = 'toTrash';
-        this.view.setStatus('🗑️ Vứt thùng');
+        this.setStatus('🗑️ Vứt thùng');
+        this.boxModel?.fold();
         return;
       }
       s.inventory.removeBox(box.uid);
-      this.box = null;
-      this.view.setHeld(null);
+      this.releaseBox();
       this.state = 'idle';
       return;
     }
@@ -260,29 +261,29 @@ export class StaffNpc {
   /** Đặt thùng còn hàng xuống sàn. */
   dropBox(): void {
     const box = this.box;
-    if (box) {
+    if (box && box.location === 'staff') {
       box.location = 'floor';
       box.holderId = null;
-      box.gx = Math.floor(this.gx) + 0.5;
-      box.gy = Math.floor(this.gy) + 0.5;
-      this.world.reserved.delete(box.uid);
+      box.gx = Math.round(this.x * 100) / 100;
+      box.gy = Math.round(this.z * 100) / 100;
       this.world.s.bus.emit('boxes:changed', {});
     }
-    this.release();
-  }
-
-  private release(): void {
-    if (this.box) this.world.reserved.delete(this.box.uid);
-    this.box = null;
-    this.target = null;
-    this.view.setHeld(null);
+    this.releaseBox();
     this.state = 'idle';
     this.timer = 0.5;
   }
 
+  private releaseBox(): void {
+    if (this.box) this.world.reserved.delete(this.box.uid);
+    this.box = null;
+    this.target = null;
+    this.boxModel?.dispose();
+    this.boxModel = null;
+  }
+
   destroy(): void {
-    if (this.customer) this.customer.cancelService();
+    this.customer?.cancelService();
     this.dropBox();
-    this.view.destroy();
+    this.dispose();
   }
 }

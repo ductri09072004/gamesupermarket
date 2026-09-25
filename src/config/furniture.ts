@@ -1,3 +1,5 @@
+import { CELL } from './constants';
+
 export type StorageType = 'shelf' | 'fridge' | 'freezer';
 export type FurnitureKind = 'display' | 'checkout' | 'trash' | 'computer' | 'rack';
 
@@ -6,72 +8,50 @@ export interface FurnitureDef {
   name: string;
   icon: string;
   kind: FurnitureKind;
+  /** Kích thước thật (m): rộng (X), sâu (Z), cao (Y) — mặt trước hướng -Z trước khi xoay */
+  size: { w: number; d: number; h: number };
+  /** Footprint theo ô NavGrid (0.5m), suy ra từ size */
   footprint: { w: number; h: number };
   price: number;
-  slots: number; // số slot sản phẩm (display) hoặc số thùng (rack)
-  slotCapacity: number;
+  tiers: number;
+  columns: number;
+  /** tiers × columns (display) hoặc số thùng (rack) */
+  slots: number;
   storage: StorageType | null;
   licenseRequired: number;
-  height: number; // px
-  colors: { top: number; left: number; right: number };
-  electricity: number; // $/ngày
+  color: number;
+  electricity: number;
   buyable: boolean;
   sellable: boolean;
   warehouseOnly: boolean;
+  /** Tên file model tuỳ chọn trong public/assets/models/furniture */
+  model: string;
 }
 
-const base = {
-  slots: 0,
-  slotCapacity: 0,
-  storage: null,
-  licenseRequired: 0,
-  electricity: 0,
-  buyable: true,
-  sellable: true,
-  warehouseOnly: false,
-} as const;
+type Base = Omit<FurnitureDef, 'id' | 'name' | 'icon' | 'kind' | 'size' | 'footprint' | 'price' | 'slots' | 'color' | 'model'>;
+const base: Base = {
+  tiers: 1, columns: 1, storage: null, licenseRequired: 0, electricity: 0, buyable: true, sellable: true, warehouseOnly: false,
+};
+
+function def(d: Partial<Base> & Pick<FurnitureDef, 'id' | 'name' | 'icon' | 'kind' | 'size' | 'price' | 'color'>): FurnitureDef {
+  const merged = { ...base, ...d };
+  return {
+    ...merged,
+    footprint: { w: Math.ceil(d.size.w / CELL - 1e-6), h: Math.ceil(d.size.d / CELL - 1e-6) },
+    slots: merged.tiers * merged.columns,
+    model: `${d.id}.glb`,
+  };
+}
 
 export const FURNITURE: FurnitureDef[] = [
-  {
-    ...base, id: 'shelf_small', name: 'Kệ nhỏ', icon: '🗄️', kind: 'display', footprint: { w: 1, h: 1 },
-    price: 120, slots: 2, slotCapacity: 12, storage: 'shelf', height: 34,
-    colors: { top: 0xf7e1c4, left: 0xd9a86c, right: 0xc08a4e },
-  },
-  {
-    ...base, id: 'shelf_large', name: 'Kệ lớn', icon: '🧱', kind: 'display', footprint: { w: 2, h: 1 },
-    price: 220, slots: 4, slotCapacity: 12, storage: 'shelf', height: 34,
-    colors: { top: 0xf7e1c4, left: 0xd9a86c, right: 0xc08a4e },
-  },
-  {
-    ...base, id: 'fridge', name: 'Tủ lạnh', icon: '🧊', kind: 'display', footprint: { w: 2, h: 1 },
-    price: 450, slots: 3, slotCapacity: 12, storage: 'fridge', licenseRequired: 1, height: 44, electricity: 12,
-    colors: { top: 0xe8f4fb, left: 0xa8d8f0, right: 0x86c3e3 },
-  },
-  {
-    ...base, id: 'freezer', name: 'Tủ đông', icon: '❄️', kind: 'display', footprint: { w: 2, h: 1 },
-    price: 550, slots: 3, slotCapacity: 12, storage: 'freezer', licenseRequired: 2, height: 24, electricity: 16,
-    colors: { top: 0xd6ecff, left: 0x8fb8de, right: 0x6f9cc8 },
-  },
-  {
-    ...base, id: 'checkout', name: 'Quầy thu ngân', icon: '🧾', kind: 'checkout', footprint: { w: 2, h: 1 },
-    price: 350, height: 22, electricity: 2,
-    colors: { top: 0xb8e0d2, left: 0x7fb8a4, right: 0x5f9c88 },
-  },
-  {
-    ...base, id: 'trash', name: 'Thùng rác', icon: '🗑️', kind: 'trash', footprint: { w: 1, h: 1 },
-    price: 40, height: 22,
-    colors: { top: 0x6a994e, left: 0x4f7a38, right: 0x3e6329 },
-  },
-  {
-    ...base, id: 'rack', name: 'Kệ kho', icon: '📦', kind: 'rack', footprint: { w: 2, h: 1 },
-    price: 180, slots: 4, slotCapacity: 1, height: 40, warehouseOnly: true,
-    colors: { top: 0xb0b7c3, left: 0x8d95a3, right: 0x6f7786 },
-  },
-  {
-    ...base, id: 'computer', name: 'Bàn máy tính', icon: '💻', kind: 'computer', footprint: { w: 1, h: 1 },
-    price: 0, height: 20, buyable: false, sellable: false, electricity: 1,
-    colors: { top: 0xcdb4db, left: 0xa98bbd, right: 0x8c6fa3 },
-  },
+  def({ id: 'shelf_small', name: 'Kệ nhỏ', icon: '🗄️', kind: 'display', size: { w: 1, d: 0.5, h: 1.6 }, price: 120, tiers: 4, columns: 1, storage: 'shelf', color: 0xe9ecef }),
+  def({ id: 'shelf_large', name: 'Kệ lớn', icon: '🧱', kind: 'display', size: { w: 2, d: 0.5, h: 1.8 }, price: 220, tiers: 4, columns: 2, storage: 'shelf', color: 0xe9ecef }),
+  def({ id: 'fridge', name: 'Tủ lạnh', icon: '🧊', kind: 'display', size: { w: 2, d: 0.75, h: 2.0 }, price: 450, tiers: 4, columns: 2, storage: 'fridge', licenseRequired: 1, electricity: 12, color: 0xdfe7ee }),
+  def({ id: 'freezer', name: 'Tủ đông', icon: '❄️', kind: 'display', size: { w: 2, d: 0.9, h: 0.9 }, price: 550, tiers: 1, columns: 3, storage: 'freezer', licenseRequired: 2, electricity: 16, color: 0xf1f5f9 }),
+  def({ id: 'checkout', name: 'Quầy thu ngân', icon: '🧾', kind: 'checkout', size: { w: 2, d: 0.8, h: 0.9 }, price: 350, electricity: 2, color: 0x6c8ea4 }),
+  def({ id: 'trash', name: 'Thùng rác', icon: '🗑️', kind: 'trash', size: { w: 0.5, d: 0.5, h: 0.8 }, price: 40, color: 0x4f7a38 }),
+  def({ id: 'rack', name: 'Kệ kho', icon: '📦', kind: 'rack', size: { w: 2, d: 0.6, h: 2.0 }, price: 180, tiers: 3, columns: 2, warehouseOnly: true, color: 0x5c6b7a }),
+  def({ id: 'computer', name: 'Bàn máy tính', icon: '💻', kind: 'computer', size: { w: 1.2, d: 0.6, h: 0.75 }, price: 0, buyable: false, sellable: false, electricity: 1, color: 0x8d6e63 }),
 ];
 
 const byId = new Map(FURNITURE.map((f) => [f.id, f]));

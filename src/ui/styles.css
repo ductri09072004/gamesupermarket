@@ -16,7 +16,8 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #a7d98b; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1f2a; }
+canvas { display: block; }
 #game-root { position: fixed; inset: 0; }
 #ui-root { position: fixed; inset: 0; pointer-events: none; z-index: 10; font-family: 'Nunito', system-ui, sans-serif; }
 #ui-root > * { pointer-events: auto; }
@@ -227,7 +228,7 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 .tut-next { background: #fff4d6; border-radius: 8px; padding: 4px 8px; font-weight: 800; }
 
 /* ---------- Menu ---------- */
-.main-menu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 30% 20%, #ffc8dd, transparent 50%), radial-gradient(circle at 80% 80%, #bde0fe, transparent 50%), #fdf3e3; z-index: 60; }
+.main-menu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-start; padding-left: max(16px, 8vw); background: linear-gradient(90deg, rgba(20, 16, 36, 0.55), rgba(20, 16, 36, 0) 60%); z-index: 60; }
 .menu-card { width: min(380px, 92vw); background: #fff; border: 3px solid var(--ink); border-radius: 20px; box-shadow: var(--shadow); padding: 24px; text-align: center; animation: popIn 0.35s cubic-bezier(.2,1.4,.5,1); }
 .menu-card h1 { margin: 4px 0; font-weight: 900; }
 .logo { font-size: 64px; animation: bob 2s ease-in-out infinite; }
@@ -261,3 +262,53 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
   .market { flex-direction: column; }
   .cart { width: 100%; position: static; }
 }
+
+/* ---------- 3D: loading ---------- */
+.loading { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: radial-gradient(circle at 50% 40%, #2f3e5c, #141826); color: #fff; transition: opacity 0.4s; }
+.loading.hide { opacity: 0; pointer-events: none; }
+.load-logo { font-size: 72px; animation: bob 2s ease-in-out infinite; }
+.load-title { font-size: 28px; font-weight: 900; letter-spacing: 0.02em; }
+.load-bar { width: min(420px, 80vw); height: 14px; border-radius: 8px; background: rgba(255,255,255,0.12); overflow: hidden; border: 2px solid rgba(255,255,255,0.3); }
+.load-fill { height: 100%; width: 0; background: linear-gradient(90deg, #7fd1b9, #ffd166); transition: width 0.2s; }
+.load-label { font-weight: 700; opacity: 0.85; font-variant-numeric: tabular-nums; }
+
+/* ---------- 3D: tâm ngắm ---------- */
+.crosshair { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none !important; display: flex; flex-direction: column; align-items: center; }
+.ch-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.9); box-shadow: 0 0 0 1.5px rgba(0,0,0,0.45); transition: transform 0.12s; }
+.ch-dot.active { transform: scale(1.6); background: #ffd166; }
+.ch-hint { position: absolute; top: 22px; white-space: nowrap; text-align: center; color: #fff; font-weight: 800; font-size: 14px; text-shadow: 0 1px 3px rgba(0,0,0,0.9); display: flex; flex-direction: column; gap: 4px; }
+.ch-hint kbd { color: var(--ink); }
+.ch-hint .muted { color: #e5e7eb; font-weight: 600; font-size: 12px; }
+.click-to-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15, 18, 30, 0.35); cursor: pointer; z-index: 30; }
+.ctp-card { background: rgba(255,255,255,0.95); border: 3px solid var(--ink); border-radius: 18px; padding: 20px 26px; max-width: min(640px, 92vw); text-align: center; box-shadow: var(--shadow); }
+.ctp-title { font-size: 30px; font-weight: 900; margin-bottom: 8px; }
+.ctp-keys { font-size: 13px; line-height: 2; color: var(--muted); }
+
+/* ---------- 3D: bảng giá nổi ---------- */
+.float-panel { position: absolute; left: calc(50% + 40px); top: 50%; transform: translateY(-50%); width: min(420px, 92vw); background: var(--bg); border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow); padding: 10px 12px; z-index: 45; animation: popIn 0.18s; }
+.fp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+@media (max-width: 700px) { .float-panel { left: 50%; transform: translate(-50%, -50%); } }
+
+/* ---------- 3D: thanh thu ngân ---------- */
+.checkout-strip { position: absolute; left: 50%; bottom: 14px; transform: translate(-50%, 140%); width: min(900px, 96vw); background: rgba(255, 250, 242, 0.96); border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow); padding: 10px 14px; display: flex; gap: 12px; align-items: center; justify-content: space-between; transition: transform 0.25s cubic-bezier(.2,1.2,.5,1); flex-wrap: wrap; }
+.checkout-strip.show { transform: translate(-50%, 0); }
+.cs-left { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.cs-left b { font-size: 16px; }
+.cs-info .ok { color: var(--teal); }
+.cs-info .over { color: var(--red); }
+.cs-info .short { color: #b5651d; }
+.cs-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ---------- 3D: gallery ---------- */
+.gallery-ui { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.94); border: 3px solid var(--ink); border-radius: 16px; padding: 10px 14px; box-shadow: var(--shadow); max-width: 96vw; }
+.gal-info { min-width: min(360px, 60vw); text-align: center; }
+.gal-close { position: absolute; top: -40px; right: 0; }
+
+/* ---------- Cài đặt ---------- */
+.setting.range { display: grid; grid-template-columns: 170px 1fr 60px; gap: 10px; }
+.setting.range input { width: 100%; accent-color: var(--teal); }
+.set-val { font-variant-numeric: tabular-nums; text-align: right; }
+.seg { display: flex; gap: 6px; margin-left: auto; }
+@media (max-width: 500px) { .setting.range { grid-template-columns: 1fr; } }
+#ui-root.gallery-open > :not(.gallery-ui):not(.toasts) { display: none !important; }
+#ui-root.mode-focus > .tutorial { display: none; }
