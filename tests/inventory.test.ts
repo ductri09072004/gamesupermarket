@@ -141,3 +141,18 @@ describe('Bố cục slot theo kích thước sản phẩm', () => {
     }
   });
 });
+
+describe('Bán kệ còn hàng', () => {
+  it('đóng hàng vào thùng theo unitsPerBox và dọn sạch kệ', async () => {
+    const { packFurnitureContents } = await import('../src/systems/InventorySystem');
+    const shelf = makeFurniture('f', 'shelf_large', 0, 0);
+    shelf.slots[0] = { productId: 'noodles', qty: 30 };
+    shelf.slots[1] = { productId: 'noodles', qty: 5 };
+    shelf.slots[2] = { productId: 'rice', qty: 3 };
+    const packs = packFurnitureContents(shelf);
+    const noodles = packs.filter((p) => p.productId === 'noodles').map((p) => p.qty);
+    expect(noodles).toEqual([24, 11]);
+    expect(packs.find((p) => p.productId === 'rice')?.qty).toBe(3);
+    expect(shelf.slots.every((s) => s.qty === 0 && s.productId === null)).toBe(true);
+  });
+});

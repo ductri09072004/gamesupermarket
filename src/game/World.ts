@@ -74,6 +74,8 @@ export class World implements GameCtx {
     this.products = new ProductInstances(this.root as unknown as THREE.Scene, furnitureMatrix);
     this.player = new PlayerController(this.camera, d.player.gx, d.player.gy, d.player.yaw);
     this.player.onFootstep = (p) => this.sound('footstep', p, 0.9 + Math.random() * 0.2);
+    this.player.onJump = () => this.sound('footstep', new THREE.Vector3(this.player.x, 0.05, this.player.z), 1.25);
+    this.player.onLand = (v) => this.sound('thud', new THREE.Vector3(this.player.x, 0.05, this.player.z), 1.6 - Math.min(0.5, v * 0.08));
     this.held = new HeldItem(r.heldScene);
     this.interaction = new Interaction(this.root as unknown as THREE.Scene, this.camera, s);
     this.tween = new CameraTween(this.camera);

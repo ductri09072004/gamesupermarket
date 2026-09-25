@@ -20,6 +20,9 @@ export const RUN_SPEED = 5;
 export const CROUCH_SPEED = 1.6;
 export const CARRY_SPEED_MULT = 0.9;
 export const REACH = 2.5;
+export const JUMP_VELOCITY = 4.6; // m/s → cao ~0.8m
+export const GRAVITY = 13;
+export const AIR_CONTROL = 0.25; // tỉ lệ khả năng đổi hướng khi đang bay
 export const DEFAULT_FOV = 70;
 export const MOUSE_SENSITIVITY = 0.0022;
 

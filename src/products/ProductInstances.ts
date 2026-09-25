@@ -16,6 +16,8 @@ export class ProductInstances {
   private meshes = new Map<string, THREE.InstancedMesh>();
   private dirty = true;
   private holdback = new Map<string, number>();
+  /** Nội thất đang được nhấc (Build mode) → ẩn hàng trên đó. */
+  private hidden = new Set<string>();
   private tmp = new THREE.Matrix4();
   private local = new THREE.Matrix4();
   total = 0;
@@ -23,6 +25,12 @@ export class ProductInstances {
   constructor(private scene: THREE.Scene, private furnitureMatrix: FurnitureMatrix) {}
 
   markDirty(): void {
+    this.dirty = true;
+  }
+
+  setHidden(furnUid: string, hidden: boolean): void {
+    if (hidden) this.hidden.add(furnUid);
+    else this.hidden.delete(furnUid);
     this.dirty = true;
   }
 
@@ -69,7 +77,7 @@ export class ProductInstances {
     this.total = 0;
     for (const f of furniture) {
       const def = getFurniture(f.type);
-      if (def.kind !== 'display') continue;
+      if (def.kind !== 'display' || this.hidden.has(f.uid)) continue;
       const fm = this.furnitureMatrix(f);
       f.slots.forEach((s, si) => {
         if (!s.productId || s.qty <= 0) return;

@@ -1,13 +1,10 @@
 import * as THREE from 'three';
-import { CELL, WAREHOUSE } from '../config/constants';
 import { FEEL } from '../config/feel';
 import { getFurniture } from '../config/furniture';
 import { makeFurniture, type FurnitureData } from '../core/GameState';
-import { buildCounter } from '../entities/CheckoutCounter';
-import { buildFurnitureModel } from '../entities/FurnitureModels';
 import { canPlace } from '../systems/BuildSystem';
-import { isFurnitureEmpty } from '../systems/InventorySystem';
 import { BuildPanel } from '../ui/buildPanel';
+import { buildGrid, dropContents, ghostModel } from './BuildHelpers';
 import { footprintCells, type GridPoint } from '../world/Footprint';
 import { worldToCell } from '../world/NavGrid';
 import { furnitureMatrix } from '../world/Placement';
@@ -31,6 +28,8 @@ export class BuildMode {
   private panel = new BuildPanel();
   private ray = new THREE.Raycaster();
   private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  /** Vào Build mode bằng phím M (dời nhanh) → tự thoát sau khi đặt xong / huỷ. */
+  private quick = false;
 
   constructor(private c: GameCtx, private peopleCells: () => GridPoint[], private onChanged: () => void) {
     c.input.onMouseDown((e) => { if (this.active && e.button === 0 && !(e.target as HTMLElement).closest?.('.build-panel')) this.click(); });
@@ -61,7 +60,8 @@ export class BuildMode {
     const { W, D } = c.store;
     const span = Math.max(W, D);
     c.tween.go(new THREE.Vector3(W / 2, span * 1.05 + 3, D / 2 + span * 0.45), new THREE.Vector3(W / 2, 0, D / 2 - (c.s.data.warehouseUnlocked ? 1.5 : 0)), FEEL.cameraTweenS);
-    this.drawGrid();
+    this.grid = buildGrid(this.c.s.grid);
+    this.c.scene.add(this.grid);
     this.panel.open({ onPick: (t) => this.holdFromStock(t), onShop: () => c.s.bus.emit('ui:openPc', { app: 'furniture' }), onExit: () => this.exit() });
     this.panel.setStock(c.s.data.furnitureStock);
     this.panel.setStatus('Chọn nội thất trong kho hoặc click vào nội thất có sẵn để nhấc lên', null);
@@ -73,6 +73,7 @@ export class BuildMode {
     const c = this.c;
     this.cancel();
     this.active = false;
+    this.quick = false;
     this.grid?.removeFromParent();
     this.grid = null;
     this.panel.close();
@@ -87,35 +88,9 @@ export class BuildMode {
     c.s.bus.emit('build:mode', { active: false });
   }
 
-  private drawGrid(): void {
-    const g = this.c.s.grid;
-    const pts: number[] = [];
-    const add = (x0: number, z0: number, x1: number, z1: number) => {
-      for (let x = x0; x <= x1 + 1e-6; x += CELL) pts.push(x, 0.01, z0, x, 0.01, z1);
-      for (let z = z0; z <= z1 + 1e-6; z += CELL) pts.push(x0, 0.01, z, x1, 0.01, z);
-    };
-    add(0, 0, g.storeW, g.storeH);
-    if (g.warehouse) add(WAREHOUSE.x0, WAREHOUSE.z0, WAREHOUSE.x0 + WAREHOUSE.w, 0);
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-    this.grid = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0x3a86ff, transparent: true, opacity: 0.35 }));
-    this.c.scene.add(this.grid);
-  }
-
-  private makeGhost(type: string): void {
+  private setGhost(type: string): void {
     this.ghost?.removeFromParent();
-    const def = getFurniture(type);
-    const model = def.kind === 'checkout' ? buildCounter(def).group : buildFurnitureModel(def).group;
-    model.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.material = this.ghostMat;
-        m.castShadow = false;
-      }
-    });
-    this.ghost = new THREE.Group();
-    this.ghost.add(model);
-    this.ghost.matrixAutoUpdate = false;
+    this.ghost = ghostModel(type, this.ghostMat);
     this.c.scene.add(this.ghost);
   }
 
@@ -126,26 +101,44 @@ export class BuildMode {
     this.c.s.data.furnitureStock.splice(i, 1);
     this.holding = { type, rot: 0, from: null };
     this.panel.setStock(this.c.s.data.furnitureStock);
-    this.makeGhost(type);
+    this.setGhost(type);
     this.refresh();
   }
 
   private pickUp(cell: GridPoint): void {
+    const uid = this.c.s.grid.occupant(cell.gx, cell.gy);
+    if (uid) this.pickUpUid(uid);
+  }
+
+  /** Nhấc nội thất lên (kể cả kệ đang có hàng — hàng đi theo kệ). */
+  private pickUpUid(uid: string): void {
     const c = this.c;
-    const uid = c.s.grid.occupant(cell.gx, cell.gy);
-    const f = uid ? c.s.state.furniture(uid) : undefined;
+    const f = c.s.state.furniture(uid);
     if (!f) return;
-    if (!isFurnitureEmpty(f)) {
-      c.toast('Kệ còn hàng — hãy lấy hàng ra trước khi di chuyển', 'error');
-      c.sound('error');
-      return;
-    }
     this.holding = { type: f.type, rot: f.rot, from: f };
     c.s.grid.free(f.uid);
-    c.furniture.get(f.uid)?.setVisible(false);
-    this.makeGhost(f.type);
+    this.setCarried(f.uid, true);
+    this.setGhost(f.type);
     this.refresh();
+    const items = f.slots.reduce((a, s) => a + s.qty, 0) + f.boxes.length;
+    this.panel.setStatus(items > 0 ? `Đang dời ${getFurniture(f.type).name} — ${items} món/thùng sẽ đi theo kệ` : 'Chọn vị trí mới rồi click để đặt', null);
     c.sound('pop');
+  }
+
+  /** Ẩn kệ cùng hàng/thùng trên đó khi đang cầm. */
+  private setCarried(uid: string, carried: boolean): void {
+    this.c.furniture.get(uid)?.setVisible(!carried);
+    this.c.products.setHidden(uid, carried);
+    this.c.boxes.setHolderHidden(uid, carried);
+  }
+
+  /** Dời nhanh từ góc nhìn thứ nhất (phím M khi nhìn vào nội thất). */
+  moveFurniture(uid: string): void {
+    if (this.active || this.c.mode !== 'play') return;
+    this.enter();
+    if (!this.active) return;
+    this.quick = true;
+    this.pickUpUid(uid);
   }
 
   private cancel(): void {
@@ -156,7 +149,7 @@ export class BuildMode {
     if (!h) return;
     if (h.from) {
       this.c.s.grid.occupy(footprintCells(getFurniture(h.from.type), h.from.gx, h.from.gy, h.from.rot), h.from.uid);
-      this.c.furniture.get(h.from.uid)?.setVisible(true);
+      this.setCarried(h.from.uid, false);
     } else {
       this.c.s.data.furnitureStock.push(h.type);
       this.panel.setStock(this.c.s.data.furnitureStock);
@@ -190,12 +183,16 @@ export class BuildMode {
     this.ghost?.removeFromParent();
     this.ghost = null;
     const refund = c.s.shop.sellFurniture(h.type);
+    let packed = 0;
     if (h.from) {
+      packed = dropContents(this.c.s, h.from);
+      this.setCarried(h.from.uid, false);
       c.s.data.furniture = c.s.data.furniture.filter((f) => f.uid !== h.from!.uid);
       this.changed();
     }
-    c.toast(`Đã bán ${def.name} (+$${refund.toFixed(2)})`, 'info');
+    c.toast(`Đã bán ${def.name} (+$${refund.toFixed(2)})${packed ? ` — hàng đã đóng vào ${packed} thùng` : ''}`, 'info');
     c.sound('coin');
+    if (this.quick) this.exit();
   }
 
   /** Ô dưới con trỏ (theo tâm footprint). */
@@ -248,7 +245,7 @@ export class BuildMode {
       h.from.gx = this.cell.gx;
       h.from.gy = this.cell.gy;
       h.from.rot = h.rot;
-      c.furniture.get(h.from.uid)?.setVisible(true);
+      this.setCarried(h.from.uid, false);
       placed = h.from;
     } else {
       placed = makeFurniture(c.s.state.newUid('f'), h.type, this.cell.gx, this.cell.gy, h.rot);
@@ -257,7 +254,10 @@ export class BuildMode {
     this.changed();
     const v = c.furniture.get(placed.uid);
     if (v) v.model.scale.y = 0.6;
+    c.products.markDirty();
+    c.boxes.markDirty();
     c.sound('thud');
+    if (this.quick) this.exit();
   }
 
   update(dt: number): void {
@@ -276,8 +276,9 @@ export class BuildMode {
     if (e.code === 'KeyR') { this.rotate(); return true; }
     if (e.code === 'Delete' || e.code === 'Backspace') { this.sell(); return true; }
     if (e.code === 'Escape') {
-      if (this.holding) this.cancel();
-      else this.exit();
+      const wasHolding = !!this.holding;
+      this.cancel();
+      if (!wasHolding || this.quick) this.exit();
       return true;
     }
     if (e.code === 'KeyB') { this.exit(); return true; }

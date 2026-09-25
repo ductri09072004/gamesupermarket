@@ -17,20 +17,21 @@ npm test         # unit test (vitest)
 
 | Phím | Chức năng |
 | --- | --- |
-| `W A S D` | Đi · `Shift` chạy · `Ctrl` (hoặc `C`) ngồi xổm để nhìn tầng kệ thấp |
+| `W A S D` | Đi · `Shift` chạy · `Space` nhảy · `Ctrl` (hoặc `C`) ngồi xổm để nhìn tầng kệ thấp |
 | Chuột | Nhìn (click vào màn hình để khoá chuột) |
 | `E` | Nhặt thùng · dùng máy tính · vào quầy thu ngân · bật/tắt biển Mở cửa · đặt giá (nhìn nhãn giá hoặc ngăn kệ) |
 | Chuột trái / phải | Cầm thùng đã mở, nhìn vào ngăn kệ: đặt 1 món (giữ để đặt liên tục) / lấy lại 1 món |
 | `F` · `Q` | Mở/đóng thùng · thả thùng (thả lên nóc thùng khác để xếp chồng) |
 | `Tab` | Mở app Pricing chỉnh giá nhanh |
-| `B` | Build mode: camera nhìn từ trên, `R` xoay, click đặt/nhấc, `Delete` bán lại 50% |
+| `M` | Nhìn vào kệ/nội thất rồi nhấn M để dời nhanh — kệ đang có hàng vẫn dời được, hàng đi theo kệ |
+| `B` | Build mode: camera nhìn từ trên, `R` xoay, click đặt/nhấc, `Delete` bán lại 50% (hàng còn trên kệ tự đóng vào thùng) |
 | `1` `2` `3` | Tốc độ thời gian · `N` kết thúc ngày (sau 22:00) |
 | Ở quầy | Click món trên băng chuyền (hoặc `Space`) để quét · click khay tiền để thối · bấm phím máy POS hoặc gõ số + `Enter` |
 | `Esc` · `F3` · `F4` | Menu · debug (FPS, draw calls, triangles, đường đi khách) · Product Gallery |
 
 ## Điểm chính
 
-- **Sản phẩm sinh bằng code**: 7 kiểu bao bì (hộp bo góc, lon, chai, hũ, túi phồng, hộp sữa mái nhà, tuýp) với kích thước thật; nhãn canvas có tên hãng hư cấu, hoạ tiết, dung tích và mã vạch **EAN-13 đúng chuẩn**. Hiển thị trên kệ bằng `InstancedMesh` (1 mesh / sản phẩm).
+- **42 mặt hàng** chia 5 nhóm giấy phép, **sản phẩm sinh bằng code**: 7 kiểu bao bì (hộp bo góc, lon, chai, hũ, túi phồng, hộp sữa mái nhà, tuýp) với kích thước thật; nhãn canvas có tên hãng hư cấu, hoạ tiết, dung tích và mã vạch **EAN-13 đúng chuẩn**. Hiển thị trên kệ bằng `InstancedMesh` (1 mesh / sản phẩm).
 - **Kệ theo tầng & ngăn**: mỗi ngăn tự tính lưới vị trí theo kích thước sản phẩm; khung highlight + bóng mờ món kế tiếp; món bay vào kệ với tween, lắc nhẹ, tiếng "tộc" đổi cao độ.
 - **Quầy thu ngân 3D**: khách đặt từng món lên băng chuyền, món bay qua máy quét (laser nháy, bíp), màn hình LCD canvas, ngăn kéo tiền trượt ra với các khay mệnh giá, tiền thối xếp trên quầy, máy POS có phím bấm được.
 - **Không khí**: tone mapping ACES, bóng đổ, môi trường phòng (PMREM), dải đèn trần phát sáng + bloom, cửa kính trượt tự động, ánh sáng ngoài trời đổi theo giờ, đèn đường & biển hiệu sáng ban đêm, âm thanh 3D (tiếng máy lạnh tủ đông, chuông cửa, bước chân, nhạc nền, tiếng đám đông).

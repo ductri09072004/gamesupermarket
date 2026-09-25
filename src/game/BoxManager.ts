@@ -19,6 +19,8 @@ export class BoxManager {
   private entries = new Map<string, Entry>();
   private dirty = true;
   private pendingDrops = new Set<string>();
+  /** Kệ kho đang được nhấc → ẩn thùng trên đó. */
+  private hiddenHolders = new Set<string>();
   private offs: Array<() => void> = [];
 
   constructor(private s: Services) {
@@ -26,6 +28,12 @@ export class BoxManager {
       s.bus.on('boxes:changed', () => { this.dirty = true; }),
       s.bus.on('order:arrived', ({ boxUids }) => { boxUids.forEach((u) => this.pendingDrops.add(u)); this.dirty = true; }),
     );
+  }
+
+  setHolderHidden(uid: string, hidden: boolean): void {
+    if (hidden) this.hiddenHolders.add(uid);
+    else this.hiddenHolders.delete(uid);
+    this.dirty = true;
   }
 
   markDirty(): void {
@@ -72,6 +80,7 @@ export class BoxManager {
       if (b.location === 'rack' && b.holderId) {
         const rack = this.s.state.furniture(b.holderId);
         if (!rack) continue;
+        g.visible = !this.hiddenHolders.has(rack.uid);
         const def = getFurniture(rack.type);
         const i = Math.max(0, rack.boxes.indexOf(b.uid));
         const sb = slotBox(def, i);
@@ -81,6 +90,7 @@ export class BoxManager {
         e.y = p.y;
         continue;
       }
+      g.visible = true;
       const key = `${b.gx.toFixed(2)},${b.gy.toFixed(2)}`;
       const n = stacks.get(key) ?? 0;
       stacks.set(key, n + 1);

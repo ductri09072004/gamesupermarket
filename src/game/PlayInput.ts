@@ -32,6 +32,7 @@ export class PlayInput {
       case 'KeyQ': w.actions.drop(); break;
       case 'Tab': e.preventDefault(); this.ui.openPc('pricing'); break;
       case 'KeyB': w.build.toggle(); break;
+      case 'KeyM': this.moveTarget(); break;
       case 'Digit1': case 'Digit2': case 'Digit3': w.s.time.setSpeed(Number(e.code.slice(-1))); break;
     }
   }
@@ -79,6 +80,18 @@ export class PlayInput {
         else w.actions.takeFromRack(f.uid);
         break;
     }
+  }
+
+  /** Dời nội thất đang nhìn (kệ có hàng vẫn dời được — hàng đi theo kệ). */
+  moveTarget(): void {
+    const w = this.w;
+    const t = w.interaction.target;
+    if (!t.uid || (t.kind !== 'furniture' && t.kind !== 'slot' && t.kind !== 'tag')) return;
+    if (this.holding) {
+      w.toast('Đặt thùng xuống (Q) trước khi dời kệ', 'error');
+      return;
+    }
+    w.build.moveFurniture(t.uid);
   }
 
   /** Camera tween sát vào màn hình máy tính rồi mới mở giao diện PC. */
@@ -137,6 +150,7 @@ export class PlayInput {
         break;
       }
     }
+    if (!held && t.uid && (t.kind === 'furniture' || t.kind === 'slot' || t.kind === 'tag')) out.push('<span class="muted"><kbd>M</kbd> Dời vị trí</span>');
     if (held) out.push(`<span class="muted">${getProduct(held.productId).name} ×${held.qty} · <kbd>F</kbd> ${held.open ? 'đóng' : 'mở'} · <kbd>Q</kbd> thả</span>`);
     return out;
   }

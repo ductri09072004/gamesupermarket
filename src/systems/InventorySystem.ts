@@ -133,6 +133,25 @@ export function isFurnitureEmpty(furn: FurnitureData): boolean {
   return furn.slots.every((s) => s.qty === 0) && furn.boxes.length === 0;
 }
 
+/**
+ * Dọn hàng trên kệ vào thùng (khi bán kệ): gom theo sản phẩm, mỗi thùng tối đa unitsPerBox món.
+ * Xoá hàng khỏi slot và trả về danh sách thùng cần tạo.
+ */
+export function packFurnitureContents(furn: FurnitureData): Array<{ productId: string; qty: number }> {
+  const totals = new Map<string, number>();
+  for (const s of furn.slots) {
+    if (s.productId && s.qty > 0) totals.set(s.productId, (totals.get(s.productId) ?? 0) + s.qty);
+    s.qty = 0;
+    s.productId = null;
+  }
+  const out: Array<{ productId: string; qty: number }> = [];
+  for (const [productId, total] of totals) {
+    const per = getProduct(productId).unitsPerBox;
+    for (let left = total; left > 0; left -= per) out.push({ productId, qty: Math.min(per, left) });
+  }
+  return out;
+}
+
 export function rackCanAdd(rack: FurnitureData): boolean {
   const def = getFurniture(rack.type);
   return def.kind === 'rack' && rack.boxes.length < def.slots;
