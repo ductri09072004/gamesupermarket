@@ -110,3 +110,10 @@ export const SAVE_VERSION = 3;
 
 // Thu ngân
 export const DENOMINATIONS = [50, 20, 10, 5, 1, 0.25, 0.1, 0.05, 0.01];
+
+/** Cường độ ánh sáng môi trường khi dùng HDRI thật (RoomEnvironment code dùng 0.35). */
+export const ENV_INTENSITY = 0.5;
+/** Kích thước thật (m) mà 1 lần lặp texture PBR phủ — khớp dimensions trên Poly Haven. */
+export const PBR_TILE_M = { floor: 1.5, wall: 1.0, concrete: 3.0 };
+/** Độ đậm bóng tiếp xúc giả dưới kệ/tủ */
+export const CONTACT_SHADOW_OPACITY = 0.55;

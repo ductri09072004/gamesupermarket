@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { contactShadow } from '../world/ContactShadow';
 
 export interface HumanLook {
   shirt: number;
@@ -66,7 +67,7 @@ export class Human {
     const skin = m(look.skin, 0.6);
     const pants = m(look.pants);
     const shoes = m(0x222222, 0.5);
-    this.root.add(this.body);
+    this.root.add(this.body, contactShadow(0.62, 0.62, 0.5, true));
     const hips = mesh(geo.hips, pants);
     hips.position.y = 0.92;
     const torso = mesh(geo.torso, shirt);

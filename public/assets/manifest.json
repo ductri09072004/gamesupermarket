@@ -1,1 +1,30 @@
-{ "models": [] }
+{
+  "models": [],
+  "hdri": "hdri/brown_photostudio_02_1k.hdr",
+  "textures": {
+    "wall": {
+      "id": "white_plaster_02",
+      "maps": {
+        "nor_gl": "textures/wall/white_plaster_02_1k_nor_gl.jpg",
+        "rough": "textures/wall/white_plaster_02_1k_rough.jpg"
+      }
+    },
+    "concrete": {
+      "id": "concrete_floor_worn_001",
+      "maps": {
+        "diff": "textures/concrete/concrete_floor_worn_001_1k_diff.jpg",
+        "nor_gl": "textures/concrete/concrete_floor_worn_001_1k_nor_gl.jpg",
+        "rough": "textures/concrete/concrete_floor_worn_001_1k_rough.jpg",
+        "ao": "textures/concrete/concrete_floor_worn_001_1k_ao.jpg"
+      }
+    },
+    "floor": {
+      "id": "marble_01",
+      "maps": {
+        "diff": "textures/floor/marble_01_1k_diff.jpg",
+        "nor_gl": "textures/floor/marble_01_1k_nor_gl.jpg",
+        "rough": "textures/floor/marble_01_1k_rough.jpg"
+      }
+    }
+  }
+}

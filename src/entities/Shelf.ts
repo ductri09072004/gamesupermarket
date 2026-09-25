@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { CONTACT_SHADOW_OPACITY } from '../config/constants';
+import { contactShadow } from '../world/ContactShadow';
 import { getFurniture, type FurnitureDef } from '../config/furniture';
 import { getProduct } from '../config/products';
 import type { FurnitureData } from '../core/GameState';
@@ -56,6 +58,8 @@ export class FurnitureView {
       if ((o as THREE.Mesh).isMesh && !(o.userData.kind)) o.userData.owner = data.uid;
     });
     this.root.add(this.model);
+    const round = def.kind === 'trash';
+    this.root.add(contactShadow(def.size.w, def.size.d, round ? 0.5 : CONTACT_SHADOW_OPACITY, round));
     this.hit = new THREE.Mesh(unit, hitMat);
     const bb = new THREE.Box3().setFromObject(this.model);
     const size = bb.getSize(new THREE.Vector3());

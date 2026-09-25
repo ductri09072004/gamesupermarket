@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
+import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, PBR_TILE_M, SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
 import { aabb, type AABB } from './Colliders';
+import { applyPbr, pbrSet, setRepeat } from './Materials';
 import { ceilingTexture, concreteTexture, floorTexture, wallTexture } from './Textures';
 
 const H = CEILING_HEIGHT;
@@ -33,6 +34,10 @@ export class Store {
   private walls: Record<string, THREE.Mesh> = {};
   private wallTex: Record<string, THREE.Texture> = {};
   private floorTex = floorTexture();
+  /** Texture sàn cần đổi repeat khi mở rộng (canvas hoặc bộ PBR) */
+  private floorMaps: THREE.Texture[] = [];
+  private floorTile = 1.2;
+  private wallPbr: Record<string, THREE.Texture[]> = {};
   private strips: THREE.InstancedMesh;
   private mullions: THREE.InstancedMesh;
   private doorL: THREE.Group;
@@ -44,6 +49,16 @@ export class Store {
 
   constructor() {
     const floorMat = new THREE.MeshStandardMaterial({ map: this.floorTex, roughness: 0.28, metalness: 0.0 });
+    this.floorMaps = [this.floorTex];
+    const fs = pbrSet('floor');
+    if (fs) {
+      // đá bóng: roughnessMap nhân với roughness → vệt phản chiếu đèn trần mờ nhưng vẫn có vân
+      floorMat.roughness = 0.55;
+      floorMat.normalScale.set(0.6, 0.6);
+      this.floorMaps = applyPbr(floorMat, fs, ['map', 'normalMap', 'roughnessMap', 'aoMap']);
+      if (!fs.map) this.floorMaps.push(this.floorTex);
+      this.floorTile = PBR_TILE_M.floor;
+    }
     this.floor = new THREE.Mesh(unitPlane, floorMat);
     this.floor.rotation.x = -Math.PI / 2;
     this.floor.receiveShadow = true;
@@ -56,7 +71,15 @@ export class Store {
       const tex = baseWall.clone();
       tex.needsUpdate = true;
       this.wallTex[name] = tex;
-      const m = new THREE.Mesh(unitBox, wallMat(tex));
+      const mat = wallMat(tex);
+      const ws = pbrSet('wall');
+      if (ws) {
+        // giữ màu sơn vẽ bằng code, thêm vân vữa thật (normal + roughness) có repeat riêng theo kích thước tường
+        mat.roughness = 1;
+        mat.normalScale.set(0.45, 0.45);
+        this.wallPbr[name] = applyPbr(mat, ws, ['normalMap', 'roughnessMap'], true);
+      }
+      const m = new THREE.Mesh(unitBox, mat);
       m.castShadow = true;
       m.receiveShadow = true;
       this.walls[name] = m;
@@ -108,7 +131,13 @@ export class Store {
     const { x0, z0, w, d } = WAREHOUSE;
     const concrete = concreteTexture('#b8b5ae', false);
     concrete.repeat.set(w / 2, d / 2);
-    const floor = new THREE.Mesh(unitPlane, new THREE.MeshStandardMaterial({ map: concrete, roughness: 0.7 }));
+    const floorMat = new THREE.MeshStandardMaterial({ map: concrete, roughness: 0.7 });
+    const cs = pbrSet('concrete');
+    if (cs) {
+      floorMat.roughness = 1;
+      setRepeat(applyPbr(floorMat, cs, ['map', 'normalMap', 'roughnessMap', 'aoMap'], true), w / PBR_TILE_M.concrete, d / PBR_TILE_M.concrete);
+    }
+    const floor = new THREE.Mesh(unitPlane, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.scale.set(w, d, 1);
     floor.position.set(x0 + w / 2, 0.001, z0 + d / 2);
@@ -143,7 +172,7 @@ export class Store {
     this.warehouse = warehouse;
     this.floor.scale.set(W, D, 1);
     this.floor.position.set(W / 2, 0, D / 2);
-    this.floorTex.repeat.set(W / 1.2, D / 1.2);
+    setRepeat(this.floorMaps, W / this.floorTile, D / this.floorTile);
     this.ceiling.scale.set(W, D, 1);
     this.ceiling.position.set(W / 2, H, D / 2);
     const w = this.walls;
@@ -152,6 +181,7 @@ export class Store {
       const len = Math.max(x1 - x0, z1 - z0);
       this.wallTex[name]?.repeat.set(Math.max(1, len / 2), (y1 - y0) / H);
       this.wallTex[name]?.offset.set(0, y0 / H);
+      if (this.wallPbr[name]) setRepeat(this.wallPbr[name], len / PBR_TILE_M.wall, (y1 - y0) / PBR_TILE_M.wall);
     };
     wall('backL', -T, WH_GAP.x0, 0, H, -T, 0);
     wall('backR', WH_GAP.x1, W + T, 0, H, -T, 0);

@@ -47,6 +47,13 @@ export class Renderer {
     this.setQuality('medium');
   }
 
+  /** Thay môi trường sinh bằng code bằng HDRI thật (PMREM). */
+  setEnvironment(env: THREE.Texture, intensity = 0.55): void {
+    this.scene.environment = env;
+    this.scene.environmentIntensity = intensity;
+    this.heldScene.environment = env;
+  }
+
   get canvas(): HTMLCanvasElement {
     return this.renderer.domElement;
   }

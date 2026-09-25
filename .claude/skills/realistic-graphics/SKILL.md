@@ -34,9 +34,11 @@ phải sạch và không cần ghi công bắt buộc; vẫn ghi nguồn vào `p
   (danh sách host ở `references/asset-sources.md`) — rồi làm tiếp các bước không cần asset (ánh sáng, AO,
   vát cạnh, texture canvas tốt hơn) thay vì dừng lại.
 - Chi tiết chọn độ phân giải, định dạng, đặt tên: `references/asset-sources.md`.
-- Lần đầu dùng: `src/engine/Assets.ts` mới chỉ đọc `manifest.models`. Cần mở rộng để đọc `manifest.hdri`
-  (→ `scene.environment`) và `manifest.textures.<slot>` (→ vật liệu sàn/tường/kim loại…), với fallback về
-  texture canvas trong `src/world/Textures.ts` khi thiếu key. Kiểm tra xem việc này đã làm chưa trước khi thêm.
+- Đường ống đã có: `Assets.ts` đọc `manifest.hdri` (→ `src/engine/Environment.ts`, PMREM → `scene.environment`)
+  và `manifest.textures.<slot>` (→ `src/world/Materials.ts`); `Store.ts` dùng slot `floor`, `wall`, `concrete`,
+  thiếu thì quay về texture canvas. Slot mới (vd. `metal` cho kệ) → nạp tự động, chỉ cần gọi `pbrSet('metal')`
+  ở nơi tạo vật liệu.
+- Ảnh xem trước `cdn.polyhaven.com` có thể bị chặn dù API mở — tải map diff 1k về scratchpad để xem thay thế.
 
 ### 3. Ánh sáng, môi trường, bóng
 Đọc `references/lighting-post.md`. Trọng tâm: HDRI nội thất qua PMREM làm `scene.environment`,

@@ -30,6 +30,11 @@ scene.environmentIntensity = 0.6;    // r163+: chỉnh toàn cục thay vì từ
 
 ## Bóng tiếp xúc & AO
 - GTAO (`GTAOPass`) ở Trung/Cao: radius ~0.3–0.5 m, intensity ~1; tắt ở Thấp.
+- Bẫy đã gặp: GTAOPass vẽ mọi thứ (trừ Points/Lines) vào G-buffer pháp tuyến → sprite bong bóng, kính, decal
+  trong suốt bị AO phủ thành mảng xám/đen. `src/engine/Post.ts` có `GameGTAOPass` ẩn thêm sprite và mesh
+  `transparent && !depthWrite` khi vẽ G-buffer — giữ nguyên khi sửa Post. Tăng `thickness`/`scale` quá tay cũng gây
+  mảng đen ở góc trần; chỉnh `radius` (~0.35) là đủ.
+- AO giả trong lòng kệ: `backShade()` trong `FurnitureModels.ts` (1 tấm gradient phủ vách sau/kệ) — dùng cho kệ mới.
 - Rẻ hơn và luôn bật: decal bóng mờ dưới chân kệ, tủ, khách (plane với radial gradient, `depthWrite:false`,
   `polygonOffset`) — xoá cảm giác đồ vật "trôi".
 - Model GLB có `aoMap` nướng sẵn: dùng luôn, rất rẻ.

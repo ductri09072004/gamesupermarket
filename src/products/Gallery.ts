@@ -20,6 +20,10 @@ export class Gallery {
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.show(this.index - 1);
   };
 
+  setEnvironment(env: THREE.Texture): void {
+    this.scene.environment = env;
+  }
+
   constructor(env: THREE.Texture | null) {
     this.scene.background = new THREE.Color(0x2b2d42);
     this.scene.environment = env;

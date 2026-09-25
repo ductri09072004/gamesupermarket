@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { FurnitureDef } from '../config/furniture';
 import { shelfGeom, slotBox, tierHeights } from '../systems/SlotLayout';
 import { textCanvas } from '../products/LabelTexture';
-import { block, glassMat, mat, std } from './FurnitureModels';
+import { backShade, block, glassMat, mat, std } from './FurnitureModels';
 
 /** Biển chữ phát sáng (canvas) cho đầu tủ. */
 function signMat(key: string, text: string, bg: string, fg: string, glow = 0.7): THREE.Material {
@@ -64,6 +64,7 @@ export function electronicsCase(def: FurnitureDef, g: THREE.Group): void {
   for (const x of [-w / 2, w / 2 - geo.side]) g.add(block(body, x, x + geo.side, geo.base, h - geo.top, -d / 2, d / 2));
   // vách sau: panel sáng màu để hàng nổi bật
   g.add(block(std(0xe8eef5, 0.5), -w / 2 + geo.side, w / 2 - geo.side, geo.base, h - geo.top, d / 2 - 0.035, d / 2 - 0.03, false));
+  backShade(def, g, d / 2 - 0.037, 0.4);
   const glassShelf = mat('glassShelf', () => new THREE.MeshStandardMaterial({
     color: 0xcfefff, transparent: true, opacity: 0.45, roughness: 0.05, metalness: 0.2,
   }));

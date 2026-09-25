@@ -1,9 +1,14 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { h, uiRoot } from '../ui/dom';
+import { loadPbrTextures, type TextureEntry } from '../world/Materials';
 
 interface Manifest {
   models?: string[];
+  /** HDRI môi trường, ví dụ "hdri/brown_photostudio_02_1k.hdr" */
+  hdri?: string;
+  /** Bộ texture PBR theo slot vật liệu (floor, wall, concrete...) */
+  textures?: Record<string, TextureEntry>;
 }
 
 /**
@@ -70,6 +75,12 @@ export class Assets {
         console.warn(`[Assets] Không nạp được model ${path}, dùng placeholder.`);
       }
     }
+    if (this.manifest.textures) await loadPbrTextures(this.manifest.textures);
+  }
+
+  /** Đường dẫn HDRI (tương đối trang) nếu manifest có. */
+  get hdri(): string | null {
+    return this.manifest.hdri ? `assets/${this.manifest.hdri}` : null;
   }
 
   /** Model GLB đã nạp (clone) hoặc null. */

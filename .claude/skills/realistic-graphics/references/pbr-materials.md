@@ -13,6 +13,12 @@
 - Dùng chung material giữa các instance (cache theo key như `mat()` trong `FurnitureModels.ts`) — mỗi material
   mới là thêm program/uniform upload.
 
+- `alphaMap` đọc kênh **G**, không đọc alpha: texture mask phải vẽ trắng (đậm) trên nền đen.
+- Code sẵn có: `src/world/Materials.ts` (`pbrSet(slot)`, `applyPbr(mat, set, keys, clone)`, `setRepeat`) nạp từ
+  `manifest.textures`; kích thước thật 1 lần lặp của mỗi slot ở `PBR_TILE_M` (config/constants.ts).
+- Sàn siêu thị cần tông sáng: nhiều texture "floor tiles" của Poly Haven tối/bẩn (floor_tiles_06, tiled_floor_001)
+  — đang dùng `marble_01`. Tải thử map diff 1k và xem ảnh trước khi chọn.
+
 ## Bảng thông số
 | Bề mặt | color | roughness | metalness | Map nên có | Ghi chú |
 | --- | --- | --- | --- | --- | --- |

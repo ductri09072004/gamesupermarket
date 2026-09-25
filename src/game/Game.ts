@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PRODUCTS } from '../config/products';
 import { bus } from '../core/EventBus';
+import { ENV_INTENSITY } from '../config/constants';
 import { createNewState, type SaveData, type Settings } from '../core/GameState';
 import { SaveSystem } from '../core/SaveSystem';
 import { Services, setServices } from '../core/Services';
@@ -9,6 +10,7 @@ import { AudioEngine } from '../engine/Audio';
 import { Input } from '../engine/Input';
 import { Loop } from '../engine/Loop';
 import { Renderer } from '../engine/Renderer';
+import { loadHdriEnvironment } from '../engine/Environment';
 import { Gallery } from '../products/Gallery';
 import { labelTexture } from '../products/LabelTexture';
 import { packaging } from '../products/PackagingFactory';
@@ -57,6 +59,7 @@ export class Game {
     this.assets.showLoading();
     await this.assets.run([
       ['Đang đọc danh sách asset', () => this.assets.loadManifest()],
+      ['Đang nạp ánh sáng môi trường', () => this.loadEnvironment()],
       ['Đang in nhãn sản phẩm', () => { for (const p of PRODUCTS) labelTexture(p); }],
       ['Đang tạo bao bì 3D', () => { for (const p of PRODUCTS) packaging(p.id); }],
       ['Đang dựng cửa hàng', () => this.buildMenuWorld()],
@@ -65,6 +68,15 @@ export class Game {
     this.loop.start();
     this.assets.hideLoading();
     this.showMenu();
+  }
+
+  private async loadEnvironment(): Promise<void> {
+    const url = this.assets.hdri;
+    if (!url) return;
+    const env = await loadHdriEnvironment(this.r.renderer, url);
+    if (!env) return;
+    this.r.setEnvironment(env, ENV_INTENSITY);
+    this.gallery.setEnvironment(env);
   }
 
   applySettings(st: Settings): void {

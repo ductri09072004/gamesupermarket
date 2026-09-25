@@ -32,6 +32,43 @@ export function block(material: THREE.Material, x0: number, x1: number, y0: numb
   return m;
 }
 
+/**
+ * AO giả trong lòng kệ: 1 tấm phủ vách sau, tối dần ngay dưới mỗi tấm kệ phía trên (ánh sáng trần bị che).
+ * Vẽ 1 texture/cấu hình tầng, dùng chung — thay cho SSAO ở chất lượng Thấp/Trung.
+ */
+export function backShade(def: FurnitureDef, g: THREE.Group, z: number, strength = 0.55): void {
+  const geo = shelfGeom(def);
+  const { w, h } = def.size;
+  const y0 = geo.base;
+  const y1 = h - geo.top;
+  const tiers = tierHeights(def);
+  const m = mat(`shade:${def.id}:${strength}`, () => {
+    const H = 256;
+    const t = textCanvas(4, H, (c) => {
+      c.fillStyle = '#000';
+      c.fillRect(0, 0, 4, H);
+      const tops = [...tiers.slice(1), y1];
+      tiers.forEach((ty, i) => {
+        const a = H * (1 - (tops[i] - y0) / (y1 - y0));
+        const b = H * (1 - (ty - y0) / (y1 - y0));
+        const gr = c.createLinearGradient(0, a, 0, b);
+        const k = Math.round(255 * strength);
+        gr.addColorStop(0, `rgb(${k},${k},${k})`);
+        gr.addColorStop(0.55, 'rgb(20,20,20)');
+        gr.addColorStop(1, `rgb(${Math.round(k * 0.35)},${Math.round(k * 0.35)},${Math.round(k * 0.35)})`);
+        c.fillStyle = gr;
+        c.fillRect(0, a, 4, b - a);
+      });
+    });
+    t.colorSpace = THREE.NoColorSpace;
+    return new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: t, transparent: true, depthWrite: false });
+  });
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(w - geo.side * 2, y1 - y0), m);
+  p.position.set(0, (y0 + y1) / 2, z);
+  p.rotation.y = Math.PI;
+  g.add(p);
+}
+
 function gondola(def: FurnitureDef, g: THREE.Group): void {
   const { w, d, h } = def.size;
   const geo = shelfGeom(def);
@@ -50,6 +87,7 @@ function gondola(def: FurnitureDef, g: THREE.Group): void {
   // bảng pegboard sau
   const peg = mat('peg', () => new THREE.MeshStandardMaterial({ map: pegTexture(), roughness: 0.6 }));
   g.add(block(peg, -w / 2 + geo.side, w / 2 - geo.side, geo.base, h - geo.top, d / 2 - 0.035, d / 2 - 0.03, false));
+  backShade(def, g, d / 2 - 0.037);
 }
 
 function pegTexture(): THREE.Texture {
@@ -97,6 +135,7 @@ function fridge(def: FurnitureDef, g: THREE.Group): void {
   const lamp = mat('fridgeLamp', () => new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xe6f4ff, emissiveIntensity: 2 }));
   g.add(block(lamp, -w / 2 + 0.1, w / 2 - 0.1, h - geo.top - 0.02, h - geo.top, -d / 2 + 0.06, -d / 2 + 0.1, false));
   g.add(block(inner, -w / 2 + geo.side, w / 2 - geo.side, geo.base, h - geo.top, d / 2 - 0.06, d / 2 - 0.04, false));
+  backShade(def, g, d / 2 - 0.062, 0.4);
   // 2 cửa kính
   const frame = std(0x9aa5b1, 0.3, 0.8);
   for (const s of [-1, 1]) {
