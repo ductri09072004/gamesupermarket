@@ -19,3 +19,15 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `textures/floor/marble_01_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
 | `textures/floor/marble_01_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
 | `textures/floor/marble_01_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
+| `models/characters/Casual2_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Casual2_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Casual3_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Casual3_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Casual_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Casual_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/OldClassy_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/OldClassy_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Suit_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Suit_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Worker_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `models/characters/Worker_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |

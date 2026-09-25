@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { h, uiRoot } from '../ui/dom';
 import { loadPbrTextures, type TextureEntry } from '../world/Materials';
+import { registerCharacter } from '../entities/CharacterModels';
 
 interface Manifest {
   models?: string[];
@@ -9,6 +10,8 @@ interface Manifest {
   hdri?: string;
   /** Bộ texture PBR theo slot vật liệu (floor, wall, concrete...) */
   textures?: Record<string, TextureEntry>;
+  /** Nhân vật rig, ví dụ "characters/Casual_Male.glb" (tên file = tên model) */
+  characters?: string[];
 }
 
 /**
@@ -76,6 +79,14 @@ export class Assets {
       }
     }
     if (this.manifest.textures) await loadPbrTextures(this.manifest.textures);
+    for (const path of this.manifest.characters ?? []) {
+      try {
+        const gltf = await loader.loadAsync(`assets/models/${path}`);
+        registerCharacter(path.split('/').pop()!.replace(/\.(glb|gltf|json)$/, ''), gltf);
+      } catch {
+        console.warn(`[Assets] Không nạp được nhân vật ${path}, dùng người khối.`);
+      }
+    }
   }
 
   /** Đường dẫn HDRI (tương đối trang) nếu manifest có. */

@@ -3,12 +3,13 @@ import type { Services } from '../core/Services';
 import type { GridPoint } from '../world/Footprint';
 import { cellCenter, worldToCell } from '../world/NavGrid';
 import { smoothPath } from '../world/Pathfinding';
-import { Human, type HumanLook } from './Human';
+import type { HumanBody, HumanLook } from './Human';
+import { createHuman } from './RiggedHuman';
 import { Bubble } from './Bubble';
 
 /** Nhân vật NPC đi theo đường A* (đã làm mượt), xoay người mượt về hướng đi. */
 export class Walker {
-  readonly human: Human;
+  readonly human: HumanBody;
   readonly bubble: Bubble;
   x: number;
   z: number;
@@ -22,7 +23,7 @@ export class Walker {
   constructor(protected s: Services, look: HumanLook, x: number, z: number) {
     this.x = x;
     this.z = z;
-    this.human = new Human(look);
+    this.human = createHuman(look);
     this.bubble = new Bubble(this.human.root, 2.05);
     this.sync();
   }

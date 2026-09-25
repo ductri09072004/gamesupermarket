@@ -26,5 +26,19 @@
         "rough": "textures/floor/marble_01_1k_rough.jpg"
       }
     }
-  }
+  },
+  "characters": [
+    "characters/Casual2_Female.glb",
+    "characters/Casual2_Male.glb",
+    "characters/Casual3_Female.glb",
+    "characters/Casual3_Male.glb",
+    "characters/Casual_Female.glb",
+    "characters/Casual_Male.glb",
+    "characters/OldClassy_Female.glb",
+    "characters/OldClassy_Male.glb",
+    "characters/Suit_Female.glb",
+    "characters/Suit_Male.glb",
+    "characters/Worker_Female.glb",
+    "characters/Worker_Male.glb"
+  ]
 }

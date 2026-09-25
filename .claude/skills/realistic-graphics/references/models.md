@@ -16,7 +16,26 @@
 5. Chụp ảnh kệ đầy hàng ở góc gần để kiểm tra hàng nằm đúng trên mặt tầng.
 6. Kiểm tra build mode (ghost model), di chuyển kệ (M), bán kệ vẫn hoạt động.
 
-## Nhân vật (khách, nhân viên)
+## Nhân vật (khách, nhân viên) — ĐÃ LÀM
+Đang dùng Quaternius *Ultimate Animated Character Pack* (CC0) trong `public/assets/models/characters/`:
+`src/entities/RiggedHuman.ts` (AnimationMixer Idle/Walk/Walk_Carry/PickUp, cùng API với `Human` qua interface
+`HumanBody`, fallback người khối qua `createHuman()`), registry `CharacterModels.ts`, danh sách model ở
+`src/config/characters.ts`. Nguồn tải là thư mục Google Drive (cần mở `drive.google.com`,
+`drive.usercontent.google.com`); link thư mục nằm trên trang pack của quaternius.com.
+Chuẩn bị file: `node scripts/prep_characters.mjs <thư mục .gltf> public/assets/models/characters`
+(cần `npm i @gltf-transform/core @gltf-transform/functions @gltf-transform/extensions` ở thư mục tạm).
+
+Bẫy đã gặp:
+- Xoá animation trong gltf-transform phải xoá cả channel + sampler, nếu không accessor vẫn nằm trong file (850 KB → 150 KB).
+- Mọi model cùng khung xương → chỉ 1 file giữ clip, các file khác chỉ giữ mesh.
+- Vật liệu gốc `doubleSided` → shadow acne lốm đốm trên người; đặt `side = FrontSide`, `shadowSide = BackSide`.
+- GLTFLoader làm sạch tên node (`Fist.L` → `FistL`): dùng `THREE.PropertyBinding.sanitizeNodeName()`.
+- Model Quaternius nhìn về +Z (game quy ước -Z) → xoay π. Đồ gắn vào xương tay phải bù tỉ lệ và giữ hướng
+  theo thân (`alignHands()`), nếu không giỏ sẽ xuyên qua cẳng tay.
+- Phong cách pack là chibi (đầu to). Muốn tỉ lệ người thật hơn: *Universal Base Characters* + *Universal
+  Animation Library* của Quaternius (cùng nguồn Drive).
+
+### Ghi chú cũ
 - `src/entities/Human.ts` dựng người bằng khối; `Walker.ts`/`Customer.ts` điều khiển. Model rig (Quaternius CC0)
   cần: `SkeletonUtils.clone` cho mỗi khách, 1 `AnimationMixer`/khách với clip Idle/Walk (+ Pick), tốc độ clip khớp
   `CUSTOMER_SPEED`, tắt mixer khi xa > `NPC_ANIM_CULL_DISTANCE`.

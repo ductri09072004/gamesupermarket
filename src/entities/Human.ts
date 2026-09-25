@@ -8,6 +8,22 @@ export interface HumanLook {
   hair: number;
   apron?: number;
   female?: boolean;
+  /** Tên model rig (config/characters.ts); không có/không nạp được → người khối */
+  model?: string;
+}
+
+/** Giao diện chung của người khối (Human) và người rig (RiggedHuman) — logic khách/nhân viên chỉ dùng cái này. */
+export interface HumanBody {
+  readonly root: THREE.Group;
+  readonly handL: THREE.Object3D;
+  readonly handR: THREE.Object3D;
+  speed: number;
+  animate: boolean;
+  holding: boolean;
+  reach(): void;
+  update(dt: number): void;
+  setCarrying(on: boolean): void;
+  dispose(): void;
 }
 
 export const SHIRTS = [0xef476f, 0x06d6a0, 0x118ab2, 0xffd166, 0x9b5de5, 0xf78c6b, 0x43aa8b, 0x577590, 0xe76f51, 0x8ecae6];
@@ -46,7 +62,7 @@ function mesh(g: THREE.BufferGeometry, mat: THREE.Material): THREE.Mesh {
  * Người low-poly (cao ~1.7m), gốc ở chân, mặt hướng -Z. Animation đi / đứng / với tay bằng code.
  * Dùng chung geometry cho mọi nhân vật; vật liệu cache theo màu.
  */
-export class Human {
+export class Human implements HumanBody {
   readonly root = new THREE.Group();
   private body = new THREE.Group();
   private armL: THREE.Group;

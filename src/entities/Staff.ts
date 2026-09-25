@@ -11,6 +11,7 @@ import { cellCenter, worldToCell } from '../world/NavGrid';
 import { furnitureCenter } from '../world/Placement';
 import { BoxModel } from './Box';
 import type { Customer } from './Customer';
+import { STAFF_MODELS } from '../config/characters';
 import { HAIRS, SKINS } from './Human';
 import { Walker } from './Walker';
 
@@ -41,7 +42,7 @@ export class StaffNpc extends Walker {
   private status = '';
 
   constructor(private world: StaffWorld, public data: StaffData, start: GridPoint) {
-    super(world.s, { ...UNIFORM, skin: SKINS[data.shirt % SKINS.length], hair: HAIRS[data.shirt % HAIRS.length], female: data.shirt % 2 === 0 },
+    super(world.s, { ...UNIFORM, skin: SKINS[data.shirt % SKINS.length], hair: HAIRS[data.shirt % HAIRS.length], female: data.shirt % 2 === 0, model: STAFF_MODELS[data.shirt % 2 === 0 ? 1 : 0] },
       cellCenter(start.gx, start.gy).x, cellCenter(start.gx, start.gy).z);
   }
 
@@ -53,10 +54,8 @@ export class StaffNpc extends Walker {
 
   tick(sim: number, dt: number): void {
     const moving = this.step(STAFF_SPEED * this.data.speed * sim, sim > 0 ? dt : 0);
-    if (this.boxModel) {
-      this.human.setCarrying(true);
-      this.boxModel.update(dt);
-    }
+    this.human.setCarrying(!!this.boxModel);
+    this.boxModel?.update(dt);
     if (moving || sim <= 0) return;
     if (this.data.role === 'cashier') this.cashier(sim);
     else this.stocker(sim);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CUSTOMER_MODELS } from '../config/characters';
 import { MAX_CUSTOMERS, MINUTES_PER_SECOND, NPC_ANIM_CULL_DISTANCE } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
@@ -135,7 +136,7 @@ export class CustomerManager implements CustomerWorld {
     const from = pick(s.rng, spawns);
     const exit = pick(s.rng, spawns);
     const wishes = generateWishlist(s.state.unlockedProducts(), stockedProductIds(s.data.furniture), s.rng);
-    const look = { shirt: pick(s.rng, SHIRTS), pants: pick(s.rng, PANTS), skin: pick(s.rng, SKINS), hair: pick(s.rng, HAIRS), female: s.rng() < 0.5 };
+    const look = { shirt: pick(s.rng, SHIRTS), pants: pick(s.rng, PANTS), skin: pick(s.rng, SKINS), hair: pick(s.rng, HAIRS), female: s.rng() < 0.5, model: pick(s.rng, CUSTOMER_MODELS) };
     const cu = new Customer(this, look, from, exit, wishes);
     this.group.add(cu.human.root);
     this.customers.push(cu);
