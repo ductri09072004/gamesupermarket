@@ -8,7 +8,7 @@ import { canStockSlot } from '../systems/InventorySystem';
 import { itemLayout, itemPosition, slotBox } from '../systems/SlotLayout';
 import { packaging } from '../products/PackagingFactory';
 
-export type TargetKind = 'slot' | 'tag' | 'furniture' | 'box' | 'sign' | 'none';
+export type TargetKind = 'slot' | 'tag' | 'furniture' | 'box' | 'sign' | 'vehicle' | 'kiosk' | 'none';
 
 export interface Target {
   kind: TargetKind;
@@ -48,6 +48,8 @@ export class Interaction {
       if (u.kind === 'furniture') return { kind: 'furniture', uid: u.uid!, slot: -1, object: hit.object, point: hit.point, distance: hit.distance };
       if (u.kind === 'box') return { kind: 'box', uid: u.uid!, slot: -1, object: o, point: hit.point, distance: hit.distance };
       if (u.kind === 'sign') return { kind: 'sign', uid: null, slot: -1, object: o, point: hit.point, distance: hit.distance };
+      if (u.kind === 'vehicle') return { kind: 'vehicle', uid: u.uid!, slot: -1, object: o, point: hit.point, distance: hit.distance };
+      if (u.kind === 'kiosk') return { kind: 'kiosk', uid: null, slot: -1, object: o, point: hit.point, distance: hit.distance };
       if (u.owner) return { kind: 'furniture', uid: u.owner, slot: -1, object: hit.object, point: hit.point, distance: hit.distance };
       o = o.parent;
     }
@@ -121,7 +123,7 @@ export class Interaction {
       const b = boxModel(t.uid);
       return b ? [b] : [];
     }
-    if (t.kind === 'sign' && t.object) return [t.object];
+    if ((t.kind === 'sign' || t.kind === 'vehicle' || t.kind === 'kiosk') && t.object) return [t.object];
     if (t.kind === 'tag' && t.object) return [t.object];
     if (t.kind === 'slot' && this.frame.visible) return [];
     const v = t.uid ? views(t.uid) : undefined;

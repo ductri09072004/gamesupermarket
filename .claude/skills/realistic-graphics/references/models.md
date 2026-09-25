@@ -35,6 +35,28 @@ Bẫy đã gặp:
 - Phong cách pack là chibi (đầu to). Muốn tỉ lệ người thật hơn: *Universal Base Characters* + *Universal
   Animation Library* của Quaternius (cùng nguồn Drive).
 
+## Thành phố & xe — ĐÃ LÀM
+Nhà (Ultimate Textured Building Pack), cây/bụi (Ultimate Nature), ô tô (Cars), đèn đường/biển báo (Modular
+Streets, Public Transport) của Quaternius trong `public/assets/models/city/`, đặt bằng `src/world/CityLayout.ts`
+(thuần dữ liệu, có test) + `CityInstances.ts` (InstancedMesh chia ô 70 m để frustum culling có tác dụng).
+Xe máy & bán tải dựng bằng code (`src/entities/VehicleModels.ts`) vì chưa tải được model CC0; thả
+`city/vehicle_moto.glb` / `city/vehicle_pickup.glb` (mặt trước -Z, gốc giữa đáy) vào manifest.city là tự thay.
+
+Các gói này chỉ có FBX/OBJ. Quy trình chuyển (scripts/fbx/):
+1. Liệt kê thư mục Drive: `python3 scripts/gdrive_list.py <folderId>`; tải file:
+   `curl -sL "https://drive.usercontent.google.com/download?id=<id>&export=download&confirm=t" -o X.fbx`.
+2. Đặt FBX + texture vào `src/`, symlink `three` → node_modules/three, chạy `python3 -m http.server 8765`,
+   rồi `node conv.mjs <thư mục ra>`: FBXLoader + GLTFExporter trong Chromium headless, đưa về mét, gốc giữa đáy.
+3. `node compress.mjs <vào> <ra> <tên...>` (weld + quantize, cần gltf-transform).
+
+Bẫy đã gặp:
+- GLTFExporter bỏ UV nếu vật liệu không có map → gắn texture giả 1×1 lúc xuất, gán atlas thật lúc chạy.
+- Màu FBX của Quaternius đã là linear nhưng FBXLoader lại đổi sRGB→linear → quá tối: `color.convertLinearToSRGB()`.
+- Mesh FBX có hàng trăm group xen kẽ vật liệu → gom tam giác theo tên vật liệu (1 mesh/vật liệu), nếu không 1 ô tô = 130 draw call.
+- UV từ FBX theo quy ước flipY = true (khác glTF) và vượt [0,1] → atlas để flipY mặc định, RepeatWrapping, lọc Nearest.
+- Tỉ lệ mỗi gói khác nhau (nhà ~0.025, cây 0.026, ô tô 0.01, đèn đường 0.045); xe buýt gói Public Transport sai tỉ lệ → bỏ.
+- Trang artifact không nhận .glb/.hdr: bản online chuyển GLB → glTF JSON (buffer base64) đặt đuôi .json.
+
 ### Ghi chú cũ
 - `src/entities/Human.ts` dựng người bằng khối; `Walker.ts`/`Customer.ts` điều khiển. Model rig (Quaternius CC0)
   cần: `SkeletonUtils.clone` cho mỗi khách, 1 `AnimationMixer`/khách với clip Idle/Walk (+ Pick), tốc độ clip khớp

@@ -1,7 +1,8 @@
 import type { Services } from '../core/Services';
 import { formatClock } from '../systems/TimeSystem';
 import { clear, h, money, uiRoot } from './dom';
-import { renderMarket } from './apps/market';
+import { renderMarket, renderWholesale } from './apps/market';
+import { renderGarage } from './apps/garageApp';
 import { renderFurniture } from './apps/furnitureApp';
 import { renderLicenses } from './apps/licensesApp';
 import { renderExpansion } from './apps/expansionApp';
@@ -9,7 +10,7 @@ import { renderStaff } from './apps/staffApp';
 import { renderBank } from './apps/bankApp';
 import { renderPricing } from './apps/pricingApp';
 
-export type AppId = 'market' | 'furniture' | 'licenses' | 'expansion' | 'staff' | 'bank' | 'pricing';
+export type AppId = 'market' | 'furniture' | 'licenses' | 'expansion' | 'staff' | 'bank' | 'pricing' | 'garage' | 'wholesale';
 
 export interface AppContext {
   s: Services;
@@ -23,6 +24,8 @@ interface AppDef {
   name: string;
   icon: string;
   render(body: HTMLElement, ctx: AppContext): void;
+  /** Không hiện icon trên desktop (chỉ mở từ nơi khác, vd. quầy kho sỉ) */
+  hidden?: boolean;
 }
 
 const APPS: AppDef[] = [
@@ -33,6 +36,8 @@ const APPS: AppDef[] = [
   { id: 'expansion', name: 'Expansion', icon: '🏗️', render: renderExpansion },
   { id: 'staff', name: 'Staff', icon: '👥', render: renderStaff },
   { id: 'bank', name: 'Bank', icon: '🏦', render: renderBank },
+  { id: 'garage', name: 'Garage', icon: '🚗', render: renderGarage },
+  { id: 'wholesale', name: 'Kho sỉ', icon: '🏭', render: renderWholesale, hidden: true },
 ];
 
 /** Máy tính dạng desktop giả lập. */
@@ -55,7 +60,7 @@ export class Computer {
       this.winHost = h('div', { class: 'pc-windows' });
       this.clock = h('span');
       this.balance = h('span');
-      const icons = h('div', { class: 'pc-icons' }, APPS.map((a) => h('button', {
+      const icons = h('div', { class: 'pc-icons' }, APPS.filter((a) => !a.hidden).map((a) => h('button', {
         class: 'pc-icon', onClick: () => this.openApp(a.id),
       }, [h('div', { class: 'pc-icon-img', text: a.icon }), h('div', { text: a.name })])));
       this.root = h('div', { class: 'pc-overlay' }, [

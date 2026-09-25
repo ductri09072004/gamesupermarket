@@ -1,4 +1,5 @@
 import { DELIVERY_MAX_MS, DELIVERY_MIN_MS, DELIVERY_STACK } from '../config/constants';
+import { WHOLESALE_PRICE_FACTOR } from '../config/vehicles';
 import { boxCost, getProduct } from '../config/products';
 import type { EventBus, GameEvents } from '../core/EventBus';
 import type { GameState, OrderData } from '../core/GameState';
@@ -14,6 +15,11 @@ export function cartTotal(cart: Cart): number {
   let t = 0;
   for (const [id, n] of Object.entries(cart)) t += boxCost(getProduct(id)) * n;
   return round2(t);
+}
+
+/** Giá mua sỉ tại kho (tự lấy hàng). */
+export function wholesaleTotal(cart: Cart): number {
+  return round2(cartTotal(cart) * WHOLESALE_PRICE_FACTOR);
 }
 
 export function cartBoxes(cart: Cart): number {
@@ -68,6 +74,30 @@ export class OrderSystem {
     this.state.data.orders.push(order);
     this.bus.emit('order:placed', { orderId: order.id });
     return { ok: true, order };
+  }
+
+  /** Mua sỉ tại kho: trả tiền rẻ hơn, thùng xuất hiện ngay ở bãi lấy hàng của kho (pad). */
+  buyWholesale(cart: Cart, pad: GridPoint[]): { ok: boolean; reason?: string; uids?: string[] } {
+    const items = Object.entries(cart).filter(([, n]) => n > 0);
+    if (items.length === 0) return { ok: false, reason: 'Giỏ hàng trống' };
+    for (const [id] of items) if (!this.state.hasLicense(getProduct(id).licenseId)) return { ok: false, reason: 'Chưa có giấy phép' };
+    const total = wholesaleTotal(cart);
+    if (!this.economy.spend(total, 'Mua hàng sỉ')) return { ok: false, reason: 'Không đủ tiền' };
+    this.state.data.stats.purchases = round2(this.state.data.stats.purchases + total);
+    const counts = new Map<string, number>();
+    const uids: string[] = [];
+    for (const [id, n] of items) {
+      const p = getProduct(id);
+      for (let i = 0; i < n; i++) {
+        const t = pickDeliveryTile(pad, counts);
+        const k = `${t.gx.toFixed(2)},${t.gy.toFixed(2)}`;
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+        uids.push(this.inventory.createBox(p.id, p.unitsPerBox, t.gx, t.gy).uid);
+      }
+    }
+    this.bus.emit('order:arrived', { orderId: 'wholesale', boxUids: uids });
+    this.bus.emit('boxes:changed', {});
+    return { ok: true, uids };
   }
 
   /** dtMs: thời gian thực (không nhân tốc độ). */

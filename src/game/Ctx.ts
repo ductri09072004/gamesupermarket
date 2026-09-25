@@ -14,7 +14,7 @@ import type { BoxManager } from './BoxManager';
 import type { Effects } from './Effects';
 import type { FurnitureManager } from './FurnitureManager';
 
-export type Mode = 'play' | 'pc' | 'checkout' | 'build' | 'modal' | 'gallery';
+export type Mode = 'play' | 'pc' | 'checkout' | 'build' | 'modal' | 'gallery' | 'drive';
 
 /** Tham chiếu dùng chung giữa các phần của ván chơi. */
 export interface GameCtx {

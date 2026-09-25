@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { FEEL } from '../config/feel';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
+import { getVehicle } from '../config/vehicles';
+import { cargoUsed } from '../systems/VehicleSystem';
 import type { World } from './World';
 
 export interface PlayUiHooks {
@@ -20,6 +22,10 @@ export class PlayInput {
 
   onKey(e: KeyboardEvent): void {
     const w = this.w;
+    if (w.mode === 'drive' && !this.ui.isUiOpen()) {
+      w.driving.onKey(e);
+      return;
+    }
     if (w.mode !== 'play' || this.ui.isUiOpen()) return;
     switch (e.code) {
       case 'KeyE': if (!e.repeat) this.interact(); break;
@@ -33,6 +39,7 @@ export class PlayInput {
       case 'Tab': e.preventDefault(); this.ui.openPc('pricing'); break;
       case 'KeyB': w.build.toggle(); break;
       case 'KeyM': this.moveTarget(); break;
+      case 'KeyG': this.unloadVehicle(); break;
       case 'Digit1': case 'Digit2': case 'Digit3': w.s.time.setSpeed(Number(e.code.slice(-1))); break;
     }
   }
@@ -44,6 +51,18 @@ export class PlayInput {
     if (t.kind === 'box' && t.uid) {
       if (held) w.toast('Tay đang cầm thùng — nhấn Q để thả xuống', 'error');
       else w.actions.pickUp(t.uid);
+      return;
+    }
+    if (t.kind === 'vehicle' && t.uid) {
+      if (held) this.loadVehicle(t.uid);
+      else w.driving.enter(t.uid);
+      return;
+    }
+    if (t.kind === 'kiosk') {
+      w.mode = 'pc';
+      w.player.cameraOverride = true;
+      w.input.exitLock();
+      this.ui.openPc('wholesale');
       return;
     }
     if (t.kind === 'sign') {
@@ -80,6 +99,39 @@ export class PlayInput {
         else w.actions.takeFromRack(f.uid);
         break;
     }
+  }
+
+  private loadVehicle(uid: string): void {
+    const w = this.w;
+    const box = this.holding;
+    if (!box) return;
+    const r = w.s.vehicles.load(uid, box);
+    if (!r.ok) {
+      w.toast(r.reason ?? 'Không chất được', 'error');
+      w.sound('error');
+      return;
+    }
+    w.held.hold(null);
+    w.player.carrying = false;
+    const v = w.s.vehicles.get(uid)!;
+    w.sound('place', new THREE.Vector3(v.x, 1, v.z));
+  }
+
+  /** G: lấy 1 thùng từ xe đang nhìn xuống tay. */
+  private unloadVehicle(): void {
+    const w = this.w;
+    const t = w.interaction.target;
+    if (t.kind !== 'vehicle' || !t.uid) return;
+    if (this.holding) {
+      w.toast('Tay đang cầm thùng', 'error');
+      return;
+    }
+    const box = w.s.vehicles.unload(t.uid);
+    if (!box) {
+      w.toast('Xe không chở thùng nào', 'info');
+      return;
+    }
+    w.actions.pickUp(box.uid);
   }
 
   /** Dời nội thất đang nhìn (kệ có hàng vẫn dời được — hàng đi theo kệ). */
@@ -132,6 +184,16 @@ export class PlayInput {
         break;
       }
       case 'sign': out.push(`<kbd>E</kbd> ${w.s.data.storeOpen ? 'Đóng cửa' : 'Mở cửa'}`); break;
+      case 'vehicle': {
+        const v = t.uid ? w.s.vehicles.get(t.uid) : undefined;
+        if (!v) break;
+        const def = getVehicle(v.type);
+        const load = `${cargoUsed(v, w.s.data.boxes)}/${def.capacity} ${def.countBySize ? 'suất' : 'thùng'}`;
+        out.push(held ? `<kbd>E</kbd> Chất thùng lên ${def.name} (${load})` : `<kbd>E</kbd> Lái ${def.name}`);
+        if (!held && v.cargo.length) out.push(`<kbd>G</kbd> Dỡ 1 thùng (${load})`);
+        break;
+      }
+      case 'kiosk': out.push('<kbd>E</kbd> Mua hàng sỉ (lấy ngay tại bãi)'); break;
       case 'tag': out.push('<kbd>E</kbd> Đặt giá (súng dán giá)'); break;
       case 'slot':
         if (held && held.open) out.push('<kbd>Chuột trái</kbd> Xếp hàng (giữ để xếp liên tục)', '<kbd>Chuột phải</kbd> Lấy lại vào thùng');

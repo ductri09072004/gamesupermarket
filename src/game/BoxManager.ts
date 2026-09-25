@@ -64,7 +64,7 @@ export class BoxManager {
     const boxes = [...this.s.data.boxes].sort((a, b) => a.uid.localeCompare(b.uid, undefined, { numeric: true }));
     let dropIndex = 0;
     for (const b of boxes) {
-      if (b.location === 'held' || b.location === 'staff') continue;
+      if (b.location === 'held' || b.location === 'staff' || b.location === 'vehicle') continue;
       seen.add(b.uid);
       let e = this.entries.get(b.uid);
       if (!e) {

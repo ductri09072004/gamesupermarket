@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, PBR_TILE_M, SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
-import { aabb, type AABB } from './Colliders';
+import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, PBR_TILE_M, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
+import type { AABB } from './Colliders';
 import { applyPbr, pbrSet, setRepeat } from './Materials';
 import { ceilingTexture, concreteTexture, floorTexture, wallTexture } from './Textures';
 
@@ -259,11 +259,6 @@ export class Store {
       box(x0 + w, x0 + w + T, z0 - T, 0, 'wall');
       box(x0 - T, x0 + w + T, z0 - T, z0, 'wall');
     }
-    // ranh giới: không đi xuống lòng đường, không ra quá xa hai bên
-    out.push(aabb(W / 2, D + SIDEWALK_DEPTH + 5.2, 200, 10, 'bound'));
-    out.push(aabb(-18, 0, 20, 200, 'bound'));
-    out.push(aabb(W + 18, 0, 20, 200, 'bound'));
-    out.push(aabb(W / 2, -18, 200, 20, 'bound'));
     return out;
   }
 }

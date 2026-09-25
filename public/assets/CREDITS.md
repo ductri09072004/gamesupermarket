@@ -31,3 +31,48 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `models/characters/Suit_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
 | `models/characters/Worker_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
 | `models/characters/Worker_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
+| `textures/asphalt/asphalt_02_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
+| `textures/asphalt/asphalt_02_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
+| `textures/asphalt/asphalt_02_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
+| `textures/pavement/hexagonal_concrete_paving_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/hexagonal_concrete_paving | CC0 |
+| `textures/pavement/hexagonal_concrete_paving_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/hexagonal_concrete_paving | CC0 |
+| `textures/pavement/hexagonal_concrete_paving_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/hexagonal_concrete_paving | CC0 |
+| `textures/grass/leafy_grass_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/leafy_grass | CC0 |
+| `textures/grass/leafy_grass_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/leafy_grass | CC0 |
+| `models/city/1Story.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/1Story_GableRoof.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/1Story_Sign.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story_2.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story_Balcony.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story_Columns.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story_Sign.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story_Slim.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story_Wide.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/2Story_Wide_2Doors.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/3Story_Balcony.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/3Story_Slim.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/3Story_Small.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/4Story.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/4Story_Center.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/4Story_Wide_2Doors.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/6Story_Stack.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
+| `models/city/BirchTree_1.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/Bush_1.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/Bush_2.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/CommonTree_1.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/CommonTree_2.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/CommonTree_3.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/CommonTree_4.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/CommonTree_5.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
+| `models/city/NormalCar1.glb` | Quaternius — Cars Pack (https://quaternius.com/packs/cars.html), chuyển FBX→GLB | CC0 |
+| `models/city/NormalCar2.glb` | Quaternius — Cars Pack (https://quaternius.com/packs/cars.html), chuyển FBX→GLB | CC0 |
+| `models/city/SUV.glb` | Quaternius — Cars Pack (https://quaternius.com/packs/cars.html), chuyển FBX→GLB | CC0 |
+| `models/city/Sign_NoParking.glb` | Quaternius — Modular Streets Pack (https://quaternius.com/packs/modularstreets.html), chuyển FBX→GLB | CC0 |
+| `models/city/Sign_Stop.glb` | Quaternius — Modular Streets Pack (https://quaternius.com/packs/modularstreets.html), chuyển FBX→GLB | CC0 |
+| `models/city/Streetlight_Double.glb` | Quaternius — Modular Streets Pack (https://quaternius.com/packs/modularstreets.html), chuyển FBX→GLB | CC0 |
+| `models/city/Streetlight_Single.glb` | Quaternius — Modular Streets Pack (https://quaternius.com/packs/modularstreets.html), chuyển FBX→GLB | CC0 |
+| `models/city/Taxi.glb` | Quaternius — Cars Pack (https://quaternius.com/packs/cars.html), chuyển FBX→GLB | CC0 |
+| `models/city/TrafficCone.glb` | Quaternius — Public Transport Pack (https://quaternius.com/packs/publictransport.html), chuyển FBX→GLB | CC0 |
+| `models/city/TrafficLight.glb` | Quaternius — Public Transport Pack (https://quaternius.com/packs/publictransport.html), chuyển FBX→GLB | CC0 |
+| `textures/buildings/*.png` | Quaternius — Ultimate Textured Building Pack | CC0 |

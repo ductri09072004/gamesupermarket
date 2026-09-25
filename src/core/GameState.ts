@@ -20,7 +20,7 @@ export interface FurnitureData {
   boxes: string[];
 }
 
-export type BoxLocation = 'floor' | 'held' | 'rack' | 'staff';
+export type BoxLocation = 'floor' | 'held' | 'rack' | 'staff' | 'vehicle';
 
 /** Thùng hàng. gx/gy là toạ độ world (m) theo X/Z. */
 export interface BoxData {
@@ -32,6 +32,16 @@ export interface BoxData {
   gy: number;
   location: BoxLocation;
   holderId: string | null;
+}
+
+/** Xe người chơi sở hữu. x/z/yaw: vị trí world (m, rad); cargo: uid thùng đang chở. */
+export interface VehicleData {
+  uid: string;
+  type: string;
+  x: number;
+  z: number;
+  yaw: number;
+  cargo: string[];
 }
 
 export interface OrderData {
@@ -120,6 +130,7 @@ export interface SaveData {
   /** Vị trí người chơi (m) và hướng nhìn */
   player: { gx: number; gy: number; yaw: number };
   gameOver: boolean;
+  vehicles: VehicleData[];
 }
 
 export function emptyStats(rep: number): DayStats {
@@ -183,6 +194,7 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
     tutorial: {},
     player: { gx: 3, gy: 8, yaw: 0 },
     gameOver: false,
+    vehicles: [],
   };
 }
 

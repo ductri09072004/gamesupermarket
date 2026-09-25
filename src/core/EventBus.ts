@@ -19,6 +19,9 @@ export interface GameEvents {
   'store:toggled': { open: boolean };
   'inventory:changed': { furnitureUid: string };
   'boxes:changed': Record<string, never>;
+  'vehicles:changed': Record<string, never>;
+  'vehicle:buy': { type: string };
+  'vehicle:recall': { uid: string };
   'order:placed': { orderId: string };
   'order:arrived': { orderId: string; boxUids: string[] };
   'price:changed': { productId: string; price: number };

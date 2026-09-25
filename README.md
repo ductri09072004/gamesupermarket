@@ -38,6 +38,17 @@ npm test         # unit test (vitest)
 - **Không khí**: tone mapping ACES, bóng đổ, môi trường phòng (PMREM), dải đèn trần phát sáng + bloom, cửa kính trượt tự động, ánh sáng ngoài trời đổi theo giờ, đèn đường & biển hiệu sáng ban đêm, âm thanh 3D (tiếng máy lạnh tủ đông, chuông cửa, bước chân, nhạc nền, tiếng đám đông).
 - Logic cũ (tiền, giá, khách, kho, thời gian, lưu game) được giữ lại trong `src/systems` — không import Three.
 
+### Thành phố & xe
+- **Bản đồ thành phố** quanh cửa hàng: lưới 3 đường ngang × 4 đường dọc, vỉa hè lát gạch, cỏ, ~100 ngôi nhà, cây, đèn đường,
+  đèn giao thông, xe đỗ ven đường — model thật (Quaternius, CC0) + texture PBR Poly Haven cho đường nhựa/vỉa hè/cỏ.
+- **Garage** (app 🚗 trên máy tính): mua **xe máy** (chở tối đa 2 thùng), **ô tô con** (8 suất), **bán tải** (20 suất).
+  Thùng cồng kềnh (gạo, bánh mì, giấy vệ sinh, bột giặt, hoodie, loa…) tính 2 suất; xe máy đếm theo thùng.
+- **Kho sỉ** (khối nhà bên phải, sau ngã tư): quầy tự phục vụ bán rẻ hơn 20% so với đặt online, thùng có ngay ở bãi vạch vàng
+  — tự chất lên xe và chở về.
+- Phím: nhìn vào xe <kbd>E</kbd> lên xe (đang cầm thùng thì <kbd>E</kbd> chất lên xe), <kbd>G</kbd> dỡ 1 thùng xuống tay;
+  khi lái: <kbd>W</kbd>/<kbd>S</kbd> ga · phanh/lùi, <kbd>A</kbd>/<kbd>D</kbd> lái, <kbd>Space</kbd> phanh tay,
+  chuột xoay camera, <kbd>E</kbd> xuống xe. Xe kẹt: Garage → "Gọi về bãi đỗ".
+
 ## Asset
 
 Môi trường build không truy cập được kenney.nl / polyhaven nên **mọi model, texture, âm thanh đều sinh bằng code**. Muốn dùng model GLB thật (CC0), đặt file vào `public/assets/models/` và khai báo trong `public/assets/manifest.json` — xem `public/assets/CREDITS.md`. `normalizeModel()` sẽ tự scale về kích thước thật, đặt gốc giữa đáy, mặt trước hướng -Z.

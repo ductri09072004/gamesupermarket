@@ -72,11 +72,11 @@ export class GameUI {
     window.addEventListener('keydown', onKey);
     w.input.keys.onKey((e) => { if (!e.defaultPrevented) this.play.onKey(e); });
     w.input.onMouseDown((e) => {
-      if (w.mode === 'play' && !this.isUiOpen() && !w.input.locked && !w.input.dragLook && (e.target as HTMLElement).tagName === 'CANVAS') this.relock();
+      if ((w.mode === 'play' || w.mode === 'drive') && !this.isUiOpen() && !w.input.locked && !w.input.dragLook && (e.target as HTMLElement).tagName === 'CANVAS') this.relock();
     });
     w.input.onLock((locked) => {
       if (locked) this.clickToPlay.hide();
-      else if (w.mode === 'play' && !this.isUiOpen() && !w.input.dragLook) this.openPause();
+      else if ((w.mode === 'play' || w.mode === 'drive') && !this.isUiOpen() && !w.input.dragLook) this.openPause();
     });
     this.cleanups.push(() => window.removeEventListener('keydown', onKey));
     if (s.data.day === 1 && !s.data.tutorial.welcome) {
@@ -185,7 +185,7 @@ export class GameUI {
     }
     if (e.code !== 'Escape' || e.defaultPrevented) return;
     if (this.pc.isOpen) { this.pc.close(); return; }
-    if (this.isUiOpen() || w.mode !== 'play') return;
+    if (this.isUiOpen() || (w.mode !== 'play' && w.mode !== 'drive')) return;
     this.openPause();
   }
 

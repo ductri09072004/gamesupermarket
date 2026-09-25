@@ -12,6 +12,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { InventorySystem } from '../systems/InventorySystem';
 import { OrderSystem } from '../systems/OrderSystem';
 import { StaffSystem } from '../systems/StaffSystem';
+import { VehicleSystem } from '../systems/VehicleSystem';
 import { ShopSystem } from '../systems/ShopSystem';
 import { DaySystem } from '../systems/DaySystem';
 import { marketPrice } from '../systems/PricingSystem';
@@ -28,6 +29,9 @@ export class Services {
   readonly progression: ProgressionSystem;
   readonly inventory: InventorySystem;
   readonly orders: OrderSystem;
+  readonly vehicles: VehicleSystem;
+  /** Điểm đặt thùng mua sỉ ở kho (World 3D gán khi dựng thành phố) */
+  padSpots: () => Array<{ gx: number; gy: number }> = () => [];
   readonly staff: StaffSystem;
   readonly shop: ShopSystem;
   readonly day: DaySystem;
@@ -48,6 +52,7 @@ export class Services {
     this.orders = new OrderSystem(this.state, this.bus, this.economy, this.inventory, this.rng, () => this.grid.deliverySpots());
     this.staff = new StaffSystem(this.state, this.bus, this.rng);
     this.shop = new ShopSystem(this.state, this.bus, this.economy);
+    this.vehicles = new VehicleSystem(this.state, this.bus, this.economy);
     this.day = new DaySystem(this);
   }
 

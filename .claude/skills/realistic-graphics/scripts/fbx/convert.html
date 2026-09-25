@@ -1,0 +1,63 @@
+<!doctype html><script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+window.inspect = async (name) => {
+  const obj = await new FBXLoader().setPath('/src/').loadAsync(name);
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj); const s = box.getSize(new THREE.Vector3());
+  const mats = new Map(); let tris = 0, meshes = 0;
+  obj.traverse((o) => { if (!o.isMesh) return; meshes++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3;
+    for (const m of [].concat(o.material)) mats.set(m.name, (m.map?.image?.src ?? m.map?.name ?? '') + ' #' + m.color.getHexString()); });
+  return { name, size: [s.x, s.y, s.z].map((v) => +v.toFixed(2)), min: [box.min.x, box.min.y, box.min.z].map((v) => +v.toFixed(2)), meshes, tris, mats: [...mats].map(([k, v]) => k + ':' + v.split('/').pop()), anims: obj.animations.length };
+};
+
+window.convert = async (name, scale, rough) => {
+  const obj = await new FBXLoader().setPath('/src/').loadAsync(name);
+  obj.updateMatrixWorld(true);
+  // gom tam giác theo tên vật liệu trên toàn model → 1 mesh / vật liệu (ít draw call)
+  const buckets = new Map();
+  obj.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone());
+    g.applyMatrix4(o.matrixWorld); g.scale(scale, scale, scale);
+    const mats = [].concat(o.material);
+    const groups = g.groups.length ? g.groups : [{ start: 0, count: g.attributes.position.count, materialIndex: 0 }];
+    for (const gr of groups) {
+      const m = mats[gr.materialIndex ?? 0] ?? mats[0];
+      let b = buckets.get(m.name);
+      if (!b) { b = { src: m, pos: [], nor: [], uv: [] }; buckets.set(m.name, b); }
+      const P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv;
+      for (let i = gr.start; i < gr.start + gr.count; i++) {
+        b.pos.push(P.getX(i), P.getY(i), P.getZ(i));
+        if (N) b.nor.push(N.getX(i), N.getY(i), N.getZ(i));
+        b.uv.push(U ? U.getX(i) : 0, U ? U.getY(i) : 0);
+      }
+    }
+  });
+  const dummy = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1); dummy.needsUpdate = true;
+  const out = new THREE.Group(); out.name = name.replace('.fbx', '');
+  for (const [mname, b] of buckets) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
+    if (b.nor.length) g.setAttribute('normal', new THREE.Float32BufferAttribute(b.nor, 3)); else g.computeVertexNormals();
+    const textured = !!b.src.map || mname === 'Texture';
+    if (textured) g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2));
+    // FBXLoader coi màu FBX là sRGB rồi đổi sang linear, nhưng file Quaternius đã lưu linear → trả lại 1 lần
+    const col = b.src.color.clone().convertLinearToSRGB();
+    const glass = /window|glass/i.test(mname);
+    const light = /light/i.test(mname) && !/street|traffic/i.test(mname);
+    const mat = new THREE.MeshStandardMaterial({ name: mname, color: col, roughness: glass ? 0.1 : rough, metalness: glass ? 0.4 : 0,
+      emissive: light ? col : 0x000000, emissiveIntensity: light ? 0.6 : 0, map: textured ? dummy : null });
+    const mesh = new THREE.Mesh(g, mat); mesh.name = mname; out.add(mesh);
+  }
+  const box = new THREE.Box3().setFromObject(out); const c = box.getCenter(new THREE.Vector3());
+  out.children.forEach((m) => m.geometry.translate(-c.x, -box.min.y, -c.z));
+  const s = box.getSize(new THREE.Vector3());
+  const glb = await new GLTFExporter().parseAsync(out, { binary: true });
+  const bytes = new Uint8Array(glb); let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return { size: [s.x, s.y, s.z].map((v) => +v.toFixed(2)), b64: btoa(bin), mats: buckets.size };
+};
+window.done = true;
+</script>
