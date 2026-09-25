@@ -36,11 +36,11 @@ export class EconomySystem {
   }
 
   /** Ghi nhận doanh thu bán hàng vào thống kê trong ngày. */
-  recordSale(revenue: number, cogs: number, items: number): void {
+  recordSale(revenue: number, cogs: number, items: number, countCustomer = true): void {
     const s = this.state.data.stats;
     s.revenue = round2(s.revenue + revenue);
     s.cogs = round2(s.cogs + cogs);
     s.itemsSold += items;
-    s.customers += 1;
+    if (countCustomer) s.customers += 1;
   }
 }

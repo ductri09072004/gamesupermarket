@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventBus, type GameEvents } from '../src/core/EventBus';
 import { createNewState, GameState } from '../src/core/GameState';
 import { EconomySystem } from '../src/systems/EconomySystem';
+import { ShopSystem } from '../src/systems/ShopSystem';
 import { applyXp, ProgressionSystem, xpNeeded } from '../src/systems/ProgressionSystem';
 import { buildReport, computeExpenses, isGameOver, nextDebtDays } from '../src/systems/DayReport';
 
@@ -85,5 +86,21 @@ describe('Cuối ngày', () => {
     expect(isGameOver(debt, false)).toBe(false);
     expect(isGameOver(3, true)).toBe(false);
     expect(nextDebtDays(10, 3)).toBe(0);
+  });
+});
+
+describe('Giấy phép Thời trang / Điện tử', () => {
+  it('Thời trang cần Sữa & Lạnh, Điện tử cần Thời trang', () => {
+    const state = new GameState(createNewState(1));
+    const bus = new EventBus<GameEvents>();
+    const shop = new ShopSystem(state, bus, new EconomySystem(state, bus));
+    state.data.level = 10;
+    state.data.money = 100000;
+    expect(shop.licenseStatus(5)).toBe('locked-prev');
+    expect(shop.buyLicense(1).ok).toBe(true);
+    expect(shop.licenseStatus(5)).toBe('available');
+    expect(shop.licenseStatus(6)).toBe('locked-prev');
+    expect(shop.buyLicense(5).ok).toBe(true);
+    expect(shop.buyLicense(6).ok).toBe(true);
   });
 });

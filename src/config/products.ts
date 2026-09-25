@@ -1,6 +1,6 @@
 import type { StorageType } from './furniture';
 
-export type PackShape = 'box' | 'can' | 'bottle' | 'jar' | 'bag' | 'carton' | 'tube';
+export type PackShape = 'box' | 'can' | 'bottle' | 'jar' | 'bag' | 'carton' | 'tube' | 'garment' | 'pants' | 'cap';
 export type LabelPattern = 'stripes' | 'dots' | 'wave' | 'solid';
 
 export interface LabelStyle {
@@ -108,6 +108,32 @@ const groups: Array<{ category: string; licenseId: number; rows: Row[] }> = [
       ['milktea', 'Trà sữa chai', '🧋', 'fridge', 12, 1.4, 2.05, '#d4a373', 'bottle', [0.07, 0.2, 0.07], 'Boba Bay', L('#faedcd', '#6f4518', '#432818', 'dots'), '450ml'],
       ['wine', 'Rượu vang', '🍷', 'shelf', 6, 7.5, 10.9, '#7b2cbf', 'bottle', [0.08, 0.3, 0.08], 'Vino Rosa', L('#f8f1e7', '#7b2cbf', '#3c096c', 'solid'), '750ml'],
       ['beer', 'Bia', '🍺', 'fridge', 24, 1.5, 2.2, '#f9c74f', 'can', [0.066, 0.122, 0.066], 'Hop Hop', L('#1b4332', '#f9c74f', '#f9c74f', 'stripes'), '330ml'],
+    ],
+  },
+  {
+    category: 'Thời trang',
+    licenseId: 5,
+    rows: [
+      ['tshirt', 'Áo thun', '👕', 'clothing', 10, 6.0, 8.9, '#e63946', 'garment', [0.44, 0.62, 0.03], 'Urban Loop', L('#e63946', '#ffffff', '#ffffff', 'solid'), 'Size M'],
+      ['hoodie', 'Áo hoodie', '🧥', 'clothing', 6, 14.0, 20.5, '#264653', 'garment', [0.46, 0.66, 0.05], 'North Kite', L('#264653', '#e9c46a', '#e9c46a', 'solid'), 'Size L'],
+      ['jeans', 'Quần jean', '👖', 'clothing', 8, 12.0, 17.5, '#1d3557', 'pants', [0.4, 0.62, 0.03], 'Blue Mill', L('#1d3557', '#a8dadc', '#f1faee', 'solid'), 'W30'],
+      ['dress', 'Váy liền', '👗', 'clothing', 6, 15.0, 22.0, '#d63384', 'garment', [0.42, 0.78, 0.03], 'Petal & Co', L('#d63384', '#ffd6e8', '#ffffff', 'dots'), 'Size S'],
+      ['cap', 'Mũ lưỡi trai', '🧢', 'clothing', 12, 4.0, 5.9, '#2a9d8f', 'cap', [0.2, 0.12, 0.26], 'Street Arc', L('#2a9d8f', '#f4f1de', '#ffffff', 'solid'), 'Free size'],
+      ['socks', 'Tất (3 đôi)', '🧦', 'clothing', 20, 1.5, 2.2, '#adb5bd', 'bag', [0.12, 0.24, 0.03], 'Cozy Toe', L('#495057', '#ffd166', '#ffffff', 'stripes'), '3 đôi'],
+    ],
+  },
+  {
+    category: 'Điện tử',
+    licenseId: 6,
+    rows: [
+      ['earbuds', 'Tai nghe không dây', '🎧', 'electronics', 6, 18.0, 26.0, '#f8f9fa', 'box', [0.12, 0.16, 0.05], 'Sonix', L('#f8f9fa', '#4361ee', '#212529', 'solid'), 'Bluetooth 5.3'],
+      ['charger', 'Củ sạc nhanh', '🔌', 'electronics', 10, 6.0, 8.9, '#ffffff', 'box', [0.09, 0.13, 0.05], 'VoltEdge', L('#ffffff', '#2a9d8f', '#1d3557', 'wave'), '30W'],
+      ['powerbank', 'Pin dự phòng', '🔋', 'electronics', 8, 12.0, 17.5, '#212529', 'box', [0.1, 0.17, 0.04], 'VoltEdge', L('#212529', '#ffbe0b', '#ffffff', 'stripes'), '10000mAh'],
+      ['mouse', 'Chuột không dây', '🖱️', 'electronics', 8, 8.0, 11.9, '#6c757d', 'box', [0.11, 0.15, 0.06], 'Clicko', L('#343a40', '#00b4d8', '#ffffff', 'solid'), '2.4GHz'],
+      ['bulb', 'Bóng đèn LED', '💡', 'electronics', 12, 2.0, 2.95, '#ffd60a', 'box', [0.07, 0.13, 0.07], 'Lumo', L('#ffd60a', '#1d3557', '#1d3557', 'dots'), '9W'],
+      ['batteries', 'Pin AA (4 viên)', '🪫', 'electronics', 20, 2.5, 3.7, '#ff7b00', 'box', [0.09, 0.14, 0.02], 'PowerCell', L('#1b1b1b', '#ff7b00', '#ffffff', 'stripes'), '4 x AA'],
+      ['speaker', 'Loa bluetooth', '🔊', 'electronics', 6, 22.0, 32.0, '#3a0ca3', 'box', [0.16, 0.18, 0.09], 'Sonix', L('#3a0ca3', '#f72585', '#ffffff', 'wave'), '10W'],
+      ['smartwatch', 'Đồng hồ thông minh', '⌚', 'electronics', 6, 35.0, 49.0, '#111111', 'box', [0.1, 0.1, 0.1], 'Tikko', L('#111111', '#06d6a0', '#ffffff', 'solid'), 'GPS'],
     ],
   },
 ];

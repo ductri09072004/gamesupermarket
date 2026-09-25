@@ -114,7 +114,7 @@ describe('Luật xếp kệ', () => {
 describe('Bố cục slot theo kích thước sản phẩm', () => {
   it('mọi sản phẩm vừa slot của loại kệ đúng storage, sức chứa hợp lý', () => {
     for (const p of PRODUCTS) {
-      const type = p.storage === 'shelf' ? 'shelf_large' : p.storage;
+      const type = { shelf: 'shelf_large', fridge: 'fridge', freezer: 'freezer', clothing: 'clothing_rack', electronics: 'electronics_case' }[p.storage];
       const cap = slotCapacity(type, p.id);
       expect(cap, p.id).toBeGreaterThanOrEqual(4);
       expect(cap, p.id).toBeLessThanOrEqual(40);
@@ -154,5 +154,32 @@ describe('Bán kệ còn hàng', () => {
     expect(noodles).toEqual([24, 11]);
     expect(packs.find((p) => p.productId === 'rice')?.qty).toBe(3);
     expect(shelf.slots.every((s) => s.qty === 0 && s.productId === null)).toBe(true);
+  });
+});
+
+describe('Quần áo, điện tử & máy bán hàng tự động', () => {
+  it('giá treo nhận quần áo, tủ kính nhận điện tử, không nhận chéo', () => {
+    const rack = makeFurniture('c', 'clothing_rack', 0, 0);
+    const glass = makeFurniture('e', 'electronics_case', 0, 0);
+    expect(canStockSlot(rack, 0, 'tshirt').ok).toBe(true);
+    expect(canStockSlot(rack, 0, 'earbuds').ok).toBe(false);
+    expect(canStockSlot(glass, 0, 'earbuds').ok).toBe(true);
+    expect(canStockSlot(glass, 0, 'soda').ok).toBe(false);
+    const shelf = makeFurniture('s', 'shelf_large', 0, 0);
+    expect(findStockSlot(shelf, 'jeans').ok).toBe(false);
+  });
+
+  it('quần áo treo từ thanh ngang (đỉnh món chạm sát thanh treo)', () => {
+    const def = getFurniture('clothing_rack');
+    const p = getProduct('tshirt');
+    const b = slotBox(def, 0);
+    expect(itemPosition(def, 0, p, 0).y + p.size[1]).toBeCloseTo(b.y + b.height);
+  });
+
+  it('máy bán hàng nhận đồ kệ & tủ lạnh vừa ngăn, từ chối món quá khổ', () => {
+    const vm = makeFurniture('v', 'vending', 0, 0);
+    for (const id of ['soda', 'water', 'energy', 'beer', 'juice']) expect(canStockSlot(vm, 0, id).ok, id).toBe(true);
+    for (const id of ['chips', 'rice', 'icecream', 'tshirt']) expect(canStockSlot(vm, 0, id).ok, id).toBe(false);
+    expect(slotCapacity('vending', 'soda')).toBeGreaterThanOrEqual(6);
   });
 });

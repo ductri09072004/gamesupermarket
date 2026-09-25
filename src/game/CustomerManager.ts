@@ -10,7 +10,9 @@ import { productMesh } from '../products/PackagingFactory';
 import { generateWishlist, SpawnAccumulator, spawnRatePerHour } from '../systems/CustomerSystem';
 import { stockedProductIds } from '../systems/InventorySystem';
 import type { GridPoint } from '../world/Footprint';
+import { furnitureMatrix } from '../world/Placement';
 import { computeQueueTiles } from '../world/Queue';
+import { shelfGeom } from '../systems/SlotLayout';
 import type { GameCtx } from './Ctx';
 
 export class CustomerManager implements CustomerWorld {
@@ -43,6 +45,17 @@ export class CustomerManager implements CustomerWorld {
     if (slot < 0) return;
     const from = this.c.products.itemWorld(furn, slot, productId, furn.slots[slot].qty - 1);
     const to = cu.basket.group.getWorldPosition(new THREE.Vector3());
+    const def = getFurniture(furn.type);
+    if (def.vending) {
+      // máy bán hàng: món rơi xuống ngăn lấy hàng rồi khách cầm đi (không vào giỏ)
+      const bin = new THREE.Vector3(-(shelfGeom(def).panel ?? 0) / 2, 0.2, -def.size.d / 2 + 0.05).applyMatrix4(furnitureMatrix(furn));
+      this.c.effects.fly(productMesh(productId), from, bin, {
+        dur: 0.4, arc: 0,
+        onDone: () => this.c.effects.fly(productMesh(productId), bin, to, { dur: 0.3, arc: 0.1 }),
+      });
+      this.c.sound('place', from, 1.1);
+      return;
+    }
     this.c.effects.fly(productMesh(productId), from, to, {
       dur: 0.35, arc: 0.15, onDone: () => cu.basket.add(productId),
     });

@@ -42,3 +42,12 @@ export function completeSale(
   s.bus.emit('customer:checkout', { customerId, amount: r.revenue });
   return r;
 }
+
+/** Bán 1 món qua máy bán hàng tự động: tiền vào ngay, không qua quầy, không thối tiền. */
+export function vendingSale(s: Services, price: number, cost: number, at: { gx: number; gy: number }): void {
+  s.economy.addMoney(price, 'Máy bán hàng tự động');
+  s.economy.recordSale(price, cost, 1, false);
+  s.progression.addXp(price * XP_PER_REVENUE);
+  s.bus.emit('sale', { amount: price, gx: at.gx, gy: at.gy });
+  s.bus.emit('sound', { name: 'coin' });
+}

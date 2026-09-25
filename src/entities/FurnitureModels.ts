@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { FurnitureDef } from '../config/furniture';
 import { shelfGeom, tierHeights } from '../systems/SlotLayout';
 import { textCanvas } from '../products/LabelTexture';
+import { clothingRack, electronicsCase, vendingMachine } from './SpecialtyModels';
 
 const box = new THREE.BoxGeometry(1, 1, 1);
 const mats = new Map<string, THREE.Material>();
@@ -15,7 +16,7 @@ export function mat(key: string, make: () => THREE.Material): THREE.Material {
   return m;
 }
 
-const std = (color: number, roughness = 0.6, metalness = 0) =>
+export const std = (color: number, roughness = 0.6, metalness = 0) =>
   mat(`s${color}:${roughness}:${metalness}`, () => new THREE.MeshStandardMaterial({ color, roughness, metalness }));
 export const glassMat = () => mat('glass', () => new THREE.MeshStandardMaterial({
   color: 0xdff3ff, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.3, depthWrite: false,
@@ -188,7 +189,10 @@ export function buildFurnitureModel(def: FurnitureDef): { group: THREE.Group; sc
   const g = new THREE.Group();
   let screen: THREE.Mesh | undefined;
   if (def.kind === 'display') {
-    if (def.storage === 'fridge') fridge(def, g);
+    if (def.vending) vendingMachine(def, g);
+    else if (def.storage === 'clothing') clothingRack(def, g);
+    else if (def.storage === 'electronics') electronicsCase(def, g);
+    else if (def.storage === 'fridge') fridge(def, g);
     else if (def.storage === 'freezer') freezer(def, g);
     else gondola(def, g);
   } else if (def.kind === 'rack') rack(def, g);

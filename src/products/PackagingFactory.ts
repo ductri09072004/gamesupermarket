@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { getProduct, type ProductDef } from '../config/products';
+import { capParts, garmentParts } from './Apparel';
 import { labelTexture } from './LabelTexture';
 
 export interface Packaging {
@@ -151,6 +152,12 @@ function build(p: ProductDef): Packaging {
       crimp.translate(0, h * 0.97, 0);
       const geo = combine([part(body, 0), part(cap, 1), part(crimp, 2)]);
       return { geometry: geo, materials: [labelMat(p, { roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }), side] };
+    }
+    case 'garment':
+    case 'pants':
+    case 'cap': {
+      const a = p.shape === 'cap' ? capParts(p) : garmentParts(p);
+      return { geometry: combine(a.parts.map(([g, i]) => part(g, i))), materials: a.materials };
     }
   }
 }

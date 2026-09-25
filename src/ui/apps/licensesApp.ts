@@ -9,7 +9,7 @@ export function renderLicenses(body: HTMLElement, ctx: AppContext): void {
   for (const l of LICENSES) {
     const st = s.shop.licenseStatus(l.id);
     const products = PRODUCTS.filter((p) => p.licenseId === l.id).map((p) => p.icon).join(' ');
-    const label = st === 'owned' ? '✔ Đã sở hữu' : st === 'locked-level' ? `🔒 Cần cấp ${l.levelRequired}` : st === 'locked-prev' ? '🔒 Cần giấy phép trước' : `Mua ${money(l.price)}`;
+    const label = st === 'owned' ? '✔ Đã sở hữu' : st === 'locked-level' ? `🔒 Cần cấp ${l.levelRequired}` : st === 'locked-prev' ? `🔒 Cần giấy phép ${LICENSES[l.requires ?? 0]!.name}` : `Mua ${money(l.price)}`;
     list.append(h('div', { class: `shop-card ${st === 'owned' ? 'owned' : st !== 'available' ? 'locked' : ''}` }, [
       h('div', { class: 'shop-icon', text: l.icon }),
       h('b', { text: l.name }),

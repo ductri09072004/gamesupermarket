@@ -46,7 +46,7 @@ export class FurnitureManager {
         this.views.set(f.uid, v);
         this.group.add(v.root);
         const def = getFurniture(f.type);
-        if (this.audio && (def.storage === 'fridge' || def.storage === 'freezer')) {
+        if (this.audio && (def.storage === 'fridge' || def.storage === 'freezer' || def.vending)) {
           this.hums.set(f.uid, this.audio.attachHum(v.root, def.storage === 'freezer' ? 0.6 : 0.4));
         }
       }

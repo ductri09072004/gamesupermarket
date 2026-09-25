@@ -1,10 +1,16 @@
+import { getFurniture, type StorageType } from '../../config/furniture';
 import { PRODUCTS, boxCost } from '../../config/products';
+import { acceptsProduct } from '../../systems/SlotLayout';
 import { getLicense } from '../../config/licenses';
 import { cartBoxes, cartTotal, type Cart } from '../../systems/OrderSystem';
 import type { AppContext } from '../computer';
 import { h, money } from '../dom';
 
 const cart: Cart = {};
+
+const STORAGE_LABEL: Record<StorageType, string> = {
+  shelf: 'Kệ', fridge: 'Tủ lạnh', freezer: 'Tủ đông', clothing: 'Giá treo', electronics: 'Tủ kính',
+};
 
 export function renderMarket(body: HTMLElement, ctx: AppContext): void {
   const { s } = ctx;
@@ -23,7 +29,7 @@ export function renderMarket(body: HTMLElement, ctx: AppContext): void {
       grid.append(h('div', { class: `product-card ${unlocked ? '' : 'locked'} ${n > 0 ? 'in-cart' : ''}` }, [
         h('div', { class: 'swatch big', text: unlocked ? p.icon : '🔒', style: { background: p.color } }),
         h('div', { class: 'pc-name', text: p.name }),
-        h('div', { class: 'muted', text: `${p.unitsPerBox} món/thùng · ${p.storage === 'shelf' ? 'Kệ' : p.storage === 'fridge' ? 'Tủ lạnh' : 'Tủ đông'}` }),
+        h('div', { class: 'muted', text: `${p.unitsPerBox} món/thùng · ${STORAGE_LABEL[p.storage]}${acceptsProduct(getFurniture('vending'), p) ? ' · 🥤 máy bán hàng' : ''}` }),
         h('div', { class: 'pc-price', text: `${money(boxCost(p))}/thùng` }),
         h('div', { class: 'muted small', text: `Vốn ${money(p.costPerUnit)} · TT ${money(s.market(p.id))}` }),
         unlocked

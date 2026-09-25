@@ -31,7 +31,8 @@ npm test         # unit test (vitest)
 
 ## Điểm chính
 
-- **42 mặt hàng** chia 5 nhóm giấy phép, **sản phẩm sinh bằng code**: 7 kiểu bao bì (hộp bo góc, lon, chai, hũ, túi phồng, hộp sữa mái nhà, tuýp) với kích thước thật; nhãn canvas có tên hãng hư cấu, hoạ tiết, dung tích và mã vạch **EAN-13 đúng chuẩn**. Hiển thị trên kệ bằng `InstancedMesh` (1 mesh / sản phẩm).
+- **56 mặt hàng** chia 7 nhóm giấy phép (thêm **Thời trang**: áo thun, hoodie, quần jean, váy, mũ, tất; **Điện tử**: tai nghe, củ sạc, pin dự phòng, chuột, bóng đèn LED, pin AA, loa, đồng hồ thông minh), **sản phẩm sinh bằng code**: 10 kiểu (hộp bo góc, lon, chai, hũ, túi phồng, hộp sữa mái nhà, tuýp, áo/váy treo móc, quần treo kẹp, mũ lưỡi trai) với kích thước thật; nhãn canvas có tên hãng hư cấu, hoạ tiết, dung tích và mã vạch **EAN-13 đúng chuẩn**. Hiển thị trên kệ bằng `InstancedMesh` (1 mesh / sản phẩm).
+- **Nội thất chuyên dụng**: *Giá treo quần áo* (3 thanh treo face-out, cần giấy phép Thời trang), *Tủ kính điện tử* (kệ kính 4 tầng có đèn LED, cần giấy phép Điện tử), *Máy bán hàng tự động* (16 ngăn lò xo, nhận đồ uống/đồ kệ vừa ngăn — khách tự mua & trả tiền ngay tại máy, không qua quầy).
 - **Kệ theo tầng & ngăn**: mỗi ngăn tự tính lưới vị trí theo kích thước sản phẩm; khung highlight + bóng mờ món kế tiếp; món bay vào kệ với tween, lắc nhẹ, tiếng "tộc" đổi cao độ.
 - **Quầy thu ngân 3D**: khách đặt từng món lên băng chuyền, món bay qua máy quét (laser nháy, bíp), màn hình LCD canvas, ngăn kéo tiền trượt ra với các khay mệnh giá, tiền thối xếp trên quầy, máy POS có phím bấm được.
 - **Không khí**: tone mapping ACES, bóng đổ, môi trường phòng (PMREM), dải đèn trần phát sáng + bloom, cửa kính trượt tự động, ánh sáng ngoài trời đổi theo giờ, đèn đường & biển hiệu sáng ban đêm, âm thanh 3D (tiếng máy lạnh tủ đông, chuông cửa, bước chân, nhạc nền, tiếng đám đông).

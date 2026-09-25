@@ -32,11 +32,11 @@ describe('PricingSystem', () => {
   });
 
   it('dữ liệu sản phẩm hợp lệ', () => {
-    expect(PRODUCTS.length).toBeGreaterThanOrEqual(42);
+    expect(PRODUCTS.length).toBeGreaterThanOrEqual(56);
     expect(new Set(PRODUCTS.map((p) => p.id)).size).toBe(PRODUCTS.length);
     for (const p of PRODUCTS) {
       expect(p.costPerUnit).toBeGreaterThanOrEqual(0.5);
-      expect(p.costPerUnit).toBeLessThanOrEqual(8);
+      expect(p.costPerUnit).toBeLessThanOrEqual(p.licenseId > 4 ? 40 : 8);
       expect(p.marketPrice / p.costPerUnit).toBeGreaterThanOrEqual(1.3);
       expect(p.marketPrice / p.costPerUnit).toBeLessThanOrEqual(1.6);
       expect(p.unitsPerBox).toBeGreaterThanOrEqual(6);

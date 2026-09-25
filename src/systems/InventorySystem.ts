@@ -2,7 +2,7 @@ import { getFurniture, type StorageType } from '../config/furniture';
 import { getProduct } from '../config/products';
 import type { EventBus, GameEvents } from '../core/EventBus';
 import type { BoxData, FurnitureData, GameState } from '../core/GameState';
-import { slotCapacity } from './SlotLayout';
+import { acceptsProduct, slotCapacity } from './SlotLayout';
 
 export type Result<T = number> = { ok: true; value: T } | { ok: false; reason: string };
 
@@ -10,16 +10,25 @@ export const STORAGE_NAMES: Record<StorageType, string> = {
   shelf: 'kệ thường',
   fridge: 'tủ lạnh',
   freezer: 'tủ đông',
+  clothing: 'giá treo quần áo',
+  electronics: 'tủ kính điện tử',
 };
+
+function acceptCheck(furnType: string, productId: string): Result | null {
+  const def = getFurniture(furnType);
+  if (def.kind !== 'display') return { ok: false, reason: 'Không thể xếp hàng lên đây' };
+  const product = getProduct(productId);
+  if (acceptsProduct(def, product)) return null;
+  if (def.vending && (product.storage === 'shelf' || product.storage === 'fridge')) {
+    return { ok: false, reason: `${product.name} không lọt ngăn máy bán hàng` };
+  }
+  return { ok: false, reason: `${product.name} phải đặt trong ${STORAGE_NAMES[product.storage]}` };
+}
 
 /** Tìm slot để xếp 1 món productId lên nội thất. */
 export function findStockSlot(furn: FurnitureData, productId: string): Result {
-  const def = getFurniture(furn.type);
-  if (def.kind !== 'display') return { ok: false, reason: 'Không thể xếp hàng lên đây' };
-  const product = getProduct(productId);
-  if (product.storage !== def.storage) {
-    return { ok: false, reason: `${product.name} phải đặt trong ${STORAGE_NAMES[product.storage]}` };
-  }
+  const bad = acceptCheck(furn.type, productId);
+  if (bad) return bad;
   const cap = slotCapacity(furn.type, productId);
   const same = furn.slots.findIndex((s) => s.productId === productId && s.qty > 0 && s.qty < cap);
   if (same >= 0) return { ok: true, value: same };
@@ -35,12 +44,8 @@ export function findStockSlot(furn: FurnitureData, productId: string): Result {
 
 /** Kiểm tra 1 slot cụ thể có nhận được sản phẩm không. */
 export function canStockSlot(furn: FurnitureData, slot: number, productId: string): Result {
-  const def = getFurniture(furn.type);
-  if (def.kind !== 'display') return { ok: false, reason: 'Không thể xếp hàng lên đây' };
-  const product = getProduct(productId);
-  if (product.storage !== def.storage) {
-    return { ok: false, reason: `${product.name} phải đặt trong ${STORAGE_NAMES[product.storage]}` };
-  }
+  const bad = acceptCheck(furn.type, productId);
+  if (bad) return bad;
   const s = furn.slots[slot];
   if (!s) return { ok: false, reason: 'Slot không tồn tại' };
   if (s.qty > 0 && s.productId !== productId) return { ok: false, reason: 'Slot này đang bày sản phẩm khác' };

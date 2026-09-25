@@ -88,7 +88,9 @@ export class FurnitureView {
         map: tex, roughness: 0.4, polygonOffset: true, polygonOffsetFactor: -2,
       }));
       const freezer = def.storage === 'freezer';
-      tag.position.set(b.x0 + b.width / 2, freezer ? def.size.h * 0.6 : b.y - 0.025, (freezer ? -def.size.d / 2 : b.zFront) - 0.012);
+      const hang = def.storage === 'clothing';
+      const ty = freezer ? def.size.h * 0.6 : hang ? b.y + b.height + 0.05 : b.y - 0.025;
+      tag.position.set(b.x0 + b.width / 2, ty, (freezer || hang ? -def.size.d / 2 : b.zFront) - 0.012);
       tag.rotation.y = Math.PI;
       tag.userData = { kind: 'tag', uid: this.data.uid, slot: i };
       this.root.add(tag);

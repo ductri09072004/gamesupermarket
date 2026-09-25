@@ -6,7 +6,7 @@ import { eanBits, eanFromId } from './Ean13';
 const cache = new Map<string, THREE.CanvasTexture>();
 export const LABEL_FONT = '"Nunito", "Segoe UI", Arial, sans-serif';
 
-function pattern(g: CanvasRenderingContext2D, p: ProductDef, W: number, H: number): void {
+export function pattern(g: CanvasRenderingContext2D, p: ProductDef, W: number, H: number): void {
   const { accent, pattern: kind } = p.label;
   g.save();
   g.globalAlpha = 0.18;
@@ -38,7 +38,7 @@ function pattern(g: CanvasRenderingContext2D, p: ProductDef, W: number, H: numbe
   g.restore();
 }
 
-function logo(g: CanvasRenderingContext2D, p: ProductDef, cx: number, cy: number, r: number): void {
+export function logo(g: CanvasRenderingContext2D, p: ProductDef, cx: number, cy: number, r: number): void {
   const h = hashString(p.brand);
   g.save();
   g.translate(cx, cy);
@@ -58,7 +58,7 @@ function logo(g: CanvasRenderingContext2D, p: ProductDef, cx: number, cy: number
   g.restore();
 }
 
-function fitText(g: CanvasRenderingContext2D, text: string, maxW: number, size: number, weight: number): void {
+export function fitText(g: CanvasRenderingContext2D, text: string, maxW: number, size: number, weight: number): void {
   let s = size;
   do {
     g.font = `${weight} ${s}px ${LABEL_FONT}`;

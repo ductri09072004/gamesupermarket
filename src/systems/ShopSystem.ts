@@ -47,7 +47,8 @@ export class ShopSystem {
   licenseStatus(id: number): 'owned' | 'available' | 'locked-level' | 'locked-prev' {
     const d = this.state.data;
     if (d.licenses.includes(id)) return 'owned';
-    if (id > 0 && !d.licenses.includes(id - 1)) return 'locked-prev';
+    const req = getLicense(id).requires;
+    if (req !== null && !d.licenses.includes(req)) return 'locked-prev';
     if (d.level < getLicense(id).levelRequired) return 'locked-level';
     return 'available';
   }

@@ -10,6 +10,7 @@ import type { CheckoutItem } from '../systems/CheckoutSystem';
 import type { Wish } from '../systems/CustomerSystem';
 import { findProductLocations, productQty } from '../systems/InventorySystem';
 import { decidePurchase } from '../systems/PricingSystem';
+import { vendingSale } from '../systems/SalesSystem';
 import { frontTiles, type GridPoint } from '../world/Footprint';
 import { cellCenter } from '../world/NavGrid';
 import { furnitureCenter } from '../world/Placement';
@@ -45,6 +46,8 @@ export class Customer extends Walker {
   private queuePathOk = false;
   private enteredDoor = false;
   carryingBag = false;
+  /** Số món đã mua ở máy bán hàng tự động (đã trả tiền tại máy) */
+  private vended = 0;
 
   constructor(private world: CustomerWorld, look: HumanLook, spawn: GridPoint, private exit: GridPoint, private wishes: Wish[]) {
     super(world.s, look, cellCenter(spawn.gx, spawn.gy).x, cellCenter(spawn.gx, spawn.gy).z);
@@ -169,19 +172,25 @@ export class Customer extends Walker {
       return;
     }
     const want = t.wish.qty;
+    const vending = getFurniture(t.furn.type).vending;
     for (let i = 0; i < want; i++) {
       this.world.pickFx(this, t.furn, p.id);
       const taken = this.s.inventory.customerTake(t.furn, p.id, 1);
       if (taken <= 0) break;
-      this.basketItems.push({ productId: p.id, price, cost: p.costPerUnit, scanned: false });
+      if (vending) {
+        vendingSale(this.s, price, p.costPerUnit, this.cell);
+        this.vended += 1;
+      } else this.basketItems.push({ productId: p.id, price, cost: p.costPerUnit, scanned: false });
     }
     this.world.shakeFurniture(t.furn.uid);
-    this.bubble.hide();
+    if (vending) this.say('🥤 Tiện ghê!', 1200);
+    else this.bubble.hide();
   }
 
   private finishShopping(): void {
     if (this.basketItems.length === 0) {
-      this.say('😞');
+      if (this.vended > 0) this.s.data.stats.customers += 1;
+      this.say(this.vended > 0 ? '😋' : '😞');
       this.leave();
       return;
     }
