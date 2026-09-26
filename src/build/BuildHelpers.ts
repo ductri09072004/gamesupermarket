@@ -5,6 +5,8 @@ import type { FurnitureData } from '../core/GameState';
 import type { Services } from '../core/Services';
 import { buildCounter } from '../entities/CheckoutCounter';
 import { buildFurnitureModel } from '../entities/FurnitureModels';
+import { buildGate } from '../entities/GateModel';
+import type { GameCtx } from '../game/Ctx';
 import { packFurnitureContents } from '../systems/InventorySystem';
 import type { NavGrid } from '../world/NavGrid';
 import { furnitureCenter } from '../world/Placement';
@@ -26,7 +28,7 @@ export function buildGrid(g: NavGrid): THREE.LineSegments {
 /** Model ghost (vật liệu trong suốt xanh/đỏ). */
 export function ghostModel(type: string, mat: THREE.Material): THREE.Group {
   const def = getFurniture(type);
-  const model = def.kind === 'checkout' ? buildCounter(def).group : buildFurnitureModel(def).group;
+  const model = def.kind === 'checkout' ? buildCounter(def).group : def.kind === 'gate' ? buildGate(def).group : buildFurnitureModel(def).group;
   model.traverse((o) => {
     const m = o as THREE.Mesh;
     if (m.isMesh) {
@@ -62,4 +64,25 @@ export function dropContents(s: Services, f: FurnitureData): number {
   }
   if (n) s.bus.emit('boxes:changed', {});
   return n;
+}
+
+/** Ẩn / hiện nội thất cùng hàng & thùng trên đó khi đang được bê đi. */
+export function setCarried(c: GameCtx, uid: string, carried: boolean): void {
+  c.furniture.get(uid)?.setVisible(!carried);
+  c.products.setHidden(uid, carried);
+  c.boxes.setHolderHidden(uid, carried);
+}
+
+/** Sau khi đặt / dời nội thất: cập nhật lưới, view, hàng chờ; model "bật" lên nhẹ. */
+export function commitFurniture(c: GameCtx, placedUid: string, onChanged: () => void): void {
+  c.s.syncOccupancy();
+  c.furniture.sync();
+  c.s.bus.emit('furniture:changed', {});
+  c.s.bus.emit('grid:changed', { reason: 'furniture' });
+  onChanged();
+  const v = c.furniture.get(placedUid);
+  if (v) v.model.scale.y = 0.6;
+  c.products.markDirty();
+  c.boxes.markDirty();
+  c.sound('thud');
 }

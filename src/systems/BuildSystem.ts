@@ -49,6 +49,7 @@ export function canPlace(
 ): PlaceCheck {
   const cells = footprintCells(def, gx, gy, rot);
   if (isCeiling(def)) return canPlaceCeiling(grid, cells, furniture, ignoreUid);
+  if (def.kind === 'gate') return canPlaceGate(grid, cells, furniture, ignoreUid);
   for (const c of cells) {
     const inStore = grid.isStoreInterior(c.gx, c.gy);
     const inWarehouse = grid.isWarehouseInterior(c.gx, c.gy);
@@ -95,5 +96,20 @@ function canPlaceCeiling(grid: NavGrid, cells: GridPoint[], furniture: Furniture
     if (isCeiling(d)) for (const p of footprintCells(d, f.gx, f.gy, f.rot)) taken.add(`${p.gx},${p.gy}`);
   }
   if (cells.some((c) => taken.has(`${c.gx},${c.gy}`))) return { ok: false, reason: 'Trùng chỗ đèn khác' };
+  return { ok: true };
+}
+
+/** Cổng an ninh: trên sàn trong cửa hàng (thường đặt sát cửa), không đè nội thất khác hay cổng khác. */
+function canPlaceGate(grid: NavGrid, cells: GridPoint[], furniture: FurnitureData[], ignoreUid: string | null): PlaceCheck {
+  for (const c of cells) {
+    if (!grid.isStoreInterior(c.gx, c.gy)) return { ok: false, reason: 'Phải đặt bên trong cửa hàng' };
+    const occ = grid.occupant(c.gx, c.gy);
+    if (occ && occ !== ignoreUid) return { ok: false, reason: 'Ô đã có đồ' };
+  }
+  const own = new Set(cells.map((c) => `${c.gx},${c.gy}`));
+  for (const f of furniture) {
+    if (f.uid === ignoreUid || getFurniture(f.type).kind !== 'gate') continue;
+    if (footprintCells(getFurniture(f.type), f.gx, f.gy, f.rot).some((p) => own.has(`${p.gx},${p.gy}`))) return { ok: false, reason: 'Trùng chỗ cổng khác' };
+  }
   return { ok: true };
 }

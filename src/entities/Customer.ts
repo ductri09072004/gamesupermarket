@@ -4,6 +4,7 @@ import {
 } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
+import { SECURITY } from '../config/hygiene';
 import type { FurnitureData } from '../core/GameState';
 import type { Services } from '../core/Services';
 import type { CheckoutItem } from '../systems/CheckoutSystem';
@@ -11,14 +12,15 @@ import type { Wish } from '../systems/CustomerSystem';
 import { findProductLocations, productQty } from '../systems/InventorySystem';
 import { decidePurchase } from '../systems/PricingSystem';
 import { vendingSale } from '../systems/SalesSystem';
-import { frontTiles, type GridPoint } from '../world/Footprint';
+import type { GridPoint } from '../world/Footprint';
+import { nearestFurniture, shelfFrontGoals } from '../world/ShelfGoals';
 import { cellCenter } from '../world/NavGrid';
 import { furnitureCenter } from '../world/Placement';
 import { Basket } from './Basket';
 import type { HumanLook } from './Human';
 import { Walker } from './Walker';
 
-export type CustomerState = 'enter' | 'browse' | 'toShelf' | 'pick' | 'toQueue' | 'queue' | 'served' | 'leave' | 'gone';
+export type CustomerState = 'enter' | 'browse' | 'toShelf' | 'pick' | 'toQueue' | 'queue' | 'served' | 'flee' | 'stunned' | 'leave' | 'gone';
 
 export interface CustomerWorld {
   s: Services;
@@ -52,6 +54,9 @@ export class Customer extends Walker {
   private vended = 0;
   /** Khách lớn tuổi (model OldClassy) — dễ bí khi dùng máy tự tính tiền */
   readonly elder: boolean;
+  /** Lén mang hàng ra không trả tiền; alarmed: cổng an ninh đã hú */
+  thief = false;
+  alarmed = false;
 
   constructor(private world: CustomerWorld, look: HumanLook, spawn: GridPoint, private exit: GridPoint, private wishes: Wish[]) {
     super(world.s, look, cellCenter(spawn.gx, spawn.gy).x, cellCenter(spawn.gx, spawn.gy).z);
@@ -61,12 +66,13 @@ export class Customer extends Walker {
     this.walkTo(world.s.grid.doorInside);
   }
 
-  private say(text: string, ms = 1700): void {
+  say(text: string, ms = 1700): void {
     this.bubble.show(text, ms);
   }
 
   tick(sim: number, dt: number): void {
-    const moving = this.step(CUSTOMER_SPEED * sim, sim > 0 ? dt : 0);
+    const run = this.state === 'flee' ? (this.alarmed ? SECURITY.thiefRun : 1.15) : 1;
+    const moving = this.step(CUSTOMER_SPEED * run * sim, sim > 0 ? dt : 0);
     if (!this.enteredDoor && this.z < this.s.grid.storeH - 0.2 && this.state === 'enter') {
       this.enteredDoor = true;
       this.world.doorBell();
@@ -110,6 +116,11 @@ export class Customer extends Walker {
         if (this.queueTile && this.cell.gx === this.queueTile.gx && this.cell.gy === this.queueTile.gy) this.state = 'queue';
         else if (this.queueTile && !this.queuePathOk) this.queuePathOk = this.walkTo(this.queueTile);
         break;
+      case 'stunned':
+        this.timer -= sim;
+        if (this.timer <= 0) this.leave();
+        break;
+      case 'flee':
       case 'leave':
         this.state = 'gone';
         break;
@@ -132,25 +143,12 @@ export class Customer extends Walker {
       this.timer = 1.2;
       return;
     }
-    const goals: GridPoint[] = [];
-    for (const f of shelves) {
-      for (const t of frontTiles(getFurniture(f.type), f.gx, f.gy, f.rot)) {
-        if (this.s.grid.isWalkable(t.gx, t.gy) && this.s.grid.isStoreInterior(t.gx, t.gy)) goals.push(t);
-      }
-    }
-    if (!this.walkTo(goals)) {
+    if (!this.walkTo(shelfFrontGoals(this.s.grid, shelves))) {
       this.say(`${p.icon} ???`);
       this.timer = 0.8;
       return;
     }
-    const end = this.goal!;
-    const ec = cellCenter(end.gx, end.gy);
-    const furn = shelves.reduce((best, f) => {
-      const a = furnitureCenter(f);
-      const b = furnitureCenter(best);
-      return Math.hypot(a.x - ec.x, a.z - ec.z) < Math.hypot(b.x - ec.x, b.z - ec.z) ? f : best;
-    }, shelves[0]);
-    this.target = { furn, wish };
+    this.target = { furn: nearestFurniture(shelves, this.goal!), wish };
     this.state = 'toShelf';
     this.bubble.show(`💭 ${p.icon}`, 0);
   }
@@ -204,6 +202,10 @@ export class Customer extends Walker {
       this.leave();
       return;
     }
+    if (this.s.rng() < SECURITY.theftChance) {
+      this.sneakOut();
+      return;
+    }
     this.bubble.show(`🛒 ${this.basketItems.length}`, 1200);
     this.state = 'toQueue';
     this.patience = 0;
@@ -249,14 +251,33 @@ export class Customer extends Walker {
     this.leave();
   }
 
-  /** Đang đứng ở máy tự tính tiền mà bí → bong bóng xin giúp (giữ tới khi được giúp). */
-  askHelp(): void {
-    this.bubble.show('🙋 Máy này dùng sao đây?', 0);
-    this.human.reach();
+  /** Lén cầm giỏ đi thẳng ra cửa, không qua quầy. */
+  private sneakOut(): void {
+    this.thief = true;
+    this.state = 'flee';
+    this.bubble.hide();
+    if (!this.walkTo(this.exit)) this.state = 'gone';
   }
 
-  thankHelp(): void {
-    this.say('😊 Cảm ơn nha!', 1400);
+  /** Cổng an ninh hú còi → bỏ chạy. */
+  alarm(): void {
+    this.alarmed = true;
+    this.say('😱', 1500);
+    if (!this.walkTo(this.exit)) this.state = 'gone';
+  }
+
+  /** Bị tóm: đứng khựng (hàng đã văng ra) rồi đi về tay không. Trả về các món đang giấu. */
+  caught(): string[] {
+    const items = this.basketItems.map((i) => i.productId);
+    this.basketItems = [];
+    while (this.basket.takeOut()) { /* xoá hết món trong giỏ */ }
+    this.thief = false;
+    this.alarmed = false;
+    this.stop();
+    this.state = 'stunned';
+    this.timer = 1.4;
+    this.say('😵 Ui da! Em xin lỗi...', 2200);
+    return items;
   }
 
   walkout(message = '😠 Chờ lâu quá!'): void {

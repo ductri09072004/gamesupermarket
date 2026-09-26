@@ -6,6 +6,9 @@ import { getVehicle } from '../config/vehicles';
 import { cargoUsed } from '../systems/VehicleSystem';
 import type { World } from './World';
 
+/** Gợi ý nút tương tác chính */
+export const CLICK = '<kbd>Chuột trái</kbd>';
+
 export interface PlayUiHooks {
   openPc(app?: string): void;
   openPrice(uid: string, slot?: number): void;
@@ -27,6 +30,13 @@ export class PlayInput {
       return;
     }
     if (w.mode !== 'play' || this.ui.isUiOpen()) return;
+    if (w.fp.active) {
+      // đang bê nội thất: chỉ xoay / huỷ / đổi tốc độ
+      if (e.code === 'KeyR') w.fp.rotate(1);
+      else if (e.code === 'KeyQ') w.fp.cancel();
+      else if (e.code.startsWith('Digit')) w.s.time.setSpeed(Number(e.code.slice(-1)));
+      return;
+    }
     switch (e.code) {
       case 'KeyE': if (!e.repeat) this.interact(); break;
       case 'KeyF': {
@@ -42,6 +52,19 @@ export class PlayInput {
       case 'KeyG': this.unloadVehicle(); break;
       case 'Digit1': case 'Digit2': case 'Digit3': w.s.time.setSpeed(Number(e.code.slice(-1))); break;
     }
+  }
+
+  /** Chuột trái = tương tác (E vẫn dùng được). Đang cầm thùng mở nhìn ngăn kệ → để World xếp hàng. */
+  onPrimaryClick(): void {
+    const w = this.w;
+    if (w.mode !== 'play' || this.ui.isUiOpen()) return;
+    if (w.fp.active) {
+      w.fp.place();
+      return;
+    }
+    const t = w.interaction.target;
+    if (t.kind === 'none' || (t.kind === 'slot' && this.holding?.open)) return;
+    this.interact();
   }
 
   interact(): void {
@@ -63,6 +86,26 @@ export class PlayInput {
       w.player.cameraOverride = true;
       w.input.exitLock();
       this.ui.openPc('wholesale');
+      return;
+    }
+    if (t.kind === 'crate' && t.uid) {
+      const crate = w.s.data.crates.find((k) => k.uid === t.uid);
+      if (!crate) return;
+      if (held) w.toast('Tay đang cầm thùng hàng — nhấn Q để thả xuống trước', 'error');
+      else w.fp.startCrate(crate);
+      return;
+    }
+    if (t.kind === 'dirt' && t.uid) {
+      w.mess.cleanDirt(t.uid);
+      return;
+    }
+    if (t.kind === 'loose' && t.uid) {
+      w.mess.playerPickLoose(t.uid);
+      return;
+    }
+    if (t.kind === 'thief' && t.uid) {
+      const thief = w.security.byId(t.uid);
+      if (thief) w.security.catchThief(thief, 'player');
       return;
     }
     if (t.kind === 'switch') {
@@ -151,7 +194,7 @@ export class PlayInput {
       w.toast('Đặt thùng xuống (Q) trước khi dời kệ', 'error');
       return;
     }
-    w.build.moveFurniture(t.uid);
+    w.fp.startMove(t.uid);
   }
 
   /** Camera tween sát vào màn hình máy tính rồi mới mở giao diện PC. */
@@ -181,45 +224,62 @@ export class PlayInput {
 
   hints(): string[] {
     const w = this.w;
+    if (w.fp.active) return w.fp.hints();
     const t = w.interaction.target;
     const held = this.holding;
     const out: string[] = [];
     switch (t.kind) {
       case 'box': {
         const b = t.uid ? w.s.state.box(t.uid) : undefined;
-        if (b) out.push(held ? 'Tay đang bận' : `<kbd>E</kbd> Nhặt thùng ${getProduct(b.productId).name} ×${b.qty}`);
+        if (b) out.push(held ? 'Tay đang bận' : `${CLICK} Nhặt thùng ${getProduct(b.productId).name} ×${b.qty}`);
         if (b && !held) out.push(`<kbd>F</kbd> ${b.open ? 'Đóng' : 'Mở'} thùng`);
         break;
       }
-      case 'sign': out.push(`<kbd>E</kbd> ${w.s.data.storeOpen ? 'Đóng cửa' : 'Mở cửa'}`); break;
-      case 'switch': out.push(`<kbd>E</kbd> ${w.s.data.lightsOn ? 'Tắt' : 'Bật'} đèn cửa hàng`); break;
+      case 'sign': out.push(`${CLICK} ${w.s.data.storeOpen ? 'Đóng cửa' : 'Mở cửa'}`); break;
+      case 'switch': out.push(`${CLICK} ${w.s.data.lightsOn ? 'Tắt' : 'Bật'} đèn cửa hàng`); break;
       case 'vehicle': {
         const v = t.uid ? w.s.vehicles.get(t.uid) : undefined;
         if (!v) break;
         const def = getVehicle(v.type);
         const load = `${cargoUsed(v, w.s.data.boxes)}/${def.capacity} ${def.countBySize ? 'suất' : 'thùng'}`;
-        out.push(held ? `<kbd>E</kbd> Chất thùng lên ${def.name} (${load})` : `<kbd>E</kbd> Lái ${def.name}`);
+        out.push(held ? `${CLICK} Chất thùng lên ${def.name} (${load})` : `${CLICK} Lái ${def.name}`);
         if (!held && v.cargo.length) out.push(`<kbd>G</kbd> Dỡ 1 thùng (${load})`);
         break;
       }
-      case 'kiosk': out.push('<kbd>E</kbd> Mua hàng sỉ (lấy ngay tại bãi)'); break;
-      case 'tag': out.push('<kbd>E</kbd> Đặt giá (súng dán giá)'); break;
+      case 'kiosk': out.push(`${CLICK} Mua hàng sỉ (lấy ngay tại bãi)`); break;
+      case 'dirt': {
+        const d = w.s.data.dirt.find((x) => x.uid === t.uid);
+        if (d) out.push(`${CLICK} ${d.kind === 'litter' ? 'Nhặt rác' : d.kind === 'spill' ? 'Lau vết bẩn' : 'Lau kính'}`);
+        break;
+      }
+      case 'loose': {
+        const it = w.s.data.loose.find((x) => x.uid === t.uid);
+        if (it) out.push(`${CLICK} Nhặt ${getProduct(it.productId).name} về kệ`);
+        break;
+      }
+      case 'thief': out.push(`${CLICK} 🚨 Tóm kẻ trộm!`); break;
+      case 'crate': {
+        const k = w.s.data.crates.find((x) => x.uid === t.uid);
+        if (k) out.push(held ? 'Tay đang bận' : `${CLICK} Bê thùng ${getFurniture(k.type).icon} ${getFurniture(k.type).name} đi lắp đặt`);
+        break;
+      }
+      case 'tag': out.push(`${CLICK} Đặt giá (súng dán giá)`); break;
       case 'slot':
         if (held && held.open) out.push('<kbd>Chuột trái</kbd> Xếp hàng (giữ để xếp liên tục)', '<kbd>Chuột phải</kbd> Lấy lại vào thùng');
         else if (held) out.push('<kbd>F</kbd> Mở thùng để xếp hàng');
-        out.push('<kbd>E</kbd> Đặt giá');
+        out.push(held?.open ? '<kbd>E</kbd> Đặt giá' : `${CLICK} Đặt giá`);
         break;
       case 'furniture': {
         const f = t.uid ? w.s.state.furniture(t.uid) : undefined;
         if (!f) break;
         const def = getFurniture(f.type);
-        if (def.kind === 'computer') out.push('<kbd>E</kbd> Dùng máy tính');
-        if (def.kind === 'checkout') out.push(held ? 'Đặt thùng xuống trước (Q)' : '<kbd>E</kbd> Vào quầy thu ngân');
+        if (def.kind === 'computer') out.push(`${CLICK} Dùng máy tính`);
+        if (def.kind === 'checkout') out.push(held ? 'Đặt thùng xuống trước (Q)' : `${CLICK} Vào quầy thu ngân`);
         if (def.kind === 'selfcheckout') out.push(w.selfCheckout.hint(f.uid));
         if (def.kind === 'lamp') out.push(`${def.icon} ${def.name} · ${w.s.data.lightsOn ? 'đang bật' : 'đang tắt'}`);
-        if (def.kind === 'trash' && held) out.push(held.qty === 0 ? '<kbd>E</kbd> Gập & vứt thùng rỗng' : 'Thùng còn hàng!');
-        if (def.kind === 'rack') out.push(held ? '<kbd>E</kbd> Cất thùng lên kệ kho' : f.boxes.length ? '<kbd>E</kbd> Lấy thùng' : 'Kệ kho trống');
-        if (def.kind === 'display' && !held) out.push(`<kbd>E</kbd> Đặt giá ${def.name}`);
+        if (def.kind === 'trash' && held) out.push(held.qty === 0 ? `${CLICK} Gập & vứt thùng rỗng` : 'Thùng còn hàng!');
+        if (def.kind === 'rack') out.push(held ? `${CLICK} Cất thùng lên kệ kho` : f.boxes.length ? `${CLICK} Lấy thùng` : 'Kệ kho trống');
+        if (def.kind === 'display' && !held) out.push(`${CLICK} Đặt giá ${def.name}`);
         break;
       }
     }

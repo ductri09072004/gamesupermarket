@@ -7,6 +7,9 @@ import type { HumanBody, HumanLook } from './Human';
 import { createHuman } from './RiggedHuman';
 import { Bubble } from './Bubble';
 
+/** Khoảng cập nhật animation (s) của NPC ở xa */
+export const FAR_ANIM_INTERVAL = 1 / 12;
+
 /** Nhân vật NPC đi theo đường A* (đã làm mượt), xoay người mượt về hướng đi. */
 export class Walker {
   readonly human: HumanBody;
@@ -133,8 +136,9 @@ export class Walker {
   }
 
   update(dt: number, cameraPos: THREE.Vector3, cullDist: number): void {
+    // ở xa: animation cập nhật thưa (~12 lần/s) thay vì đứng hình
     const far = cameraPos.distanceToSquared(this.human.root.position) > cullDist * cullDist;
-    this.human.animate = !far;
+    this.human.animInterval = far ? FAR_ANIM_INTERVAL : 0;
     this.human.update(dt);
     this.bubble.update();
     this.sync();

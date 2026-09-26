@@ -2,7 +2,7 @@ import type { DayReport } from '../systems/DayReport';
 
 export type SoundName =
   | 'beep' | 'ching' | 'door' | 'doorbell' | 'click' | 'error' | 'pop' | 'place' | 'levelup' | 'whoosh' | 'coin'
-  | 'tock' | 'footstep' | 'truck' | 'drawerOpen' | 'drawerClose' | 'fold' | 'thud' | 'scan' | 'paper';
+  | 'tock' | 'footstep' | 'truck' | 'drawerOpen' | 'drawerClose' | 'fold' | 'thud' | 'scan' | 'paper' | 'alarm' | 'mop' | 'punch' | 'crash';
 
 export interface GameEvents {
   'money:changed': { money: number; delta: number; reason: string };
@@ -16,6 +16,8 @@ export interface GameEvents {
   'xp:changed': { xp: number; level: number; needed: number };
   'level:up': { level: number };
   'reputation:changed': { reputation: number; delta: number };
+  'dirt:changed': Record<string, never>;
+  'loose:changed': Record<string, never>;
   'store:toggled': { open: boolean };
   'inventory:changed': { furnitureUid: string };
   'boxes:changed': Record<string, never>;
@@ -23,7 +25,8 @@ export interface GameEvents {
   'vehicle:buy': { type: string };
   'vehicle:recall': { uid: string };
   'order:placed': { orderId: string };
-  'order:arrived': { orderId: string; boxUids: string[] };
+  'order:arrived': { orderId: string; boxUids: string[]; from?: { x: number; y: number; z: number } };
+  'crates:changed': Record<string, never>;
   'price:changed': { productId: string; price: number };
   'license:bought': { id: number };
   'furniture:changed': Record<string, never>;
@@ -43,7 +46,6 @@ export interface GameEvents {
   'player:interact': { kind: string };
   'checkout:mode': { active: boolean; counterUid: string | null };
   'build:mode': { active: boolean };
-  'build:hold': { furnitureId: string };
   'tutorial:done': { step: string };
   'sound': { name: SoundName; pos?: { x: number; y: number; z: number }; pitch?: number; volume?: number };
   'settings:changed': Record<string, never>;

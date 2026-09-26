@@ -22,7 +22,7 @@ export class BuildPanel {
         h('button', { class: 'btn small', text: '🛒 Mua nội thất', onClick: () => h2.onShop() }),
         h('button', { class: 'btn small', text: 'Thoát (B)', onClick: () => h2.onExit() }),
       ]),
-      h('div', { class: 'build-help', html: 'Click nội thất để <b>nhấc</b> (kệ có hàng: hàng đi theo kệ) · Click trái để <b>đặt</b> · <kbd>R</kbd> xoay · <kbd>Delete</kbd> bán lại 50% (hàng tự vào thùng) · <kbd>Esc</kbd> huỷ' }),
+      h('div', { class: 'build-help', html: 'Click nội thất để <b>nhấc</b> (kệ có hàng: hàng đi theo kệ) · Click trái để <b>đặt</b> · <kbd>Lăn chuột</kbd> xoay 15° · <kbd>R</kbd> xoay 90° · <kbd>Delete</kbd> bán lại 50% (hàng tự vào thùng) · <kbd>Esc</kbd> huỷ' }),
       this.list,
       this.status,
     ]);

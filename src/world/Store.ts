@@ -168,6 +168,29 @@ export class Store {
   }
 
   /** Dựng lại kích thước (gọi mỗi frame khi đang có animation mở rộng). */
+  private grow: { fromW: number; fromD: number; t: number } | null = null;
+
+  /** Bắt đầu hiệu ứng tường nới ra khi mở rộng cửa hàng. */
+  beginGrow(): void {
+    this.grow = { fromW: this.W, fromD: this.D, t: 0 };
+  }
+
+  /** Chạy hiệu ứng mở rộng / bật tắt kho. Trả true khi hình dạng vừa chốt (cần tính lại va chạm). */
+  animateTo(W: number, D: number, warehouse: boolean, dt: number): boolean {
+    const a = this.grow;
+    if (a) {
+      a.t = Math.min(1, a.t + dt / 1.2);
+      const k = 1 - Math.pow(1 - a.t, 3);
+      this.setSize(a.fromW + (W - a.fromW) * k, a.fromD + (D - a.fromD) * k, warehouse);
+      if (a.t < 1) return false;
+      this.grow = null;
+      return true;
+    }
+    if (this.warehouse === warehouse) return false;
+    this.setSize(W, D, warehouse);
+    return true;
+  }
+
   setSize(W: number, D: number, warehouse: boolean): void {
     this.W = W;
     this.D = D;

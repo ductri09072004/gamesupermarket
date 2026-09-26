@@ -157,6 +157,21 @@ export function packFurnitureContents(furn: FurnitureData): Array<{ productId: s
   return out;
 }
 
+/**
+ * Kệ trưng bày để trả lại 1 món (hàng bị trộm văng ra): ưu tiên kệ đang bày đúng món đó, rồi slot trống nhận được.
+ */
+export function findReturnShelf(list: FurnitureData[], productId: string): { furn: FurnitureData; slot: number } | null {
+  let fallback: { furn: FurnitureData; slot: number } | null = null;
+  for (const f of list) {
+    if (getFurniture(f.type).kind !== 'display') continue;
+    const r = findStockSlot(f, productId);
+    if (!r.ok) continue;
+    if (f.slots[r.value].productId === productId) return { furn: f, slot: r.value };
+    fallback ??= { furn: f, slot: r.value };
+  }
+  return fallback;
+}
+
 export function rackCanAdd(rack: FurnitureData): boolean {
   const def = getFurniture(rack.type);
   return def.kind === 'rack' && rack.boxes.length < def.slots;
@@ -195,6 +210,16 @@ export class InventorySystem {
       this.bus.emit('inventory:changed', { furnitureUid: furn.uid });
       this.bus.emit('boxes:changed', {});
     }
+    return r;
+  }
+
+  /** Đặt 1 món rời (không từ thùng) lên slot. */
+  returnOne(furn: FurnitureData, slot: number, productId: string): Result {
+    const r = canStockSlot(furn, slot, productId);
+    if (!r.ok) return r;
+    furn.slots[slot].productId = productId;
+    furn.slots[slot].qty += 1;
+    this.bus.emit('inventory:changed', { furnitureUid: furn.uid });
     return r;
   }
 

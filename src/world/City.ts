@@ -6,6 +6,7 @@ import { buildCityInstances } from './CityInstances';
 import { cityLayout, V_ROADS, type CityLayout, type Rect } from './CityLayout';
 import { buildDepot } from './Depot';
 import { applyPbr, pbrSet } from './Materials';
+import { buildShopSigns } from './ShopSigns';
 import { asphaltTexture, concreteTexture, grassTexture } from './Textures';
 
 /** Mặt phẳng nằm ngang phủ rect, UV theo toạ độ thế giới / tile (m) → vật liệu dùng chung, không cần repeat riêng. */
@@ -40,13 +41,16 @@ export class City {
   readonly group = new THREE.Group();
   layout!: CityLayout;
   private lampMats: THREE.MeshStandardMaterial[] = [];
+  private signMats: THREE.MeshStandardMaterial[] = [];
   private lights: THREE.PointLight[] = [];
   private kiosk: THREE.Object3D | null = null;
+  /** Gọi sau mỗi lần dựng lại (xe & người đi bộ cần tuyến mới) */
+  onBuilt: (L: CityLayout) => void = () => {};
 
   build(D: number, storeW: number): void {
     this.group.clear();
     this.lights = [];
-    const L = cityLayout(D);
+    const L = cityLayout(D, storeW);
     this.layout = L;
     const b = L.bounds;
     const outer: Rect = { x0: b.x0 - 80, x1: b.x1 + 80, z0: b.z0 - 80, z1: b.z1 + 80 };
@@ -64,6 +68,7 @@ export class City {
     this.addMarkings(L);
     this.addCurbs(L);
     this.lampMats = buildCityInstances(L.placements, this.group);
+    this.signMats = buildShopSigns(L.placements, this.group);
     this.kiosk = buildDepot(L, this.group);
     // đèn đường thật (PointLight) chỉ cho vài cột gần cửa hàng — còn lại chỉ phát sáng (emissive)
     const cx = storeW / 2;
@@ -75,6 +80,7 @@ export class City {
       this.lights.push(l);
       this.group.add(l);
     }
+    this.onBuilt(L);
   }
 
   private addMarkings(L: CityLayout): void {
@@ -138,6 +144,7 @@ export class City {
 
   setNight(night: number): void {
     for (const m of this.lampMats) m.emissiveIntensity = 0.3 + night * 3;
+    for (const m of this.signMats) m.emissiveIntensity = 0.1 + night * 1.2;
     for (const l of this.lights) l.intensity = night * 14;
   }
 }

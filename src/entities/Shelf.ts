@@ -12,7 +12,9 @@ import { furnitureMatrix } from '../world/Placement';
 import { buildCounter, type CounterParts } from './CheckoutCounter';
 import { buildFurnitureModel } from './FurnitureModels';
 import { buildSelfCheckout, type KioskParts } from './SelfCheckoutModel';
+import { buildGate, type GateParts } from './GateModel';
 import { drawLcd } from '../game/CheckoutProps';
+import { prop } from '../engine/Props';
 
 export interface PriceInfo {
   price: number;
@@ -35,6 +37,7 @@ export class FurnitureView {
   private tagKeys: string[] = [];
   counter: CounterParts | null = null;
   kiosk: KioskParts | null = null;
+  gate: GateParts | null = null;
   screen: THREE.Mesh | null = null;
   private shakeT = 0;
   private flips = new Map<number, number>();
@@ -50,9 +53,20 @@ export class FurnitureView {
     } else if (def.kind === 'selfcheckout') {
       this.kiosk = buildSelfCheckout(def);
       this.model = this.kiosk.group;
+    } else if (def.kind === 'gate') {
+      this.gate = buildGate(def);
+      this.model = this.gate.group;
     } else {
       const glb = assets?.model(def.model);
-      if (glb) this.model = normalizeModel(glb, def.size);
+      if (glb) {
+        this.model = normalizeModel(glb, def.size);
+        // bàn máy tính: laptop đặt riêng trên mặt bàn (không bị ép theo chiều cao bàn)
+        const laptop = def.kind === 'computer' ? prop('laptop') : null;
+        if (laptop) {
+          laptop.position.set(0, def.size.h, 0.03);
+          this.model.add(laptop);
+        }
+      }
       else {
         const b = buildFurnitureModel(def);
         this.model = b.group;
@@ -156,6 +170,8 @@ export class FurnitureView {
 
   /** Hiệu ứng rung kệ & lật nhãn giá. */
   update(dt: number): void {
+    // hiệu ứng "bật" lên sau khi đặt / dời (commitFurniture ép chiều cao xuống 0.6)
+    if (this.model.scale.y < 1) this.model.scale.y = Math.min(1, this.model.scale.y + dt * 3);
     if (this.shakeT > 0) {
       this.shakeT = Math.max(0, this.shakeT - dt);
       this.model.position.x = Math.sin(this.shakeT * 90) * 0.004 * (this.shakeT / 0.18);

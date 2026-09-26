@@ -19,6 +19,8 @@ export interface HumanBody {
   readonly handR: THREE.Object3D;
   speed: number;
   animate: boolean;
+  /** > 0: gộp dt, chỉ cập nhật animation mỗi N giây (NPC ở xa — vẫn thấy bước đi mà rẻ hơn) */
+  animInterval: number;
   holding: boolean;
   reach(): void;
   update(dt: number): void;
@@ -76,6 +78,8 @@ export class Human implements HumanBody {
   private reachT = 0;
   speed = 0;
   animate = true;
+  animInterval = 0;
+  private animAcc = 0;
   holding = false;
 
   constructor(look: HumanLook) {
@@ -140,8 +144,12 @@ export class Human implements HumanBody {
     this.reachT = 0.7;
   }
 
-  update(dt: number): void {
+  update(frameDt: number): void {
     if (!this.animate) return;
+    this.animAcc += frameDt;
+    if (this.animAcc < this.animInterval) return;
+    const dt = this.animAcc;
+    this.animAcc = 0;
     const walking = this.speed > 0.05;
     this.phase += dt * (walking ? this.speed * 5.2 : 1.5);
     const s = Math.sin(this.phase);

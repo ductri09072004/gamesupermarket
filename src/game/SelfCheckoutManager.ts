@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { REP_SELF_HELPED, SELF_ASSIST_SPEEDUP, SELF_HELP_PATIENCE_S, SELF_PAY_S, SELF_SCAN_S } from '../config/constants';
+import { REP_SELF_HELPED, SELF_ASSIST_SPEEDUP, SELF_HELP_SOLO_S, SELF_PAY_S, SELF_SCAN_S } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
 import type { FurnitureData } from '../core/GameState';
@@ -10,7 +10,7 @@ import { itemsTotal, type CheckoutItem } from '../systems/CheckoutSystem';
 import { completeSale } from '../systems/SalesSystem';
 import { rollHelpIndex } from '../systems/SelfCheckoutSystem';
 import { adjacentTiles, counterTiles, footprintCells, type GridPoint } from '../world/Footprint';
-import { bagMesh } from './CheckoutProps';
+import { bagMesh, cardMesh } from './CheckoutProps';
 import type { GameCtx } from './Ctx';
 import type { CustomerManager } from './CustomerManager';
 import { drawKioskScreen, type KioskScreenState } from './KioskScreen';
@@ -28,13 +28,18 @@ interface Session {
   elapsed: number;
   lines: string[];
   claimedBy: string | null;
+  /** Thẻ khách đang chạm vào đầu đọc */
+  card: THREE.Mesh | null;
 }
+
+/** Đầu đọc thẻ trên máy (toạ độ local, phía khách) */
+const CARD_POINT = new THREE.Vector3(0.19, 1.06, 0.155);
 
 const LIGHT = { idle: 0x22c55e, busy: 0x3b82f6, help: 0xef4444 };
 
 /**
  * Máy tự tính tiền: khách đứng đầu hàng tự quét từng món → trả tiền tại máy.
- * Một số khách bí giữa chừng (đèn đỏ nháy) → người chơi (E) hoặc nhân viên chăm sóc khách tới giúp.
+ * Một số khách bí giữa chừng (đèn đỏ nháy) → người chơi (click) hoặc nhân viên chăm sóc khách tới giúp.
  */
 export class SelfCheckoutManager implements KioskHelpApi {
   private sessions = new Map<string, Session>();
@@ -56,6 +61,7 @@ export class SelfCheckoutManager implements KioskHelpApi {
       let ss = this.sessions.get(k.uid);
       // khách bỏ đi / máy bị dời → huỷ phiên
       if (ss && ss.customer.state !== 'served') {
+        ss.card?.removeFromParent();
         this.sessions.delete(k.uid);
         ss = undefined;
       }
@@ -68,7 +74,11 @@ export class SelfCheckoutManager implements KioskHelpApi {
       if (d && (d.t -= dt) <= 0) this.done.delete(k.uid);
       this.render(k.uid, this.sessions.get(k.uid));
     }
-    for (const uid of [...this.sessions.keys()]) if (!alive.has(uid)) this.sessions.delete(uid);
+    for (const [uid, ss] of [...this.sessions]) {
+      if (alive.has(uid)) continue;
+      ss.card?.removeFromParent();
+      this.sessions.delete(uid);
+    }
   }
 
   private at(uid: string, local: THREE.Vector3): THREE.Vector3 {
@@ -81,7 +91,7 @@ export class SelfCheckoutManager implements KioskHelpApi {
     const items = cu.basketItems.map((it) => ({ ...it, scanned: false }));
     const ss: Session = {
       customer: cu, items, scanned: 0, timer: 0.8, helpAt: rollHelpIndex(items.length, cu.elder, this.c.s.rng),
-      helped: false, phase: 'scan', wait: 0, elapsed: 0, lines: [], claimedBy: null,
+      helped: false, phase: 'scan', wait: 0, elapsed: 0, lines: [], claimedBy: null, card: null,
     };
     this.sessions.set(k.uid, ss);
     this.done.delete(k.uid);
@@ -92,9 +102,13 @@ export class SelfCheckoutManager implements KioskHelpApi {
     ss.elapsed += sim;
     if (ss.phase === 'help') {
       ss.wait += sim;
-      if (ss.wait > SELF_HELP_PATIENCE_S) {
-        this.sessions.delete(k.uid);
-        ss.customer.walkout('😤 Chẳng ai giúp cả!');
+      // không ai tới giúp thì khách tự mò ra, chỉ chậm hơn
+      if (ss.wait > SELF_HELP_SOLO_S) {
+        ss.phase = 'scan';
+        ss.helpAt = -1;
+        ss.claimedBy = null;
+        ss.timer = 0.6;
+        ss.customer.say('💡 À, ra là vậy!', 1400);
       }
       return;
     }
@@ -107,9 +121,10 @@ export class SelfCheckoutManager implements KioskHelpApi {
     if (!ss.helped && ss.scanned === ss.helpAt) {
       ss.phase = 'help';
       ss.wait = 0;
-      ss.customer.askHelp();
+      ss.customer.bubble.show('🙋 Máy này dùng sao đây?', 0);
+      ss.customer.human.reach();
       this.c.sound('error', this.at(k.uid, new THREE.Vector3(0, 1.3, 0)), 0.8);
-      this.c.toast('🙋 Có khách cần hỗ trợ ở máy tự tính tiền!', 'info');
+      this.c.toast('🙋 Khách lúng túng ở máy tự tính tiền — click chuột trái vào máy để giúp', 'info');
       return;
     }
     this.scanOne(k, ss);
@@ -117,7 +132,25 @@ export class SelfCheckoutManager implements KioskHelpApi {
     if (ss.scanned >= ss.items.length) {
       ss.phase = 'pay';
       ss.timer = SELF_PAY_S;
+      this.tapCard(k, ss);
     }
+  }
+
+  /** Khách rút thẻ chạm vào đầu đọc: bíp xác nhận. */
+  private tapCard(k: FurnitureData, ss: Session): void {
+    const view = this.c.furniture.get(k.uid);
+    if (!view?.kiosk) return;
+    const card = cardMesh();
+    // thẻ dựng đứng, mặt in hướng về khách
+    card.quaternion.setFromRotationMatrix(view.root.matrixWorld).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)));
+    ss.card = card;
+    const hand = ss.customer.human.handR.getWorldPosition(new THREE.Vector3());
+    const reader = this.at(k.uid, CARD_POINT);
+    ss.customer.human.reach();
+    this.c.effects.fly(card, hand, reader, {
+      dur: 0.7, arc: 0.08, keep: true,
+      onDone: () => { if (ss.card === card) this.c.sound('beep', reader, 1.3); },
+    });
   }
 
   private scanOne(k: FurnitureData, ss: Session): void {
@@ -147,8 +180,14 @@ export class SelfCheckoutManager implements KioskHelpApi {
     const s = this.c.s;
     const total = itemsTotal(ss.items);
     const at = this.at(k.uid, new THREE.Vector3(0, 1.5, -0.5));
-    // máy tự thối đúng tiền → không có rủi ro thối sai
-    const r = completeSale(s, ss.customer.id, ss.items, s.rng() < 0.7 ? 'card' : 'cash', total, 0, ss.elapsed, { gx: at.x, gy: at.z });
+    // máy chỉ nhận thẻ: khách tự chạm thẻ, không cần thu ngân
+    const r = completeSale(s, ss.customer.id, ss.items, 'card', total, 0, ss.elapsed, { gx: at.x, gy: at.z });
+    if (ss.card) {
+      const card = ss.card;
+      ss.card = null;
+      const hand = ss.customer.human.handR.getWorldPosition(new THREE.Vector3());
+      this.c.effects.fly(card, card.position.clone(), hand, { dur: 0.35, arc: 0.05 });
+    }
     if (ss.helped) s.progression.changeReputation(REP_SELF_HELPED);
     this.c.effects.floatText(`+$${r.revenue.toFixed(2)}`, at);
     ss.customer.finishCheckout(true, bagMesh());
@@ -216,7 +255,7 @@ export class SelfCheckoutManager implements KioskHelpApi {
     ss.helped = true;
     ss.claimedBy = null;
     ss.timer = 0.4;
-    ss.customer.thankHelp();
+    ss.customer.say('😊 Cảm ơn nha!', 1400);
     this.c.sound('click', this.at(uid, new THREE.Vector3(0, 1.2, 0)));
     return true;
   }
@@ -234,11 +273,12 @@ export class SelfCheckoutManager implements KioskHelpApi {
   /** Gợi ý phím dưới tâm ngắm khi nhìn vào máy. */
   hint(uid: string): string {
     const ss = this.sessions.get(uid);
-    if (ss?.phase === 'help') return '<kbd>E</kbd> Hỗ trợ khách tính tiền';
+    if (ss?.phase === 'help') return '<kbd>Chuột trái</kbd> Hỗ trợ khách tính tiền';
     return ss ? '🖥️ Khách đang tự thanh toán' : '🖥️ Máy tự tính tiền — đang chờ khách';
   }
 
   clear(): void {
+    for (const ss of this.sessions.values()) ss.card?.removeFromParent();
     this.sessions.clear();
   }
 }

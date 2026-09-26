@@ -7,6 +7,7 @@ import { getLicense } from '../config/licenses';
 import type { EventBus, GameEvents } from '../core/EventBus';
 import type { GameState } from '../core/GameState';
 import type { EconomySystem } from './EconomySystem';
+import type { OrderSystem } from './OrderSystem';
 
 export interface ExpansionPack {
   index: number;
@@ -42,7 +43,7 @@ type R = { ok: boolean; reason?: string };
 export class ShopSystem {
   readonly packs = expansionPacks();
 
-  constructor(private state: GameState, private bus: EventBus<GameEvents>, private economy: EconomySystem) {}
+  constructor(private state: GameState, private bus: EventBus<GameEvents>, private economy: EconomySystem, private orders?: Pick<OrderSystem, 'orderFurniture'>) {}
 
   licenseStatus(id: number): 'owned' | 'available' | 'locked-level' | 'locked-prev' {
     const d = this.state.data;
@@ -80,7 +81,9 @@ export class ShopSystem {
     if (!c.ok) return c;
     const def = getFurniture(type);
     this.economy.spend(def.price, `Mua ${def.name}`);
-    this.state.data.furnitureStock.push(type);
+    // có hệ thống giao hàng → xe tải chở thùng tới; không thì vào kho nội thất như cũ
+    if (this.orders) this.orders.orderFurniture(type);
+    else this.state.data.furnitureStock.push(type);
     this.bus.emit('furniture:changed', {});
     return { ok: true };
   }

@@ -21,7 +21,8 @@ export class PlayerController {
   sensitivity = 1;
   private vx = 0;
   private vz = 0;
-  private bobDist = 0;
+  /** Pha bước chân: +1 mỗi bước (headbob và tiếng bước cùng nhịp) */
+  private stepPhase = 0;
   private bobOffset = 0;
   private lastStep = 0;
   speed = 0;
@@ -114,10 +115,10 @@ export class PlayerController {
     // headbob + bước chân
     this.landDip *= 1 - Math.min(1, dt * 10);
     if (this.speed > 0.3 && this.grounded) {
-      this.bobDist += moved;
-      const phase = this.bobDist * FEEL.headbobFreq * Math.PI;
+      this.stepPhase += moved / (FEEL.strideBase + FEEL.stridePerMs * this.speed);
+      const phase = this.stepPhase * Math.PI;
       this.bobOffset = this.headbob ? Math.abs(Math.sin(phase)) * FEEL.headbobAmp * Math.min(1, this.speed / WALK_SPEED) : 0;
-      const step = Math.floor(this.bobDist * FEEL.headbobFreq);
+      const step = Math.floor(this.stepPhase);
       if (step !== this.lastStep) {
         this.lastStep = step;
         this.onFootstep(new THREE.Vector3(this.x, 0.05, this.z));

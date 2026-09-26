@@ -29,6 +29,19 @@
 - Bẫy: nhãn giá đặt ở `zFront - 0.012` → nẹp giá phải nằm SAU mặt đó (trước đây nẹp che mất nhãn trên kệ gondola).
 - Muốn đẹp hơn nữa phải mua bộ kệ/tủ (Sketchfab Store, CGTrader); thả `<id>.glb` vào `models/furniture/` là tự thay.
 
+## Đợt thay GLB tháng 9/2026 — ĐÃ LÀM
+- Kệ nhỏ/lớn: Poly Haven `steel_frame_shelves_01` (kệ lớn = 2 kệ ghép). `GEOM.shelf` = base 0.1 / board 0.012 / top 0.004
+  khớp 4 tấm gỗ dưới (6.5% / 30% / 53.5% / 77% chiều cao).
+- Bàn máy tính `metal_office_desk` + laptop `classic_laptop` (prop riêng, Shelf.ts đặt lên mặt bàn để không bị ép chiều cao).
+- Registry `src/engine/Props.ts` ← `manifest.props` ("props/<tên>.glb"): máy tính tiền trên quầy, đèn tuýp/đèn thả
+  (mặt kính → vật liệu glow dùng chung để công tắc điều khiển), chổi + biển sàn ướt + xô của lao công, camera an ninh,
+  chậu cây, xe tải giao hàng. Xe người chơi: `city/vehicle_car|pickup.glb`.
+- Script chuẩn hoá: scratchpad `tools/process.mjs` (gltf-transform: bake transform, xoay về -Z, scale, gốc giữa đáy,
+  pivot bánh xe về tâm bánh, WebP 1024). Bẫy: gộp doc cần `unpartition()` trước khi ghi GLB; mesh nhiều vật liệu
+  thành nhóm cha + con cùng tên → chỉ quay nút "wheel" ngoài cùng (`findWheels`).
+- Đã loại: Poly Pizza "Fridge with Display" (thực ra là tủ lạnh gia đình kín), "Bag" (túi da, không phải túi mua hàng).
+- Chưa có CC0: tủ đông, máy bán hàng, máy tự tính tiền, cổng an ninh, tủ kính điện tử, xe máy, giỏ, tiền giấy/thẻ.
+
 ## Quầy thu ngân & máy tự tính tiền — ĐÃ LÀM (code)
 - `CheckoutCounter.ts`: vỏ tĩnh gộp qua `mergedModel('counter:<id>')` — ốp gỗ sồi (Poly Haven `oak_veneer_01`, slot
   `wood`), mặt đá nhân tạo, nẹp inox, ray băng chuyền. Phần động (băng chuyền cuộn, laser, LCD, ngăn kéo, POS) giữ

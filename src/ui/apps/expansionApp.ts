@@ -20,7 +20,8 @@ export function renderExpansion(body: HTMLElement, ctx: AppContext): void {
         onClick: () => {
           const r = s.shop.buyExpansion();
           if (!r.ok) s.bus.emit('toast', { message: r.reason ?? 'Lỗi', kind: 'error' });
-          else ctx.closePc();
+          else s.bus.emit('sound', { name: 'coin' });
+          ctx.rerender();
         },
       }),
     ]));
@@ -39,7 +40,8 @@ export function renderExpansion(body: HTMLElement, ctx: AppContext): void {
       onClick: () => {
         const r = s.shop.buyWarehouse();
         if (!r.ok) s.bus.emit('toast', { message: r.reason ?? 'Lỗi', kind: 'error' });
-        else ctx.closePc();
+        else s.bus.emit('sound', { name: 'coin' });
+        ctx.rerender();
       },
     }),
   ]));

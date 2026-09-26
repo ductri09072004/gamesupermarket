@@ -38,7 +38,7 @@ export class StaffSystem {
     this.candidates = [
       generateCandidate('cashier', this.rng), generateCandidate('cashier', this.rng),
       generateCandidate('stocker', this.rng), generateCandidate('stocker', this.rng),
-      generateCandidate('helper', this.rng),
+      generateCandidate('helper', this.rng), generateCandidate('cleaner', this.rng), generateCandidate('guard', this.rng),
     ];
   }
 

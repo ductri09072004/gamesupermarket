@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { EventBus, GameEvents, SoundName } from '../core/EventBus';
 import type { Settings } from '../core/GameState';
 import { buildSoundBank } from './SoundBank';
+import { buildStepBank, type StepSurface } from './FootstepSynth';
 
 /**
  * Âm thanh: THREE.AudioListener gắn vào camera, PositionalAudio cho âm 3D,
@@ -10,6 +11,9 @@ import { buildSoundBank } from './SoundBank';
 export class AudioEngine {
   readonly listener = new THREE.AudioListener();
   private bank: Map<string, AudioBuffer> | null = null;
+  private steps: Record<StepSurface, AudioBuffer[]> | null = null;
+  private lastStep = -1;
+  private stepSide = 1;
   private sfx!: GainNode;
   private music!: GainNode;
   private ambient!: GainNode;
@@ -83,6 +87,30 @@ export class AudioEngine {
     const g = this.context.createGain();
     g.gain.value = volume;
     src.connect(g).connect(this.sfx);
+    src.start();
+  }
+
+  /**
+   * Bước chân của chính người chơi: không định vị 3D (tai ở ngay trên chân),
+   * xen kẽ trái/phải, chọn biến thể khác bước trước, lệch pitch/âm lượng nhẹ.
+   */
+  playStep(surface: StepSurface, volume: number): void {
+    if (this.settings?.muted || this.context.state !== 'running') return;
+    this.steps ??= buildStepBank(this.context);
+    const list = this.steps[surface];
+    let k = Math.floor(Math.random() * list.length);
+    if (k === this.lastStep) k = (k + 1) % list.length;
+    this.lastStep = k;
+    this.stepSide = -this.stepSide;
+    const ctx = this.context;
+    const src = ctx.createBufferSource();
+    src.buffer = list[k];
+    src.playbackRate.value = 0.94 + Math.random() * 0.12;
+    const g = ctx.createGain();
+    g.gain.value = volume * (0.85 + Math.random() * 0.3);
+    const pan = ctx.createStereoPanner();
+    pan.pan.value = this.stepSide * 0.18;
+    src.connect(g).connect(pan).connect(this.sfx);
     src.start();
   }
 

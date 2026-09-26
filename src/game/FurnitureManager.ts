@@ -5,9 +5,9 @@ import type { Services } from '../core/Services';
 import type { Assets } from '../engine/Assets';
 import type { AudioEngine } from '../engine/Audio';
 import { FurnitureView } from '../entities/Shelf';
-import { rotatedSize } from '../world/Footprint';
+import { rotatedExtent } from '../world/Footprint';
 import type { AABB } from '../world/Colliders';
-import { furnitureCenter } from '../world/Placement';
+import { furnitureCenter, furnitureMatrix } from '../world/Placement';
 
 /** Đồng bộ các FurnitureView với state; sinh collider AABB. */
 export class FurnitureManager {
@@ -64,7 +64,7 @@ export class FurnitureManager {
     this.onChanged();
   }
 
-  /** Hộp va chạm theo kích thước thật (xoay 90°). */
+  /** Hộp va chạm theo kích thước thật (hộp bao khi xoay xiên). */
   colliders(): AABB[] {
     const out: AABB[] = [];
     for (const f of this.s.data.furniture) {
@@ -72,10 +72,17 @@ export class FurnitureManager {
       if (v && !v.root.visible) continue;
       const def = getFurniture(f.type);
       if (isCeiling(def)) continue;
+      if (def.kind === 'gate') {
+        // chỉ 2 cột 2 bên chặn người chơi; lối giữa đi qua được
+        const m = furnitureMatrix(f);
+        for (const sx of [-1, 1]) {
+          const p = new THREE.Vector3(sx * (def.size.w / 2 - 0.07), 0, 0).applyMatrix4(m);
+          out.push({ minX: p.x - 0.1, maxX: p.x + 0.1, minZ: p.z - 0.1, maxZ: p.z + 0.1, tag: f.uid });
+        }
+        continue;
+      }
       const c = furnitureCenter(f);
-      const rs = rotatedSize(def, f.rot);
-      const sw = rs.w === def.footprint.w ? def.size.w : def.size.d;
-      const sd = rs.w === def.footprint.w ? def.size.d : def.size.w;
+      const { w: sw, d: sd } = rotatedExtent(def.size.w, def.size.d, f.rot);
       out.push({ minX: c.x - sw / 2, maxX: c.x + sw / 2, minZ: c.z - sd / 2, maxZ: c.z + sd / 2, tag: f.uid });
     }
     return out;

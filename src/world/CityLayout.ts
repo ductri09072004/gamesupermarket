@@ -1,9 +1,10 @@
 import {
-  BUILDINGS, BUILDING_TEXTURES, BUSHES, CITY_SEED, LAMP_SPACING, PARKED_CARS, ROAD_WIDTH, TREES, TREE_SPACING, WALK_WIDTH,
+  BUSHES, CITY_SEED, LAMP_SPACING, PARKED_CARS, ROAD_WIDTH, TREES, TREE_SPACING, WALK_WIDTH,
 } from '../config/city';
 import { SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
-import { mulberry32, pick, type Rng } from '../core/Random';
+import { mulberry32, pick } from '../core/Random';
 import type { AABB } from './Colliders';
+import { fillEdge, infillBlocks, ringEdges, sideShops } from './CityFill';
 
 export interface Rect {
   x0: number;
@@ -22,6 +23,8 @@ export interface Placement {
   z: number;
   rot: number;
   variant: number;
+  /** Chữ biển hiệu (cửa hiệu cạnh siêu thị) */
+  sign?: string;
 }
 
 export interface Spot {
@@ -43,6 +46,8 @@ export interface CityLayout {
   placements: Placement[];
   colliders: AABB[];
   bounds: Rect;
+  /** Tim các đường ngang (Z) — cùng V_ROADS tạo lưới đường cho xe chạy */
+  hz: number[];
 }
 
 const HALF = ROAD_WIDTH / 2;
@@ -65,8 +70,11 @@ export function curbZ(D: number): number {
   return D + WALL_THICKNESS + SIDEWALK_DEPTH;
 }
 
-/** Bố cục phố cố định theo hạt giống, chỉ phụ thuộc chiều sâu cửa hàng D (đường chính chạy trước mặt tiền). */
-export function cityLayout(D: number): CityLayout {
+/**
+ * Bố cục phố cố định theo hạt giống, phụ thuộc chiều sâu cửa hàng D (đường chính chạy trước mặt tiền)
+ * và chiều rộng W (dãy cửa hiệu bên phải co lại khi mở rộng).
+ */
+export function cityLayout(D: number, W = 12): CityLayout {
   const rng = mulberry32(CITY_SEED);
   const F = curbZ(D);
   const hz = [-44, F + HALF, F + 64];
@@ -96,7 +104,9 @@ export function cityLayout(D: number): CityLayout {
   const pad: Rect = { x0: 78, x1: 94, z0: F - walk - 8, z1: F - walk - 2 };
   const depot = { shed, pad, kiosk: { x: 96.5, z: pad.z0 + 3, yaw: 0 } };
   const reserved: Rect[] = [
-    { x0: -10, x1: 34, z0: WAREHOUSE.z0 - 6, z1: F }, lot, { ...shed, z1: F }, { x0: shed.x0 - 2, x1: shed.x1 + 2, z0: shed.z0, z1: F },
+    // cửa hàng + kho phía sau (chừa lối sau 3m) và vỉa hè trước mặt tiền
+    { x0: -0.6, x1: W + 0.6, z0: WAREHOUSE.z0 - 4, z1: F }, { x0: -14.5, x1: 35, z0: D + WALL_THICKNESS, z1: F },
+    lot, { ...shed, z1: F }, { x0: shed.x0 - 2, x1: shed.x1 + 2, z0: shed.z0, z1: F },
   ];
   const placements: Placement[] = [];
   const colliders: AABB[] = [];
@@ -104,17 +114,13 @@ export function cityLayout(D: number): CityLayout {
   const addSolid = (r: Rect, tag: string) => colliders.push({ minX: r.x0, maxX: r.x1, minZ: r.z0, maxZ: r.z1, tag });
   addSolid(shed, 'depot');
   addSolid({ x0: depot.kiosk.x - 0.6, x1: depot.kiosk.x + 0.6, z0: depot.kiosk.z - 0.4, z1: depot.kiosk.z + 0.4 }, 'kiosk');
+  // hàng xóm sát hai bên siêu thị trước, rồi mới tới nhà ven các khối phố
+  sideShops(D, W, lot.x0 - 1.5, taken, placements, addSolid);
 
   // nhà dọc 4 cạnh mỗi khối, mặt tiền quay ra đường
   for (const b of blocks) {
     const inner: Rect = { x0: b.x0 + walk, x1: b.x1 - walk, z0: b.z0 + walk, z1: b.z1 - walk };
-    const edges: Array<{ rot: number; along: 'x' | 'z'; from: number; to: number; line: number; sign: number }> = [
-      { rot: 0, along: 'x', from: inner.x0, to: inner.x1, line: inner.z1, sign: -1 },
-      { rot: Math.PI, along: 'x', from: inner.x0, to: inner.x1, line: inner.z0, sign: 1 },
-      { rot: Math.PI / 2, along: 'z', from: inner.z0 + 8, to: inner.z1 - 8, line: inner.x1, sign: -1 },
-      { rot: -Math.PI / 2, along: 'z', from: inner.z0 + 8, to: inner.z1 - 8, line: inner.x0, sign: 1 },
-    ];
-    for (const e of edges) fillEdge(rng, e, taken, placements, addSolid);
+    for (const e of ringEdges(b, walk)) fillEdge(rng, e, taken, placements, addSolid);
     // bụi cây trong sân sau
     for (let k = 0; k < 6; k++) {
       const x = inner.x0 + 10 + rng() * (inner.x1 - inner.x0 - 20);
@@ -124,6 +130,8 @@ export function cityLayout(D: number): CityLayout {
       placements.push({ kind: 'bush', model: pick(rng, BUSHES), x, z, rot: rng() * Math.PI * 2, variant: 0 });
     }
   }
+
+  infillBlocks(rng, blocks, walk, taken, placements, addSolid);
 
   // cây & đèn dọc vỉa hè (sát lề đường), chừa giao lộ, lối vào bãi, trước cửa hàng
   const noTree: Rect[] = [{ x0: -4, x1: 30, z0: F - walk, z1: F }, { x0: lot.x0, x1: lot.x1, z0: F - walk, z1: F },
@@ -152,12 +160,8 @@ export function cityLayout(D: number): CityLayout {
       addSolid({ x0: p.x - 0.25, x1: p.x + 0.25, z0: p.z - 0.25, z1: p.z + 0.25 }, 'lamp');
     }
   }
-  // xe đỗ trang trí: 3 chỗ cuối bãi + ven đường phía bắc
+  // xe đỗ trang trí: 3 chỗ cuối bãi (lòng đường để cho xe NPC chạy — xem Traffic)
   lotSpots.slice(3).forEach((s, i) => placements.push({ kind: 'car', model: PARKED_CARS[i % PARKED_CARS.length], x: s.x, z: s.z, rot: s.yaw, variant: 0 }));
-  for (let i = 0; i < 5; i++) {
-    const x = -70 + i * 38 + rng() * 6;
-    placements.push({ kind: 'car', model: pick(rng, PARKED_CARS), x, z: hz[2] - HALF + 1.2, rot: -Math.PI / 2, variant: 0 });
-  }
   for (const p of placements) if (p.kind === 'car') addSolid(footprint(p.x, p.z, 1.9, 4.3, p.rot), 'car');
   // cọc chặn: xe không chạy vào cửa hàng qua cửa kính
   const bounds: Rect = { x0: xMin - 4, x1: xMax + 4, z0: zMin - 4, z1: zMax + 4 };
@@ -167,31 +171,7 @@ export function cityLayout(D: number): CityLayout {
     { minX: bounds.x0, maxX: bounds.x1, minZ: bounds.z0 - 10, maxZ: bounds.z0, tag: 'bound' },
     { minX: bounds.x0, maxX: bounds.x1, minZ: bounds.z1, maxZ: bounds.z1 + 10, tag: 'bound' },
   );
-  return { roads, centerLines, blocks, lot, lotSpots, depot, placements, colliders, bounds };
-}
-
-function fillEdge(
-  rng: Rng, e: { rot: number; along: 'x' | 'z'; from: number; to: number; line: number; sign: number },
-  taken: Rect[], out: Placement[], addSolid: (r: Rect, tag: string) => void,
-): void {
-  const names = Object.keys(BUILDINGS);
-  let t = e.from + rng() * 2;
-  let guard = 0;
-  while (t < e.to && guard++ < 60) {
-    const name = pick(rng, names);
-    const [w, , d] = BUILDINGS[name];
-    if (t + w > e.to) { t += 1.5; continue; }
-    const c = t + w / 2;
-    const off = e.line + e.sign * (d / 2 + 0.3);
-    const x = e.along === 'x' ? c : off;
-    const z = e.along === 'x' ? off : c;
-    const r = footprint(x, z, w, d, e.rot);
-    if (taken.some((k) => rectsOverlap(k, r, 0.4))) { t += 2; continue; }
-    taken.push(r);
-    out.push({ kind: 'building', model: name, x, z, rot: e.rot, variant: Math.floor(rng() * BUILDING_TEXTURES.length) });
-    addSolid(r, 'building');
-    t += w + 0.4 + rng() * 2.5;
-  }
+  return { roads, centerLines, blocks, lot, lotSpots, depot, placements, colliders, bounds, hz };
 }
 
 /** Các dải vỉa hè dọc đường: hàm at(t, lề) trả điểm cách mép đường `lề` mét. facing: hướng quay ra đường. */

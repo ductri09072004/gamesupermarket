@@ -54,7 +54,22 @@ export class OrderSystem {
     private inventory: InventorySystem,
     private rng: Rng,
     private deliveryTiles: () => GridPoint[],
+    private crateTiles: () => GridPoint[] = () => [],
   ) {}
+
+  /** Có đặt thì đơn tới hạn sẽ gọi hàm này (xe tải chạy tới rồi mới deliver); không đặt → giao ngay. */
+  onDue: ((order: OrderData) => void) | null = null;
+
+  /** Nội thất đã trả tiền → đơn giao hàng dạng thùng lắp đặt. */
+  orderFurniture(type: string): OrderData {
+    const order: OrderData = {
+      id: this.state.newUid('o'), items: [], furniture: [type], total: 0,
+      remainingMs: DELIVERY_MIN_MS + this.rng() * (DELIVERY_MAX_MS - DELIVERY_MIN_MS),
+    };
+    this.state.data.orders.push(order);
+    this.bus.emit('order:placed', { orderId: order.id });
+    return order;
+  }
 
   placeOrder(cart: Cart): { ok: boolean; reason?: string; order?: OrderData } {
     const items = Object.entries(cart).filter(([, n]) => n > 0).map(([productId, boxes]) => ({ productId, boxes }));
@@ -104,20 +119,27 @@ export class OrderSystem {
   update(dtMs: number): void {
     const d = this.state.data;
     if (d.orders.length === 0) return;
-    const arrived: OrderData[] = [];
+    const due: OrderData[] = [];
     for (const o of d.orders) {
+      if (o.dispatched) continue;
       o.remainingMs -= dtMs;
-      if (o.remainingMs <= 0) arrived.push(o);
+      if (o.remainingMs <= 0) due.push(o);
     }
-    if (arrived.length === 0) return;
-    d.orders = d.orders.filter((o) => o.remainingMs > 0);
-    for (const o of arrived) this.deliver(o);
+    for (const o of due) {
+      if (this.onDue) {
+        o.dispatched = true;
+        this.onDue(o);
+      } else this.deliver(o);
+    }
   }
 
-  deliver(order: OrderData): string[] {
+  /** Thùng xuất hiện ở ô giao hàng (from: điểm bay ra — đuôi xe tải). */
+  deliver(order: OrderData, from?: { x: number; y: number; z: number }): string[] {
+    const d = this.state.data;
+    d.orders = d.orders.filter((o) => o !== order);
     const tiles = this.deliveryTiles();
     const counts = new Map<string, number>();
-    for (const b of this.state.data.boxes) {
+    for (const b of d.boxes) {
       if (b.location !== 'floor') continue;
       const k = `${b.gx.toFixed(2)},${b.gy.toFixed(2)}`;
       counts.set(k, (counts.get(k) ?? 0) + 1);
@@ -132,9 +154,21 @@ export class OrderSystem {
         uids.push(this.inventory.createBox(p.id, p.unitsPerBox, t.gx, t.gy).uid);
       }
     }
-    this.bus.emit('order:arrived', { orderId: order.id, boxUids: uids });
+    for (const type of order.furniture ?? []) {
+      const t = pickCrateTile(this.crateTiles(), d.crates);
+      d.crates.push({ uid: this.state.newUid('k'), type, x: t.gx, z: t.gy });
+    }
+    if (order.furniture?.length) this.bus.emit('crates:changed', {});
+    this.bus.emit('order:arrived', { orderId: order.id, boxUids: uids, from });
     this.bus.emit('boxes:changed', {});
-    this.bus.emit('toast', { message: `📦 Đơn hàng đã tới (${uids.length} thùng) — ra vỉa hè nhận hàng!`, kind: 'success' });
+    const n = uids.length + (order.furniture?.length ?? 0);
+    this.bus.emit('toast', { message: `📦 Hàng đã giao (${n} thùng) — ra vỉa hè nhận hàng!`, kind: 'success' });
     return uids;
   }
+}
+
+/** Ô đặt thùng nội thất: ô đầu tiên chưa có thùng (thùng to, không chồng); hết chỗ thì đặt ô cuối. */
+export function pickCrateTile(tiles: GridPoint[], crates: Array<{ x: number; z: number; held?: boolean }>): GridPoint {
+  const free = tiles.find((t) => !crates.some((c) => !c.held && Math.abs(c.x - t.gx) < 0.7 && Math.abs(c.z - t.gy) < 0.7));
+  return free ?? tiles[tiles.length - 1] ?? { gx: 0, gy: 0 };
 }

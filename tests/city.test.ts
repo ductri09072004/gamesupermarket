@@ -4,16 +4,23 @@ import { MAX_STORE_H, MAX_STORE_W, WAREHOUSE } from '../src/config/constants';
 import { cityLayout, curbZ, footprint, rectsOverlap, type Rect } from '../src/world/CityLayout';
 
 describe('Bố cục thành phố', () => {
-  for (const D of [10, MAX_STORE_H]) {
-    const L = cityLayout(D);
-    const store: Rect = { x0: -0.5, x1: MAX_STORE_W + 0.5, z0: WAREHOUSE.z0 - 0.5, z1: curbZ(D) };
+  for (const [D, W] of [[10, 12], [MAX_STORE_H, MAX_STORE_W], [14, 18]]) {
+    const L = cityLayout(D, W);
+    const store: Rect = { x0: -0.5, x1: W + 0.5, z0: WAREHOUSE.z0 - 0.5, z1: curbZ(D) };
+
+    it(`D=${D} W=${W}: có dãy cửa hiệu sát hai bên cửa hàng`, () => {
+      const shops = L.placements.filter((p) => p.sign);
+      expect(shops.some((p) => p.x < 0)).toBe(true);
+      if (W < MAX_STORE_W) expect(shops.some((p) => p.x > W)).toBe(true);
+      for (const p of shops) expect(Math.abs(p.z + BUILDINGS[p.model][2] / 2 - (D + 0.2))).toBeLessThan(0.01);
+    });
 
     it(`D=${D}: nhà không đè lên đường, cửa hàng, bãi đỗ, kho sỉ, và không đè nhau`, () => {
       const houses = L.placements.filter((p) => p.kind === 'building').map((p) => {
         const [w, , d] = BUILDINGS[p.model];
         return footprint(p.x, p.z, w, d, p.rot);
       });
-      expect(houses.length).toBeGreaterThan(30);
+      expect(houses.length).toBeGreaterThan(120);
       for (const [i, h] of houses.entries()) {
         for (const r of L.roads) expect(rectsOverlap(h, r)).toBe(false);
         expect(rectsOverlap(h, store)).toBe(false);

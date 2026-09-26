@@ -5,7 +5,7 @@ import { SaveSystem } from './SaveSystem';
 import { NavGrid } from '../world/NavGrid';
 import { PathCache } from '../world/Pathfinding';
 import { footprintCells } from '../world/Footprint';
-import { getFurniture, isCeiling } from '../config/furniture';
+import { getFurniture, isPassable } from '../config/furniture';
 import { TimeSystem } from '../systems/TimeSystem';
 import { EconomySystem } from '../systems/EconomySystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
@@ -15,6 +15,7 @@ import { StaffSystem } from '../systems/StaffSystem';
 import { VehicleSystem } from '../systems/VehicleSystem';
 import { ShopSystem } from '../systems/ShopSystem';
 import { DaySystem } from '../systems/DaySystem';
+import { CleanlinessSystem } from '../systems/CleanlinessSystem';
 import { marketPrice } from '../systems/PricingSystem';
 
 /** Gom toàn bộ system của một ván chơi. UI & scene truy cập qua getServices(). */
@@ -35,6 +36,7 @@ export class Services {
   readonly staff: StaffSystem;
   readonly shop: ShopSystem;
   readonly day: DaySystem;
+  readonly cleanliness: CleanlinessSystem;
   readonly saves = new SaveSystem();
   /** Số khách hiện có trong cửa hàng (do CustomerManager cập nhật). */
   customerCount = 0;
@@ -49,10 +51,11 @@ export class Services {
     this.economy = new EconomySystem(this.state, this.bus);
     this.progression = new ProgressionSystem(this.state, this.bus);
     this.inventory = new InventorySystem(this.state, this.bus);
-    this.orders = new OrderSystem(this.state, this.bus, this.economy, this.inventory, this.rng, () => this.grid.deliverySpots());
+    this.orders = new OrderSystem(this.state, this.bus, this.economy, this.inventory, this.rng, () => this.grid.deliverySpots(), () => this.grid.crateSpots());
     this.staff = new StaffSystem(this.state, this.bus, this.rng);
-    this.shop = new ShopSystem(this.state, this.bus, this.economy);
+    this.shop = new ShopSystem(this.state, this.bus, this.economy, this.orders);
     this.vehicles = new VehicleSystem(this.state, this.bus, this.economy);
+    this.cleanliness = new CleanlinessSystem(this.state, this.bus, this.rng, this.progression);
     this.day = new DaySystem(this);
   }
 
@@ -75,7 +78,7 @@ export class Services {
     g.clearOccupancy();
     for (const f of this.data.furniture) {
       const def = getFurniture(f.type);
-      if (!isCeiling(def)) g.occupy(footprintCells(def, f.gx, f.gy, f.rot), f.uid);
+      if (!isPassable(def)) g.occupy(footprintCells(def, f.gx, f.gy, f.rot), f.uid);
     }
   }
 
@@ -88,6 +91,8 @@ export class Services {
   /** Bản sao để lưu: thùng đang cầm được đặt xuống sàn. */
   snapshot(): SaveData {
     const copy = JSON.parse(JSON.stringify(this.data)) as SaveData;
+    // thùng nội thất đang bê → đặt xuống chỗ người chơi đứng
+    for (const k of copy.crates) if (k.held) Object.assign(k, { held: false, x: copy.player.gx, z: copy.player.gy });
     for (const b of copy.boxes) {
       if (b.location === 'held' || b.location === 'staff') {
         b.location = 'floor';

@@ -33,6 +33,8 @@ export interface BoxData {
   gy: number;
   location: BoxLocation;
   holderId: string | null;
+  /** Tư thế sau khi bị vật lý xô đổ (thùng trên sàn): độ cao tâm + quaternion. Không có → đặt thẳng, chồng theo vị trí */
+  pose?: { y: number; q: [number, number, number, number] };
 }
 
 /** Xe người chơi sở hữu. x/z/yaw: vị trí world (m, rad); cargo: uid thùng đang chở. */
@@ -48,11 +50,44 @@ export interface VehicleData {
 export interface OrderData {
   id: string;
   items: Array<{ productId: string; boxes: number }>;
+  /** Nội thất đã mua — giao tới dạng thùng lắp đặt */
+  furniture?: string[];
   remainingMs: number;
   total: number;
+  /** Đã có xe tải đang chạy tới giao (không lưu ý nghĩa qua lần tải game) */
+  dispatched?: boolean;
 }
 
-export type StaffRole = 'cashier' | 'stocker' | 'helper';
+/** Thùng nội thất (giao bằng xe tải), bê vào rồi lắp đặt ở góc nhìn thứ nhất. held: người chơi đang bê. */
+export interface CrateData {
+  uid: string;
+  type: string;
+  x: number;
+  z: number;
+  held?: boolean;
+}
+
+export type StaffRole = 'cashier' | 'stocker' | 'helper' | 'cleaner' | 'guard';
+
+/** Chất bẩn: rác trên sàn, vết đổ trên sàn, vết bẩn trên cửa kính mặt tiền. Toạ độ m. */
+export type DirtKind = 'litter' | 'spill' | 'smudge';
+
+export interface DirtData {
+  uid: string;
+  kind: DirtKind;
+  x: number;
+  z: number;
+  /** Góc xoay / biến thể hình (trang trí) */
+  seed: number;
+}
+
+/** Món hàng rơi trên sàn (văng ra từ khách trộm), chờ nhặt về kệ. */
+export interface LooseItem {
+  uid: string;
+  productId: string;
+  x: number;
+  z: number;
+}
 
 export interface StaffData {
   uid: string;
@@ -132,6 +167,9 @@ export interface SaveData {
   player: { gx: number; gy: number; yaw: number };
   gameOver: boolean;
   vehicles: VehicleData[];
+  dirt: DirtData[];
+  loose: LooseItem[];
+  crates: CrateData[];
   /** Công tắc đèn trong cửa hàng */
   lightsOn: boolean;
   /** Chế độ developer: nhiều tiền, bỏ qua giới hạn cấp độ */
@@ -200,6 +238,9 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
     player: { gx: 3, gy: 8, yaw: 0 },
     gameOver: false,
     vehicles: [],
+    dirt: [],
+    loose: [],
+    crates: [],
     lightsOn: true,
     devMode: false,
   };

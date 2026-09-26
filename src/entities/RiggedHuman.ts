@@ -44,6 +44,8 @@ export class RiggedHuman implements HumanBody {
   readonly handR = new THREE.Group();
   speed = 0;
   animate = true;
+  animInterval = 0;
+  private animAcc = 0;
   holding = false;
   private mixer: THREE.AnimationMixer;
   private idle: THREE.AnimationAction;
@@ -100,8 +102,12 @@ export class RiggedHuman implements HumanBody {
     this.pick.setEffectiveWeight(1).fadeIn(0.12).play();
   }
 
-  update(dt: number): void {
+  update(frameDt: number): void {
     if (!this.animate) return;
+    this.animAcc += frameDt;
+    if (this.animAcc < this.animInterval) return;
+    const dt = this.animAcc;
+    this.animAcc = 0;
     const w = THREE.MathUtils.clamp(this.speed / 0.5, 0, 1);
     let p = 0;
     if (this.pickT > 0) {

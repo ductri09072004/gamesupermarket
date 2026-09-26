@@ -4,6 +4,7 @@ import { h, uiRoot } from '../ui/dom';
 import { loadPbrTextures, type TextureEntry } from '../world/Materials';
 import { registerCharacter } from '../entities/CharacterModels';
 import { registerBuildingAtlas, registerCityModel } from '../world/CityModels';
+import { registerProp } from './Props';
 
 interface Manifest {
   models?: string[];
@@ -16,6 +17,8 @@ interface Manifest {
   /** Model thành phố "city/<Tên>.glb" và atlas màu nhà "textures/buildings/Texture_<Màu>.png" */
   city?: string[];
   cityTextures?: string[];
+  /** Đồ vật "props/<tên>.glb" (máy tính tiền, đèn, xe tải...) */
+  props?: string[];
 }
 
 /**
@@ -92,6 +95,13 @@ export class Assets {
       }
     }
     await this.loadCity(loader);
+    await Promise.all((this.manifest.props ?? []).map(async (path) => {
+      try {
+        registerProp(path.split('/').pop()!.replace(/\.(glb|gltf)$/, ''), (await loader.loadAsync(`assets/models/${path}`)).scene);
+      } catch {
+        console.warn(`[Assets] Không nạp được ${path}, dùng model dựng bằng code.`);
+      }
+    }));
   }
 
   private async loadCity(loader: GLTFLoader): Promise<void> {

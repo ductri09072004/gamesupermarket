@@ -14,7 +14,8 @@ export function renderFurniture(body: HTMLElement, ctx: AppContext): void {
       ? `${def.tiers} tầng × ${def.columns} ngăn`
       : def.kind === 'rack' ? `Chứa ${def.slots} thùng · chỉ đặt trong kho` : def.kind === 'checkout' ? 'Khách xếp hàng thanh toán'
         : def.kind === 'selfcheckout' ? 'Khách tự quét & trả tiền · có khách cần hỗ trợ'
-          : def.kind === 'lamp' ? `Gắn trần · chiếu sáng ~${def.light?.area ?? 0} m²` : 'Vứt thùng rỗng';
+          : def.kind === 'lamp' ? `Gắn trần · chiếu sáng ~${def.light?.area ?? 0} m²`
+            : def.kind === 'gate' ? 'Đặt ở cửa · hú còi khi khách mang hàng chưa trả tiền đi qua' : 'Vứt thùng rỗng';
     grid.append(h('div', { class: `shop-card ${locked ? 'locked' : ''}` }, [
       h('div', { class: 'shop-icon', text: def.icon }),
       h('b', { text: def.name }),
@@ -31,11 +32,11 @@ export function renderFurniture(body: HTMLElement, ctx: AppContext): void {
             return;
           }
           s.bus.emit('sound', { name: 'coin' });
-          ctx.closePc();
-          s.bus.emit('build:hold', { furnitureId: def.id });
+          s.bus.emit('toast', { message: `🚚 Đã đặt mua ${def.icon} ${def.name} — xe tải sẽ chở thùng tới trước cửa hàng`, kind: 'success' });
+          ctx.rerender();
         },
       }),
     ]));
   }
-  body.append(h('p', { class: 'muted', text: 'Mua xong sẽ vào chế độ xây dựng để đặt nội thất. Nhấn B bất cứ lúc nào để sắp xếp lại cửa hàng.' }), grid);
+  body.append(h('p', { class: 'muted', text: 'Nội thất được xe tải giao tới trước cửa hàng dạng thùng: click bê thùng rồi nhìn chỗ muốn đặt, lăn chuột để xoay, click để lắp. Nhìn vào đồ có sẵn + M để dời chỗ.' }), grid);
 }

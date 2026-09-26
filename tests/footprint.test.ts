@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FURNITURE, getFurniture } from '../src/config/furniture';
-import { adjacentTiles, counterTiles, footprintCells, frontTiles, rotatedSize, rotationY } from '../src/world/Footprint';
+import { adjacentTiles, counterTiles, footprintCells, frontTiles, quarter, ROT_STEP, rotatedExtent, rotatedSize, rotationY, stepRot } from '../src/world/Footprint';
 import { cellCenter, NavGrid, worldToCell } from '../src/world/NavGrid';
 
 describe('Footprint (ô 0.5m)', () => {
@@ -78,5 +78,29 @@ describe('NavGrid', () => {
     expect(cellCenter(0, 0)).toEqual({ x: 0.25, z: 0.25 });
     expect(worldToCell(3.1, 9.99)).toEqual({ gx: 6, gy: 19 });
     expect(worldToCell(-0.1, 0)).toEqual({ gx: -1, gy: 0 });
+  });
+
+  it('xoay góc lẻ (15°/bước): hộp bao lớn hơn, hướng khách theo hướng chính gần nhất', () => {
+    const large = getFurniture('shelf_large');
+    let r = 0;
+    for (let i = 0; i < 24; i++) r = stepRot(r, ROT_STEP);
+    expect(r).toBe(0);
+    expect(stepRot(0, -ROT_STEP)).toBeCloseTo(4 - ROT_STEP);
+    expect(stepRot(3.5, 1)).toBeCloseTo(0.5);
+    // 45°: kệ 4×1 ô → hộp bao ~3.54 × 3.54 → 4 × 4 ô
+    expect(rotatedSize(large, 0.5)).toEqual({ w: 4, h: 4 });
+    const e = rotatedExtent(2, 1, 0.5);
+    expect(e.w).toBeCloseTo(3 / Math.SQRT2);
+    expect(quarter(0.4)).toBe(0);
+    expect(quarter(0.6)).toBe(1);
+    expect(quarter(3.6)).toBe(0);
+    // mặt trước quay liên tục: 45° nằm giữa +Z (rot 0) và +X (rot 1)
+    const a = rotationY(0.5);
+    expect(-Math.sin(a)).toBeCloseTo(Math.SQRT1_2);
+    expect(-Math.cos(a)).toBeCloseTo(Math.SQRT1_2);
+    const tilt = rotatedSize(large, 1 / 6);
+    const ft = frontTiles(large, 2, 2, 1 / 6);
+    expect(ft).toHaveLength(tilt.w);
+    expect(ft.every((t) => t.gy === 2 + tilt.h)).toBe(true);
   });
 });

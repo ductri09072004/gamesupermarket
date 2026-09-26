@@ -1,6 +1,10 @@
 {
   "models": [
-    "furniture/rack.glb"
+    "furniture/rack.glb",
+    "furniture/shelf_small.glb",
+    "furniture/shelf_large.glb",
+    "furniture/computer.glb",
+    "furniture/trash.glb"
   ],
   "hdri": "hdri/brown_photostudio_02_1k.hdr",
   "textures": {
@@ -117,7 +121,9 @@
     "city/Streetlight_Single.glb",
     "city/Taxi.glb",
     "city/TrafficCone.glb",
-    "city/TrafficLight.glb"
+    "city/TrafficLight.glb",
+    "city/vehicle_pickup.glb",
+    "city/vehicle_car.glb"
   ],
   "cityTextures": [
     "textures/buildings/Texture_Blue.png",
@@ -130,5 +136,17 @@
     "textures/buildings/Texture_Red.png",
     "textures/buildings/Texture_Signs.png",
     "textures/buildings/Texture_Yellow.png"
+  ],
+  "props": [
+    "props/cash_register.glb",
+    "props/laptop.glb",
+    "props/lamp_tube.glb",
+    "props/lamp_pendant.glb",
+    "props/broom.glb",
+    "props/wet_floor_sign.glb",
+    "props/security_camera.glb",
+    "props/bucket.glb",
+    "props/houseplant.glb",
+    "props/truck.glb"
   ]
 }

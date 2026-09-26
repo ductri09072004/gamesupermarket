@@ -22,6 +22,7 @@ import { furnitureMatrix } from '../world/Placement';
 import { Store } from '../world/Store';
 import { worldToCell } from '../world/NavGrid';
 import { Actions } from './Actions';
+import { playerFootstep, stepSurface } from './Footsteps';
 import { BoxManager } from './BoxManager';
 import { CheckoutController } from './Checkout';
 import type { GameCtx, Mode } from './Ctx';
@@ -34,6 +35,16 @@ import { SelfCheckoutManager } from './SelfCheckoutManager';
 import { StoreLighting } from './StoreLighting';
 import { VehicleManager } from './VehicleManager';
 import { TutorialArrow } from './TutorialArrow';
+import { tutorialTarget } from './tutorialTarget';
+import { CityLife } from './CityLife';
+import { MessManager } from './MessManager';
+import { SecurityManager } from './SecurityManager';
+import { CrateManager } from './CrateManager';
+import { DeliveryTrucks } from './DeliveryTrucks';
+import { FpPlace } from '../build/FpPlace';
+import { BoxPhysics } from './BoxPhysics';
+import { drivePusher, WalkPusher } from './Pushers';
+import { applyTimeOfDay } from './TimeOfDay';
 
 /** Toàn bộ cảnh 3D của 1 ván chơi (hoặc cảnh nền của main menu). */
 export class World implements GameCtx {
@@ -64,11 +75,18 @@ export class World implements GameCtx {
   readonly arrow = new TutorialArrow();
   readonly vehicles: VehicleManager;
   readonly driving: Driving;
+  readonly life = new CityLife();
+  readonly mess: MessManager;
+  readonly security: SecurityManager;
+  readonly crates: CrateManager;
+  readonly trucks: DeliveryTrucks;
+  readonly fp: FpPlace;
+  readonly physics: BoxPhysics;
+  private walkFeed = new WalkPusher();
   mode: Mode = 'play';
   private colliderCache: AABB[] | null = null;
   private cityDepth: number;
   private offs: Array<() => void> = [];
-  private expandAnim: { fromW: number; fromD: number; t: number } | null = null;
 
   constructor(readonly s: Services, readonly r: Renderer, readonly input: Input, readonly audio: AudioEngine, assets: Assets | null) {
     this.scene = r.scene;
@@ -78,6 +96,7 @@ export class World implements GameCtx {
     const d = s.data;
     this.store.setSize(d.storeW, d.storeH, d.warehouseUnlocked);
     this.exterior.build(d.storeW, d.storeH);
+    this.city.onBuilt = (L) => this.life.reset(L);
     this.city.build(d.storeH, d.storeW);
     this.cityDepth = d.storeH;
     this.decor.build(d.storeW, d.storeH);
@@ -87,8 +106,8 @@ export class World implements GameCtx {
     this.boxes = new BoxManager(s);
     this.products = new ProductInstances(this.root as unknown as THREE.Scene, furnitureMatrix);
     this.player = new PlayerController(this.camera, d.player.gx, d.player.gy, d.player.yaw);
-    this.player.onFootstep = (p) => this.sound('footstep', p, 0.9 + Math.random() * 0.2);
-    this.player.onJump = () => this.sound('footstep', new THREE.Vector3(this.player.x, 0.05, this.player.z), 1.25);
+    this.player.onFootstep = () => playerFootstep(this, audio);
+    this.player.onJump = () => audio.playStep(stepSurface(this), 0.45);
     this.player.onLand = (v) => this.sound('thud', new THREE.Vector3(this.player.x, 0.05, this.player.z), 1.6 - Math.min(0.5, v * 0.08));
     this.held = new HeldItem(r.heldScene);
     this.interaction = new Interaction(this.root as unknown as THREE.Scene, this.camera, s);
@@ -96,17 +115,27 @@ export class World implements GameCtx {
     this.actions = new Actions(this);
     this.customers = new CustomerManager(this);
     this.selfCheckout = new SelfCheckoutManager(this, this.customers);
-    this.staff = new StaffManager(this, this.customers, this.selfCheckout);
+    this.mess = new MessManager(this, () => this.customers.customers);
+    this.security = new SecurityManager(this, this.customers, this.mess);
+    this.staff = new StaffManager(this, this.customers, this.selfCheckout, this.mess, this.security);
     this.checkout = new CheckoutController(this, this.customers, this.staff);
     this.vehicles = new VehicleManager(s, () => this.city.layout.lotSpots);
     this.driving = new Driving(this);
     s.padSpots = () => this.city.padSpots();
     this.build = new BuildMode(this, () => this.peopleCells(), () => this.customers.onFurnitureChanged());
+    this.fp = new FpPlace(this, () => this.peopleCells(), () => this.customers.onFurnitureChanged());
+    this.crates = new CrateManager(s);
+    this.physics = new BoxPhysics(s, () => this.colliders(), (u) => this.boxes.isAnimating(u));
+    this.boxes.physicsPose = (u) => this.physics.pose(u);
+    this.life.traffic.statics = () => this.colliders();
+    this.trucks = new DeliveryTrucks(this, () => this.city.layout);
+    for (const o of d.orders) o.dispatched = false; // đơn chờ xe từ lần chơi trước → gọi xe tải lại
+    s.orders.onDue = (o) => this.trucks.dispatch(o);
     const sp = s.grid.signPosition;
     this.sign.group.position.set(sp.x, 0, sp.z - 0.45);
     this.sign.set(d.storeOpen, false);
     this.root.add(this.store.group, this.exterior.group, this.city.group, this.decor.group, this.furniture.group, this.boxes.group, this.effects.group,
-      this.customers.group, this.staff.group, this.sign.group, this.arrow.group, this.vehicles.group, this.lights.lightSwitch.group);
+      this.customers.group, this.staff.group, this.sign.group, this.arrow.group, this.vehicles.group, this.lights.lightSwitch.group, this.life.group, this.mess.group, this.security.group, this.crates.group, this.trucks.group);
     this.scene.add(this.root);
     this.setInteractionRoots();
     this.store.onDoorOpen = () => this.sound('door', this.store.doorCenter.clone().setY(1.2), 0.9);
@@ -119,7 +148,6 @@ export class World implements GameCtx {
       s.bus.on('furniture:changed', () => this.staff.assignCounters()),
       s.bus.on('vehicle:buy', ({ type }) => { s.vehicles.buy(type, this.vehicles.freeSpot()); }),
       s.bus.on('vehicle:recall', ({ uid }) => this.recallVehicle(uid)),
-      s.bus.on('order:arrived', ({ orderId }) => { if (orderId !== 'wholesale') this.sound('truck', new THREE.Vector3(d.storeW / 2, 0.5, d.storeH + 6)); }),
     );
     this.player.applyCamera();
   }
@@ -147,7 +175,7 @@ export class World implements GameCtx {
 
   private setInteractionRoots(): void {
     const kiosk = this.city.kioskObject;
-    this.interaction.roots = [this.furniture.group, this.boxes.group, this.sign.group, this.vehicles.group, this.lights.lightSwitch.group, ...(kiosk ? [kiosk] : [])];
+    this.interaction.roots = [this.furniture.group, this.boxes.group, this.mess.group, this.security.group, this.crates.group, this.sign.group, this.vehicles.group, this.lights.lightSwitch.group, ...(kiosk ? [kiosk] : [])];
   }
 
   private peopleCells() {
@@ -156,7 +184,7 @@ export class World implements GameCtx {
 
   private onGridChanged(reason: string): void {
     if (reason === 'expansion') {
-      this.expandAnim = { fromW: this.store.W, fromD: this.store.D, t: 0 };
+      this.store.beginGrow();
       this.s.rebuildGrid();
       this.exterior.build(this.s.data.storeW, this.s.data.storeH);
       // đường chính dịch theo mặt tiền → xe đỗ phía trước cửa hàng dịch theo
@@ -188,9 +216,15 @@ export class World implements GameCtx {
     if (playing) this.player.look(look.dx, look.dy);
     this.player.moveEnabled = playing;
     if (this.mode === 'drive' && !uiOpen) this.driving.update(dt, look);
-    else this.player.update(dt, this.input, [...this.colliders(), ...this.vehicles.colliders()]);
+    else this.player.update(dt, this.input, [...this.colliders(), ...this.vehicles.colliders(), ...this.life.colliders(), ...this.trucks.colliders()]);
     this.player.applyCamera();
     this.vehicles.update(dt, this.driving.uid ? { uid: this.driving.uid, state: this.driving.state } : null);
+    const onRoad = this.driving.uid ? this.driving.state : this.player;
+    this.trucks.update(s.time.paused ? 0 : dt, [...this.life.traffic.positions(), onRoad]);
+    this.life.update(dt, onRoad, !!this.driving.uid, this.camera.position, this.trucks.obstacles());
+    this.crates.update(dt);
+    this.physics.update(dt, this.walkFeed.next(this.player), drivePusher(this));
+    if (playing) this.fp.update();
     this.tween.update(dt);
     this.interaction.enabled = playing;
     this.interaction.update(this.held.box?.productId ?? null, !!this.held.box?.open, (u) => this.furniture.get(u));
@@ -204,9 +238,11 @@ export class World implements GameCtx {
     }
     this.customers.update(sim, dt);
     this.selfCheckout.update(sim, dt);
+    this.mess.update(sim);
+    this.security.update(sim > 0 ? dt : 0);
     this.staff.update(sim, dt);
     this.checkout.update(dt);
-    this.build.update(dt);
+    this.build.update();
     this.boxes.update(dt);
     this.furniture.update(dt);
     this.products.update(s.data.furniture);
@@ -215,55 +251,13 @@ export class World implements GameCtx {
     const people = [{ x: this.player.x, z: this.player.z }, ...this.customers.customers.map((c) => ({ x: c.x, z: c.z })), ...this.staff.all().map((n) => ({ x: n.x, z: n.z }))];
     this.store.update(dt, people);
     this.lights.update(dt);
-    this.lighting.setHour(s.time.hour, this.lights.interior);
-    this.exterior.setNight(this.lighting.night);
-    this.city.setNight(this.lighting.night);
-    this.vehicles.setHeadlights(this.lighting.night);
-    this.sign.setNight(this.lighting.night);
+    applyTimeOfDay(this, s.time.hour);
     this.held.update(dt, this.camera, look, this.player.speed);
-    if (this.expandAnim) {
-      const a = this.expandAnim;
-      a.t = Math.min(1, a.t + dt / 1.2);
-      const k = 1 - Math.pow(1 - a.t, 3);
-      this.store.setSize(a.fromW + (s.data.storeW - a.fromW) * k, a.fromD + (s.data.storeH - a.fromD) * k, s.data.warehouseUnlocked);
-      if (a.t >= 1) {
-        this.expandAnim = null;
-        this.colliderCache = null;
-      }
-    } else if (this.store.warehouse !== s.data.warehouseUnlocked) {
-      this.store.setSize(s.data.storeW, s.data.storeH, s.data.warehouseUnlocked);
-      this.colliderCache = null;
-    }
-    this.arrow.point(playing ? this.tutorialTarget() : null, dt);
+    if (this.store.animateTo(s.data.storeW, s.data.storeH, s.data.warehouseUnlocked, dt)) this.colliderCache = null;
+    this.arrow.point(playing ? tutorialTarget(this) : null, dt);
     this.r.post.outline.selectedObjects = playing
       ? this.interaction.outlineTargets((u) => this.furniture.get(u), (u) => this.boxes.model(u)?.group)
       : [];
-  }
-
-  /** Vật cần tới ở bước hướng dẫn hiện tại (mũi tên vàng). */
-  private tutorialTarget(): THREE.Vector3 | null {
-    const t = this.s.data.tutorial;
-    if (t.dismissed) return null;
-    const steps = ['pc', 'order', 'pickup', 'stock', 'price', 'open', 'checkout'];
-    const step = steps.find((k) => !t[k]);
-    if (!step) return null;
-    const find = (kind: string) => this.s.data.furniture.find((f) => this.furniture.get(f.uid)?.def.kind === kind);
-    const top = (uid: string | undefined) => {
-      const v = uid ? this.furniture.get(uid) : undefined;
-      return v ? v.toWorld(new THREE.Vector3(0, v.def.size.h + 0.45, 0)) : null;
-    };
-    switch (step) {
-      case 'pc': case 'order': return top(find('computer')?.uid);
-      case 'pickup': {
-        if (this.held.box) return null;
-        const b = this.s.data.boxes.find((x) => x.location === 'floor');
-        return b ? new THREE.Vector3(b.gx, 0.4, b.gy) : null;
-      }
-      case 'stock': case 'price': return top(find('display')?.uid);
-      case 'open': return this.sign.group.position.clone().setY(1.6);
-      case 'checkout': return this.s.data.storeOpen ? top(find('checkout')?.uid) : null;
-    }
-    return null;
   }
 
   /** Vị trí mắt người chơi (dùng khi thoát chế độ camera). */
@@ -279,10 +273,19 @@ export class World implements GameCtx {
     this.offs.forEach((o) => o());
     this.checkout.exit();
     this.build.exit();
+    this.build.destroy();
     this.driving.destroy();
     this.vehicles.destroy();
+    this.life.destroy();
+    this.trucks.destroy();
+    this.crates.destroy();
+    this.fp.destroy();
+    this.physics.destroy();
+    this.s.orders.onDue = null;
     this.customers.clear();
     this.selfCheckout.clear();
+    this.security.clear();
+    this.mess.destroy();
     this.staff.destroy();
     this.furniture.destroy();
     this.boxes.destroy();

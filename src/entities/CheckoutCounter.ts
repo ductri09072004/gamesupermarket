@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { prop } from '../engine/Props';
 import { DENOMINATIONS } from '../config/constants';
 import type { FurnitureDef } from '../config/furniture';
 import { textCanvas } from '../products/LabelTexture';
@@ -182,6 +183,14 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   });
   pos.position.set(0.72, h, d / 2 - 0.2);
   g.add(pos);
+  // máy tính tiền (model Poly Haven) ở góc trái phía thu ngân, quay mặt về thu ngân
+  const register = prop('cash_register');
+  if (register) {
+    register.scale.setScalar(0.85);
+    register.position.set(-0.62, h, d / 2 - 0.2);
+    register.rotation.y = Math.PI;
+    g.add(register);
+  }
   return {
     group: g, beltTex, laser, lcd: { canvas: lcdCanvas, tex: lcdTex }, drawer, trays, posKeys,
     beltStart: new THREE.Vector3(-w / 2 + 0.15, h + 0.02, -d / 2 + 0.22),

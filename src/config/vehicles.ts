@@ -33,7 +33,7 @@ export const VEHICLES: VehicleDef[] = [
   },
   {
     id: 'car', name: 'Ô tô con', icon: '🚗', price: 5500, levelRequired: 3, capacity: 8, countBySize: true,
-    maxSpeed: 19, reverseSpeed: 5, accel: 5, brake: 14, wheelbase: 2.6, maxSteer: 0.55, size: [1.81, 1.18, 4.22],
+    maxSpeed: 19, reverseSpeed: 5, accel: 5, brake: 14, wheelbase: 2.6, maxSteer: 0.55, size: [1.93, 1.35, 3.9],
     camDist: 6.2, camHeight: 2.6, description: '8 suất chở (thùng cồng kềnh tính 2 suất) ở cốp và ghế sau.',
   },
   {

@@ -2,7 +2,7 @@ import { STAFF_HELP_S } from '../config/constants';
 import type { FurnitureData } from '../core/GameState';
 import type { GridPoint } from '../world/Footprint';
 import { furnitureCenter } from '../world/Placement';
-import type { Walker } from './Walker';
+import type { StaffBody, StaffBrain } from './StaffTypes';
 
 /** Việc hỗ trợ ở máy tự tính tiền (SelfCheckoutManager cài đặt). */
 export interface KioskHelpApi {
@@ -17,19 +17,14 @@ export interface KioskHelpApi {
   helpSpots(uid: string): GridPoint[];
 }
 
-interface HelperBody extends Walker {
-  readonly data: { uid: string; speed: number };
-  setStatus(text: string): void;
-}
-
-/** Nhân viên chăm sóc khách hàng: rảnh thì đứng chờ; máy nào báo đèn đỏ thì chạy tới giúp. */
-export class HelperBrain {
+/** Nhân viên chăm sóc khách hàng: máy nào báo đèn đỏ thì chạy tới giúp; rảnh thì ra ngoài cửa hàng đứng. */
+export class HelperBrain implements StaffBrain {
   private job: string | null = null;
   private jobAt: { x: number; z: number } | null = null;
   private phase: 'idle' | 'go' | 'help' = 'idle';
   private timer = 0;
 
-  constructor(private npc: HelperBody, private kiosks: KioskHelpApi) {}
+  constructor(private npc: StaffBody, private kiosks: KioskHelpApi) {}
 
   tick(sim: number): void {
     const k = this.kiosks;
@@ -42,7 +37,7 @@ export class HelperBrain {
         this.timer = 0.5;
         const reqs = k.requests();
         if (!reqs.length) {
-          this.npc.setStatus('🙂 Sẵn sàng hỗ trợ');
+          if (this.npc.goRest()) this.npc.setStatus('☕ Chờ ngoài cửa hàng');
           return;
         }
         const d = (f: FurnitureData) => {

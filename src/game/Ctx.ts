@@ -13,6 +13,8 @@ import type { Store } from '../world/Store';
 import type { BoxManager } from './BoxManager';
 import type { Effects } from './Effects';
 import type { FurnitureManager } from './FurnitureManager';
+import type { FpPlace } from '../build/FpPlace';
+import type { BoxPhysics } from './BoxPhysics';
 
 export type Mode = 'play' | 'pc' | 'checkout' | 'build' | 'modal' | 'gallery' | 'drive';
 
@@ -33,6 +35,10 @@ export interface GameCtx {
   held: HeldItem;
   interaction: Interaction;
   tween: CameraTween;
+  /** Đặt / dời nội thất ở góc nhìn thứ nhất */
+  fp: FpPlace;
+  /** Vật lý thùng hàng trên sàn */
+  physics: BoxPhysics;
   mode: Mode;
   toast(message: string, kind?: 'info' | 'error' | 'success'): void;
   sound(name: SoundName, pos?: THREE.Vector3, pitch?: number): void;

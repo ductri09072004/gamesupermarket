@@ -1,8 +1,15 @@
 import * as THREE from 'three';
+import { prop } from '../engine/Props';
 import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X } from '../config/constants';
 import { textCanvas } from '../products/LabelTexture';
 
 function plant(): THREE.Group {
+  // chậu cây Quaternius (GLB) — thu về cỡ chậu cạnh cửa
+  const glb = prop('houseplant');
+  if (glb) {
+    glb.scale.setScalar(0.6);
+    return glb;
+  }
   const g = new THREE.Group();
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0xc8745a, roughness: 0.7 }));
   pot.position.y = 0.2;
@@ -89,6 +96,14 @@ export class Decor {
       const pl = plant();
       pl.position.set(x, 0, D - 0.35);
       this.group.add(pl);
+    }
+    // camera an ninh ở 2 góc trước, nhìn vào trong cửa hàng
+    for (const [x, yaw] of [[0.25, -Math.PI / 4], [W - 0.25, Math.PI / 4]] as const) {
+      const cam = prop('security_camera');
+      if (!cam) break;
+      cam.position.set(x, CEILING_HEIGHT - 0.25, D - 0.25);
+      cam.rotation.set(0, yaw, 0);
+      this.group.add(cam);
     }
     const welcome = sign('Xin chào!', '#1f7a6d', 1.2);
     welcome.position.set(DOOR_X, 2.62, D - 0.02);

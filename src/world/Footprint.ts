@@ -13,9 +13,39 @@ export const DIRS: GridPoint[] = [
   { gx: -1, gy: 0 },
 ];
 
+/**
+ * rot: góc quay tính theo 1/4 vòng, trong [0, 4). Số nguyên = thẳng trục như cũ;
+ * số lẻ (vd 0.5 = 45°) = xoay xiên — footprint/va chạm là hộp bao thẳng trục của hình đã xoay.
+ */
+export const ROT_STEP = 1 / 6; // 15°
+
+/** Hướng chính (0..3) gần nhất — dùng cho ô khách đứng, ô thu ngân. */
+export function quarter(rot: number): number {
+  return ((Math.round(rot) % 4) + 4) % 4;
+}
+
+function isAxis(rot: number): boolean {
+  return Math.abs(rot - Math.round(rot)) < 1e-6;
+}
+
+/** Cộng góc rồi chuẩn hoá về [0, 4), làm tròn theo bước 7.5° để không trôi số thực. */
+export function stepRot(rot: number, delta: number): number {
+  const r = Math.round((((rot + delta) % 4) + 4) % 4 * 12) / 12;
+  return r >= 4 ? 0 : r;
+}
+
+/** Hộp bao (w × d) của hình chữ nhật w × d xoay rot. */
+export function rotatedExtent(w: number, d: number, rot: number): { w: number; d: number } {
+  if (isAxis(rot)) return quarter(rot) % 2 === 0 ? { w, d } : { w: d, d: w };
+  const a = (rot * Math.PI) / 2;
+  const c = Math.abs(Math.cos(a));
+  const sn = Math.abs(Math.sin(a));
+  return { w: w * c + d * sn, d: w * sn + d * c };
+}
+
 export function rotatedSize(def: Pick<FurnitureDef, 'footprint'>, rot: number): { w: number; h: number } {
-  const { w, h } = def.footprint;
-  return rot % 2 === 0 ? { w, h } : { w: h, h: w };
+  const e = rotatedExtent(def.footprint.w, def.footprint.h, rot);
+  return { w: Math.ceil(e.w - 1e-6), h: Math.ceil(e.d - 1e-6) };
 }
 
 export function footprintCells(def: Pick<FurnitureDef, 'footprint'>, gx: number, gy: number, rot: number): GridPoint[] {
@@ -27,19 +57,18 @@ export function footprintCells(def: Pick<FurnitureDef, 'footprint'>, gx: number,
 
 /** Hướng mặt trước (phía khách đứng) theo rot. rot 0 → +Z. */
 export function frontDir(rot: number): GridPoint {
-  return DIRS[((rot % 4) + 4) % 4];
+  return DIRS[quarter(rot)];
 }
 
-/** Góc quay quanh Y để mặt trước model (-Z) quay về frontDir. */
+/** Góc quay quanh Y để mặt trước model (-Z) quay theo rot (0 → +Z, 1 → +X, …, liên tục ở góc lẻ). */
 export function rotationY(rot: number): number {
-  const f = frontDir(rot);
-  return Math.atan2(-f.gx, -f.gy);
+  return Math.PI + (rot * Math.PI) / 2;
 }
 
 /** Các ô ngay trước mặt trước của nội thất. */
 export function frontTiles(def: Pick<FurnitureDef, 'footprint'>, gx: number, gy: number, rot: number): GridPoint[] {
   const { w, h } = rotatedSize(def, rot);
-  const r = ((rot % 4) + 4) % 4;
+  const r = quarter(rot);
   const out: GridPoint[] = [];
   if (r === 0) for (let i = 0; i < w; i++) out.push({ gx: gx + i, gy: gy + h });
   if (r === 2) for (let i = 0; i < w; i++) out.push({ gx: gx + i, gy: gy - 1 });
@@ -53,7 +82,7 @@ export function counterTiles(
   def: Pick<FurnitureDef, 'footprint'>, gx: number, gy: number, rot: number,
 ): { staff: GridPoint; customer: GridPoint; dir: GridPoint } {
   const { w, h } = rotatedSize(def, rot);
-  const r = ((rot % 4) + 4) % 4;
+  const r = quarter(rot);
   const dir = frontDir(r);
   switch (r) {
     case 0: return { staff: { gx: gx + 1, gy: gy - 1 }, customer: { gx: gx + 1, gy: gy + h }, dir };

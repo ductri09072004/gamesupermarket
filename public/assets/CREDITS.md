@@ -82,3 +82,18 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `textures/wood/oak_veneer_01_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/oak_veneer_01 | CC0 |
 | `textures/wood/oak_veneer_01_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/oak_veneer_01 | CC0 |
 | `textures/wood/oak_veneer_01_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/oak_veneer_01 | CC0 |
+| `models/furniture/shelf_small.glb`, `shelf_large.glb` | Poly Haven — Steel Frame Shelves 01 (https://polyhaven.com/a/steel_frame_shelves_01); kệ lớn = 2 kệ ghép, texture WebP 1K | CC0 |
+| `models/furniture/computer.glb` | Poly Haven — Metal Office Desk (https://polyhaven.com/a/metal_office_desk) | CC0 |
+| `models/props/laptop.glb` | Poly Haven — Classic Laptop (https://polyhaven.com/a/classic_laptop) | CC0 |
+| `models/props/cash_register.glb` | Poly Haven — Cash Register 01 (https://polyhaven.com/a/CashRegister_01) | CC0 |
+| `models/props/lamp_tube.glb` | Poly Haven — Mounted Fluorescent Lights (https://polyhaven.com/a/mounted_fluorescent_lights), giữ 2 bóng | CC0 |
+| `models/props/lamp_pendant.glb` | Poly Haven — Modern Ceiling Lamp 01 (https://polyhaven.com/a/modern_ceiling_lamp_01) | CC0 |
+| `models/props/broom.glb` | Poly Haven — Plastic Broom (https://polyhaven.com/a/plastic_broom) | CC0 |
+| `models/props/wet_floor_sign.glb` | Poly Haven — Wet Floor Sign 01 (https://polyhaven.com/a/WetFloorSign_01) | CC0 |
+| `models/props/security_camera.glb` | Poly Haven — Security Camera 01 (https://polyhaven.com/a/security_camera_01) | CC0 |
+| `models/furniture/trash.glb` | Quaternius — Trashcan, qua Poly Pizza (https://poly.pizza/m/vlVx279xut) | CC0 |
+| `models/props/bucket.glb` | Quaternius — Bucket, qua Poly Pizza (https://poly.pizza/m/83obI9bNun) | CC0 |
+| `models/props/houseplant.glb` | Quaternius — Houseplant, qua Poly Pizza (https://poly.pizza/m/bfLOqIV5uP) | CC0 |
+| `models/props/truck.glb` | Quaternius — Truck, qua Poly Pizza (https://poly.pizza/m/cXw6oiFtZ8); pivot bánh xe tách riêng | CC0 |
+| `models/city/vehicle_pickup.glb` | Quaternius — Pickup Truck, qua Poly Pizza (https://poly.pizza/m/qn4grQgHm8) | CC0 |
+| `models/city/vehicle_car.glb` | Quaternius — Car, qua Poly Pizza (https://poly.pizza/m/unqqkULtRU) | CC0 |

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { FEEL } from '../config/feel';
 import { getFurniture } from '../config/furniture';
 import type { BoxData } from '../core/GameState';
-import { BOX_D, BoxModel } from '../entities/Box';
+import { BOX_D, BOX_H, BoxModel } from '../entities/Box';
 import { productMesh } from '../products/PackagingFactory';
 import { itemPosition } from '../systems/SlotLayout';
 import { getProduct } from '../config/products';
@@ -61,13 +61,17 @@ export class Actions {
     }
     b.location = 'floor';
     b.holderId = null;
+    b.pose = undefined;
     b.gx = Math.round(x * 100) / 100;
     b.gy = Math.round(z * 100) / 100;
     c.held.hold(null);
     c.player.carrying = false;
     c.s.bus.emit('boxes:changed', {});
+    // rơi thật từ tầm tay (hoặc thả lên nóc thùng đang nhìn)
+    const onTop = t.kind === 'box' && t.uid ? c.boxes.stackTop(x, z, b.uid) : null;
+    const from = new THREE.Vector3(x, onTop ? onTop.y + BOX_H / 2 + 0.05 : 1.0, z);
+    c.physics.launch(b.uid, from, onTop ? new THREE.Vector3() : fwd.clone().setY(0).normalize());
     c.boxes.update(0);
-    c.boxes.bounce(b.uid);
     c.sound('thud', new THREE.Vector3(x, 0.1, z));
   }
 

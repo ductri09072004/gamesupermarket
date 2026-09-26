@@ -5,7 +5,9 @@ export const FEEL = {
   placeWobble: 0.06, // lắc nhẹ khi chạm kệ (rad)
   placePitchJitter: 0.08, // cao độ tiếng "tộc" ngẫu nhiên ±
   headbobAmp: 0.035,
-  headbobFreq: 1.9, // chu kỳ / mét
+  /** Sải chân (m / bước) = BASE + PER_MS × tốc độ → đi bộ ~3 bước/s, chạy ~4 bước/s */
+  strideBase: 0.55,
+  stridePerMs: 0.15,
   swayAmount: 0.018,
   swayReturn: 10,
   heldBobAmp: 0.012,

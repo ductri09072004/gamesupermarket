@@ -42,5 +42,5 @@ export function renderStaff(body: HTMLElement, ctx: AppContext): void {
       }),
     ]));
   });
-  body.append(grid, h('p', { class: 'muted small', text: 'Lương được trả cuối mỗi ngày. Thu ngân NPC nhường chỗ khi bạn đứng vào quầy.' }));
+  body.append(grid, h('p', { class: 'muted small', text: 'Lương được trả cuối mỗi ngày. Thu ngân chỉ đi làm khi có quầy thu ngân trống, và nhường chỗ khi bạn đứng vào quầy. Nhân viên hết việc ra vỉa hè đứng chờ. Bảo vệ cần có Cổng an ninh để phát hiện kẻ trộm.' }));
 }

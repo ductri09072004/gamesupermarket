@@ -6,6 +6,7 @@ import { forward, stepDrive, type DriveState } from '../systems/VehicleDrive';
 import { resolveCircle, type AABB } from '../world/Colliders';
 import { h, uiRoot } from '../ui/dom';
 import type { World } from './World';
+import { DriveImpact } from './DriveImpact';
 
 const SUBSTEPS = 3;
 
@@ -19,20 +20,24 @@ export class Driving {
   private hud: HTMLElement | null = null;
   private engine: THREE.PositionalAudio | null = null;
   private lamp: THREE.SpotLight | null = null;
-  private bumpCd = 0;
+  private impact: DriveImpact;
+  private shakeV = new THREE.Vector3();
 
-  constructor(private w: World) {}
+  constructor(private w: World) {
+    this.impact = new DriveImpact(w);
+  }
 
   get active(): boolean {
     return this.uid !== null;
   }
 
   enter(uid: string): void {
+    this.impact.reset();
     const w = this.w;
     const v = w.s.vehicles.get(uid);
     if (!v || w.mode !== 'play') return;
     if (w.held.box) {
-      w.toast('Chất thùng lên xe (E) hoặc thả xuống (Q) trước khi lái', 'error');
+      w.toast('Chất thùng lên xe (click) hoặc thả xuống (Q) trước khi lái', 'error');
       return;
     }
     this.uid = uid;
@@ -110,7 +115,8 @@ export class Driving {
     const w = this.w;
     const D = w.s.data.storeH;
     const door: AABB = { minX: DOOR_X - DOOR_WIDTH / 2 - 0.2, maxX: DOOR_X + DOOR_WIDTH / 2 + 0.2, minZ: D - 0.2, maxZ: D + WALL_THICKNESS + 0.4, tag: 'door' };
-    return [...w.colliders(), ...w.vehicles.colliders(this.uid ?? undefined), door];
+    // xe NPC xử lý riêng bằng va chạm vật rắn (DriveImpact.hitTraffic)
+    return [...w.colliders(), ...w.vehicles.colliders(this.uid ?? undefined), ...w.trucks.colliders(), door];
   }
 
   update(dt: number, look: { dx: number; dy: number }): void {
@@ -126,12 +132,16 @@ export class Driving {
     const [width, , length] = def.size;
     const r = width / 2;
     const n = Math.max(2, Math.round(length / width));
-    this.bumpCd = Math.max(0, this.bumpCd - dt);
     for (let i = 0; i < SUBSTEPS; i++) {
-      stepDrive(this.state, input, def, dt / SUBSTEPS);
+      const sdt = dt / SUBSTEPS;
+      stepDrive(this.state, input, def, sdt);
+      this.impact.integrate(this.state, sdt);
       const f = forward(this.state.yaw);
+      // vật cản tĩnh: thân xe = chuỗi hình tròn dọc thân; lấy vòng bị đẩy mạnh nhất làm điểm va
       let px = 0;
       let pz = 0;
+      let hx = 0;
+      let hz = 0;
       for (let j = 0; j < n; j++) {
         const t = (j / (n - 1) - 0.5) * (length - width);
         const cx = this.state.x + f.x * t;
@@ -140,18 +150,20 @@ export class Driving {
         if (res.hit && Math.hypot(res.x - cx, res.z - cz) > Math.hypot(px, pz)) {
           px = res.x - cx;
           pz = res.z - cz;
+          hx = cx;
+          hz = cz;
         }
       }
-      if (px !== 0 || pz !== 0) {
+      const len = Math.hypot(px, pz);
+      if (len > 0) {
         this.state.x += px;
         this.state.z += pz;
-        if (Math.abs(this.state.speed) > 3 && this.bumpCd === 0) {
-          w.sound('thud', new THREE.Vector3(this.state.x, 0.6, this.state.z), 0.7);
-          this.bumpCd = 0.4;
-        }
-        this.state.speed *= -0.2;
+        const nx = px / len;
+        const nz = pz / len;
+        this.impact.hitStatic(this.state, def, nx, nz, hx + px - nx * r, hz + pz - nz * r);
       }
     }
+    this.impact.hitTraffic(this.state, def);
     v.x = this.state.x;
     v.z = this.state.z;
     v.yaw = this.state.yaw;
@@ -180,7 +192,7 @@ export class Driving {
     const f = forward(yaw);
     const target = new THREE.Vector3(this.state.x - f.x * dist, height, this.state.z - f.z * dist);
     this.camPos.lerp(target, Math.min(1, dt * 6));
-    cam.position.copy(this.camPos);
+    cam.position.copy(this.camPos).add(this.impact.cameraShake(this.shakeV));
     const ahead = forward(this.state.yaw);
     cam.lookAt(this.state.x + ahead.x * 2, 1.0, this.state.z + ahead.z * 2);
   }

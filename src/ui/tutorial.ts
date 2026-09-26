@@ -2,13 +2,13 @@ import type { Services } from '../core/Services';
 import { h, uiRoot } from './dom';
 
 const STEPS: Array<[string, string]> = [
-  ['pc', 'Mở máy tính (E)'],
+  ['pc', 'Click vào máy tính'],
   ['order', 'Đặt hàng trong app Market'],
-  ['pickup', 'Nhặt thùng ở vỉa hè (E)'],
+  ['pickup', 'Click nhặt thùng ở vỉa hè'],
   ['stock', 'Mở thùng (F), nhìn ngăn kệ & click trái'],
   ['price', 'Đặt giá (nhìn nhãn giá + E)'],
-  ['open', 'Lật biển Mở cửa cạnh cửa ra vào (E)'],
-  ['checkout', 'Vào quầy (E) & tính tiền cho khách'],
+  ['open', 'Click lật biển Mở cửa cạnh cửa ra vào'],
+  ['checkout', 'Click vào quầy & tính tiền cho khách'],
 ];
 
 /** Checklist hướng dẫn ngày đầu ở góc phải. */

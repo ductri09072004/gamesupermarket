@@ -4,8 +4,10 @@ export const STAFF_ROLES: Record<StaffRole, { name: string; icon: string; wage: 
   cashier: { name: 'Thu ngân', icon: '🧾', wage: [55, 80], desc: 'Tự động tính tiền ở quầy trống.' },
   stocker: { name: 'Xếp kệ', icon: '📦', wage: [45, 70], desc: 'Châm hàng vào kệ còn dưới 30%.' },
   helper: { name: 'Chăm sóc khách hàng', icon: '🙋', wage: [40, 60], desc: 'Chạy tới giúp khách bí ở máy tự tính tiền.' },
+  cleaner: { name: 'Lao công', icon: '🧹', wage: [35, 55], desc: 'Nhặt rác, lau sàn và lau cửa kính khi cửa hàng bẩn.' },
+  guard: { name: 'Bảo vệ', icon: '🛡️', wage: [60, 85], desc: 'Cổng an ninh hú còi → chạy tới tóm khách trộm, nhặt hàng về kệ.' },
 };
 
 export const FIRST_NAMES = ['An', 'Bình', 'Chi', 'Dũng', 'Giang', 'Hà', 'Hùng', 'Khoa', 'Lan', 'Linh', 'Minh', 'My', 'Nam', 'Ngọc', 'Phúc', 'Quân', 'Tâm', 'Thảo', 'Trang', 'Tú', 'Vy', 'Yến'];
 export const LAST_NAMES = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Vũ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ'];
-export const MAX_STAFF = 6;
+export const MAX_STAFF = 10;

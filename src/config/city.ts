@@ -10,6 +10,12 @@ export const BUILDINGS: Record<string, [number, number, number]> = {
   '3Story_Slim': [2.79, 9.98, 5.39], '3Story_Small': [4.77, 9.62, 4.94], '4Story': [6.05, 12.73, 6.33],
   '4Story_Center': [6.05, 12.73, 6.33], '4Story_Wide_2Doors': [17.07, 12.88, 6.74], '6Story_Stack': [5.4, 19.51, 6.25],
 };
+/** Nhà mặt phố thấp tầng làm cửa hiệu cạnh siêu thị */
+export const SHOP_BUILDINGS = ['1Story_Sign', '2Story_Sign', '1Story', '2Story_Wide', '2Story', '2Story_Columns', '1Story_GableRoof', '2Story_2'];
+/** Nhà cao tầng lấp lõi khối phố (skyline) */
+export const INFILL_BUILDINGS = ['3Story_Balcony', '4Story', '4Story_Center', '4Story_Wide_2Doors', '6Story_Stack', '3Story_Small', '2Story_Balcony', '2Story_Wide'];
+/** Biển hiệu các cửa hiệu hàng xóm */
+export const SHOP_NAMES = ['TIỆM BÁNH', 'CÀ PHÊ', 'NHÀ THUỐC', 'PHỞ 24H', 'TIỆM HOA', 'SỬA XE', 'TẠP HOÁ', 'TIỆM TÓC', 'TRÀ SỮA', 'GIẶT ỦI'];
 /** Bảng màu (atlas 32×32) dùng chung cho mọi nhà — phối ngẫu nhiên để phố nhiều màu. */
 export const BUILDING_TEXTURES = ['Blue', 'Dark', 'DarkBlue', 'Green', 'Grey', 'Light', 'Light2', 'Red', 'Yellow'];
 export const TREES = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5', 'BirchTree_1'];

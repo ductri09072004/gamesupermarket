@@ -71,6 +71,23 @@ export function buildSoundBank(ctx: BaseAudioContext): Map<SoundName | 'hum' | '
     const k = Math.min(3, Math.floor(t / 0.12));
     return Math.sin(TAU * notes[k] * t) * 0.25 * env(t - k * 0.12, 0.005, 0.25);
   }));
+  // còi cổng an ninh: 2 tông luân phiên (kiểu còi báo trộm siêu thị)
+  m.set('alarm', render(ctx, 1.2, (t) => {
+    const f = Math.floor(t / 0.15) % 2 === 0 ? 1560 : 1170;
+    const sq = Math.sin(TAU * f * t) > 0 ? 0.22 : -0.22;
+    return sq * Math.min(1, t / 0.01, (1.2 - t) / 0.05);
+  }));
+  const mp = lowNoise(0.12);
+  m.set('mop', render(ctx, 0.5, (t) => mp() * 0.7 * Math.sin(Math.PI * Math.min(1, t / 0.5)) * (0.6 + 0.4 * Math.sin(TAU * 6 * t))));
+  m.set('punch', render(ctx, 0.25, (t) => (Math.sin(TAU * (120 - 200 * t) * t) * 0.9 + noise() * 0.5 * env(t, 0.001, 0.01)) * env(t, 0.002, 0.05)));
+  // va chạm xe: tiếng dội trầm của thân xe + kim loại móp rung + mảnh vụn lách cách
+  const cr = lowNoise(0.35);
+  m.set('crash', render(ctx, 0.9, (t) => {
+    const body = Math.sin(TAU * (70 - 40 * t) * t) * env(t, 0.002, 0.12) * 0.9;
+    const metal = (Math.sin(TAU * 410 * t) * 0.5 + Math.sin(TAU * 687 * t) * 0.35 + Math.sin(TAU * 1130 * t) * 0.2) * env(t, 0.003, 0.18) * 0.45;
+    const debris = cr() * env(t, 0.001, 0.07) * 1.3 + (t > 0.12 && noise() > 0.93 ? noise() * 0.5 * env(t - 0.12, 0.001, 0.25) : 0);
+    return body + metal + debris;
+  }));
   const h = lowNoise(0.02);
   m.set('hum', render(ctx, 2, (t, i, n) => {
     const edge = Math.min(1, i / 2000, (n - i) / 2000);

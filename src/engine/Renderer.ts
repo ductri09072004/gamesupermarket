@@ -19,7 +19,7 @@ export class Renderer {
   readonly heldCamera: THREE.PerspectiveCamera;
   readonly post: Post;
   quality: Quality = 'medium';
-  private shadowLights: THREE.DirectionalLight[] = [];
+  private shadowLights: Array<THREE.DirectionalLight | THREE.SpotLight> = [];
 
   constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
@@ -58,7 +58,7 @@ export class Renderer {
     return this.renderer.domElement;
   }
 
-  registerShadowLight(l: THREE.DirectionalLight): void {
+  registerShadowLight(l: THREE.DirectionalLight | THREE.SpotLight): void {
     this.shadowLights.push(l);
     this.applyShadowSize();
   }

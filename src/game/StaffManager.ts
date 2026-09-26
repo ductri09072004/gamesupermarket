@@ -7,6 +7,10 @@ import { productMesh } from '../products/PackagingFactory';
 import type { GameCtx } from './Ctx';
 import type { CustomerManager } from './CustomerManager';
 import type { KioskHelpApi } from '../entities/StaffHelper';
+import type { MessApi, SecurityApi } from '../entities/Staff';
+import { DOOR_WIDTH, DOOR_X } from '../config/constants';
+import { adjacentTiles, footprintCells, type GridPoint } from '../world/Footprint';
+import { m2c } from '../world/NavGrid';
 
 export class StaffManager implements StaffWorld {
   readonly group = new THREE.Group();
@@ -15,7 +19,7 @@ export class StaffManager implements StaffWorld {
   playerCounter: string | null = null;
   private off: () => void;
 
-  constructor(private c: GameCtx, private customers: CustomerManager, readonly kiosks: KioskHelpApi) {
+  constructor(private c: GameCtx, private customers: CustomerManager, readonly kiosks: KioskHelpApi, readonly mess: MessApi, readonly security: SecurityApi) {
     this.off = c.s.bus.on('staff:changed', () => this.sync());
     this.sync();
   }
@@ -52,6 +56,34 @@ export class StaffManager implements StaffWorld {
     this.c.effects.floatText(`+$${amount.toFixed(2)}`, at);
   }
 
+  /**
+   * Chỗ nghỉ: hàng ô trên vỉa hè sát kính mặt tiền, bắt đầu sau biển Mở cửa & ô giao hàng (bên phải cửa),
+   * mỗi nhân viên 1 ô; đông quá thì nối dài sang trước cửa hiệu bên cạnh.
+   */
+  restSpot(uid: string): GridPoint {
+    const g = this.s.grid;
+    const i = Math.max(0, this.s.data.staff.findIndex((x) => x.uid === uid));
+    const x0 = m2c(DOOR_X + DOOR_WIDTH / 2 + 4.3);
+    const spots: GridPoint[] = [];
+    for (let gx = x0; spots.length <= i && gx < x0 + 60; gx += 2) if (g.isWalkable(gx, g.sd + 1)) spots.push({ gx, gy: g.sd + 1 });
+    return spots[i] ?? spots[spots.length - 1] ?? g.doorOutside;
+  }
+
+  exitSpot(): GridPoint {
+    return this.s.grid.spawnPoints()[1];
+  }
+
+  /** Bảo vệ đứng cạnh cổng an ninh (không đứng giữa lối đi), không có cổng thì đứng trong cửa, lệch sang bên. */
+  guardPost(): GridPoint[] {
+    const g = this.s.grid;
+    const door = g.doorInside;
+    const lane = (p: GridPoint) => Math.abs(p.gx - door.gx) <= 1 && p.gy >= door.gy - 1;
+    const gate = this.s.data.furniture.find((f) => getFurniture(f.type).kind === 'gate');
+    const base = gate ? footprintCells(getFurniture(gate.type), gate.gx, gate.gy, gate.rot) : [{ gx: door.gx - 3, gy: door.gy }, { gx: door.gx + 3, gy: door.gy }];
+    const cand = gate ? adjacentTiles(base) : base.flatMap((p) => [p, ...adjacentTiles([p])]);
+    return cand.filter((p) => g.isWalkable(p.gx, p.gy) && g.isStoreInterior(p.gx, p.gy) && !lane(p));
+  }
+
   sync(): void {
     const ids = new Set(this.s.data.staff.map((x) => x.uid));
     for (const [uid, npc] of this.npcs) {
@@ -59,13 +91,17 @@ export class StaffManager implements StaffWorld {
       npc.destroy();
       this.npcs.delete(uid);
     }
+    const fresh: StaffNpc[] = [];
     for (const data of this.s.data.staff) {
       if (this.npcs.has(data.uid)) continue;
       const npc = new StaffNpc(this, data, this.s.grid.doorInside);
       this.group.add(npc.human.root);
       this.npcs.set(data.uid, npc);
+      fresh.push(npc);
     }
     this.assignCounters();
+    // thu ngân không có quầy trống: không xuất hiện (khi có quầy sẽ từ vỉa hè đi vào)
+    for (const npc of fresh) if (npc.data.role === 'cashier' && !npc.counterUid) npc.hide();
   }
 
   assignCounters(): void {
@@ -94,8 +130,9 @@ export class StaffManager implements StaffWorld {
     }
   }
 
+  /** Nhân viên đang có mặt (không tính thu ngân dư đang ẩn). */
   all(): StaffNpc[] {
-    return [...this.npcs.values()];
+    return [...this.npcs.values()].filter((n) => n.onDuty);
   }
 
   destroy(): void {

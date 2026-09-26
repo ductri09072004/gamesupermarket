@@ -32,7 +32,7 @@ export function drawKioskScreen(canvas: HTMLCanvasElement, st: KioskScreenState)
       g.font = `600 24px ${FONT}`;
       g.fillStyle = '#9ad1c9';
       g.fillText('Quét mã vạch từng món trên kính', W / 2, 215);
-      g.fillText('Hỗ trợ thẻ & tiền mặt', W / 2, 250);
+      g.fillText('💳 Thanh toán bằng thẻ', W / 2, 250);
       break;
     case 'scan': {
       g.textAlign = 'left';
@@ -53,12 +53,12 @@ export function drawKioskScreen(canvas: HTMLCanvasElement, st: KioskScreenState)
       g.font = `900 44px ${FONT}`;
       g.fillText('⚠ CẦN HỖ TRỢ', W / 2, 150);
       g.font = `700 26px ${FONT}`;
-      g.fillText('Vui lòng chờ nhân viên', W / 2, 210);
-      g.fillText('Please wait for assistance', W / 2, 250);
+      g.fillText('Món này quét không được?', W / 2, 210);
+      g.fillText('Thử lại hoặc gọi nhân viên', W / 2, 250);
       break;
     case 'pay':
       g.font = `700 28px ${FONT}`;
-      g.fillText('Đang thanh toán...', W / 2, 140);
+      g.fillText('💳 Chạm thẻ để thanh toán', W / 2, 140);
       g.font = `900 56px ${FONT}`;
       g.fillText(`$${st.total.toFixed(2)}`, W / 2, 215);
       break;

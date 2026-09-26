@@ -102,16 +102,16 @@ export const RESTOCK_THRESHOLD = 0.3;
 export const STAFF_HELP_S = 2.5;
 
 // Máy tự tính tiền
-/** Khách tự quét 1 món (chậm hơn thu ngân) và thanh toán thẻ/tiền tại máy */
+/** Khách tự quét 1 món (chậm hơn thu ngân) rồi tự chạm thẻ thanh toán tại máy */
 export const SELF_SCAN_S = 2.0;
 export const SELF_PAY_S = 3;
-/** Xác suất khách bí cần hỗ trợ = BASE + PER_ITEM × số món (+ ELDER nếu lớn tuổi), tối đa MAX */
-export const SELF_HELP_BASE = 0.12;
-export const SELF_HELP_PER_ITEM = 0.05;
-export const SELF_HELP_ELDER = 0.25;
-export const SELF_HELP_MAX = 0.6;
-/** Chờ hỗ trợ quá lâu thì bỏ về */
-export const SELF_HELP_PATIENCE_S = 40;
+/** Xác suất khách lúng túng = BASE + PER_ITEM × số món (+ ELDER nếu lớn tuổi), tối đa MAX */
+export const SELF_HELP_BASE = 0.05;
+export const SELF_HELP_PER_ITEM = 0.02;
+export const SELF_HELP_ELDER = 0.15;
+export const SELF_HELP_MAX = 0.3;
+/** Lúng túng thì tự mò ra sau N giây (không bắt buộc người chơi giúp; giúp chỉ để nhanh hơn + uy tín) */
+export const SELF_HELP_SOLO_S = 8;
 /** Sau khi được giúp, các món còn lại quét nhanh gấp N lần */
 export const SELF_ASSIST_SPEEDUP = 3;
 /** Khách hơi thích quầy có người: máy tự tính được tính như dài thêm N người khi chọn hàng */

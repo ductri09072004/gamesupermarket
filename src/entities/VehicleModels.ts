@@ -27,7 +27,7 @@ function mesh(g: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0): 
 }
 
 /** Bánh xe: lốp (xuyến) + mâm nan hoa; trục quay X. */
-function wheel(r: number, w: number): THREE.Group {
+export function wheel(r: number, w: number): THREE.Group {
   const g = new THREE.Group();
   const tire = mesh(new THREE.CylinderGeometry(r, r, w, 22).rotateZ(Math.PI / 2), std(0x151515, 0.85));
   const rim = mesh(new THREE.CylinderGeometry(r * 0.62, r * 0.62, w * 1.04, 16).rotateZ(Math.PI / 2), std(0xc8ccd2, 0.25, 0.9));
@@ -141,13 +141,29 @@ function car(): VehicleModel {
   return { group: g, wheels: [], wheelRadius: 0.33, slots, lean: null, headlights };
 }
 
+/** Nút bánh xe ngoài cùng trong GLB (mesh nhiều vật liệu có nhóm cha cùng tên — chỉ quay nhóm cha). */
+export function findWheels(root: THREE.Object3D): THREE.Object3D[] {
+  const out: THREE.Object3D[] = [];
+  const visit = (o: THREE.Object3D) => {
+    if (/wheel/i.test(o.name)) { out.push(o); return; }
+    o.children.forEach(visit);
+  };
+  visit(root);
+  return out;
+}
+
 export function buildVehicleModel(type: VehicleType): VehicleModel {
   const custom = cityModel(`vehicle_${type}`);
   if (custom) {
     const g = new THREE.Group();
-    g.add(custom.clone(true));
+    const body = custom.clone(true);
+    g.add(body);
     const base = type === 'moto' ? moto() : type === 'pickup' ? pickup() : car();
-    return { ...base, group: g, wheels: [], lean: null };
+    // bánh xe trong GLB đã có pivot riêng (tâm bánh) → quay được quanh trục X
+    const wheels = findWheels(body);
+    const r = wheels.length ? new THREE.Box3().setFromObject(wheels[0]).getSize(new THREE.Vector3()).y / 2 : base.wheelRadius;
+    body.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+    return { ...base, group: g, wheels, wheelRadius: r, lean: null };
   }
   return type === 'moto' ? moto() : type === 'pickup' ? pickup() : car();
 }

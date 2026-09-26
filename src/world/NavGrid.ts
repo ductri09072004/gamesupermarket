@@ -191,6 +191,13 @@ export class NavGrid implements WalkGrid {
     return [{ gx: NavGrid.MIN_X + 1, gy: y }, { gx: Math.min(this.sw + 14, NavGrid.MAX_X - 1), gy: y }];
   }
 
+  /** Chỗ đặt thùng nội thất trên vỉa hè (m): sau ô giao thùng hàng, cách mặt tiền ~1.45m. */
+  crateSpots(): Array<{ gx: number; gy: number }> {
+    const out: Array<{ gx: number; gy: number }> = [];
+    for (let i = 0; i < 10; i++) out.push({ gx: DOOR_X + DOOR_WIDTH / 2 + 3.6 + i * 1.6, gy: this.storeH + 1.45 });
+    return out;
+  }
+
   /** Điểm giao hàng trên vỉa hè (m). */
   deliverySpots(): Array<{ gx: number; gy: number }> {
     const z = this.storeH + 0.9;

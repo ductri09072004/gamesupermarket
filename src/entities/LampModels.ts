@@ -4,6 +4,7 @@ import type { FurnitureDef } from '../config/furniture';
 import { cyl, powder, rblock, steel } from './DisplayMaterials';
 import { block } from './FurnitureModels';
 import { mergedModel } from './MergeStatic';
+import { prop } from '../engine/Props';
 
 /** Đèn trần (gốc giữa đáy ở sàn, model treo sát trần CEILING_HEIGHT). */
 
@@ -56,6 +57,28 @@ function pendant(def: FurnitureDef): THREE.Group {
   return g;
 }
 
+/** Model GLB treo sát trần; mặt kính / quả cầu thay bằng vật liệu phát sáng dùng chung (công tắc điều khiển). */
+function glbLamp(def: FurnitureDef): THREE.Group | null {
+  const pendant = def.id === 'lamp_pendant';
+  const m = prop(pendant ? 'lamp_pendant' : 'lamp_tube');
+  if (!m) return null;
+  const box = new THREE.Box3().setFromObject(m);
+  m.position.y = H - box.max.y;
+  const light = def.light?.color ?? 0xffffff;
+  m.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.castShadow = false;
+    const name = (mesh.material as THREE.Material).name;
+    if (/glass|globe/i.test(name)) mesh.material = glow(pendant ? `glb:${name}` : 'glb:tube', light, pendant ? 1.6 : 2.6);
+  });
+  const g = new THREE.Group();
+  g.add(m);
+  return g;
+}
+
 export function buildLamp(def: FurnitureDef): THREE.Group {
+  const glb = glbLamp(def);
+  if (glb) return glb;
   return mergedModel(`lamp:${def.id}`, () => (def.id === 'lamp_pendant' ? pendant(def) : tube(def)));
 }

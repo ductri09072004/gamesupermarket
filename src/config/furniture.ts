@@ -1,7 +1,7 @@
 import { CELL, MAX_SLOT_ROWS } from './constants';
 
 export type StorageType = 'shelf' | 'fridge' | 'freezer' | 'clothing' | 'electronics';
-export type FurnitureKind = 'display' | 'checkout' | 'selfcheckout' | 'trash' | 'computer' | 'rack' | 'lamp';
+export type FurnitureKind = 'display' | 'checkout' | 'selfcheckout' | 'trash' | 'computer' | 'rack' | 'lamp' | 'gate';
 
 export interface FurnitureDef {
   id: string;
@@ -65,6 +65,7 @@ export const FURNITURE: FurnitureDef[] = [
   def({ id: 'self_checkout', name: 'Máy tự tính tiền', icon: '🖥️', kind: 'selfcheckout', size: { w: 1, d: 0.8, h: 1 }, price: 1200, licenseRequired: 1, electricity: 4, color: 0x2f3e46 }),
   def({ id: 'lamp_tube', name: 'Đèn LED tuýp', icon: '💡', kind: 'lamp', size: { w: 1.5, d: 0.5, h: 0.08 }, price: 45, electricity: 1, light: { area: 10, color: 0xf4f8ff }, color: 0xffffff }),
   def({ id: 'lamp_pendant', name: 'Đèn thả trần', icon: '🏮', kind: 'lamp', size: { w: 0.5, d: 0.5, h: 0.7 }, price: 80, electricity: 1, light: { area: 6, color: 0xffd9a8 }, color: 0x2b2d42 }),
+  def({ id: 'security_gate', name: 'Cổng an ninh', icon: '🚨', kind: 'gate', size: { w: 1.6, d: 0.4, h: 1.55 }, price: 650, electricity: 2, color: 0xe5e7eb }),
   def({ id: 'trash', name: 'Thùng rác', icon: '🗑️', kind: 'trash', size: { w: 0.5, d: 0.5, h: 0.8 }, price: 40, color: 0x4f7a38 }),
   def({ id: 'rack', name: 'Kệ kho', icon: '📦', kind: 'rack', size: { w: 2, d: 0.6, h: 2.0 }, price: 180, tiers: 3, columns: 2, warehouseOnly: true, color: 0x5c6b7a }),
   def({ id: 'computer', name: 'Bàn máy tính', icon: '💻', kind: 'computer', size: { w: 1.2, d: 0.6, h: 0.75 }, price: 0, buyable: false, sellable: false, electricity: 1, color: 0x8d6e63 }),
@@ -75,6 +76,11 @@ const byId = new Map(FURNITURE.map((f) => [f.id, f]));
 /** Nội thất gắn trần (đèn): không chiếm ô sàn, không chặn đường, không va chạm. */
 export function isCeiling(def: Pick<FurnitureDef, 'kind'>): boolean {
   return def.kind === 'lamp';
+}
+
+/** Không chiếm ô sàn / không chặn đường (đèn trần, cổng an ninh — khách đi xuyên qua giữa 2 cột). */
+export function isPassable(def: Pick<FurnitureDef, 'kind'>): boolean {
+  return def.kind === 'lamp' || def.kind === 'gate';
 }
 
 export function getFurniture(id: string): FurnitureDef {

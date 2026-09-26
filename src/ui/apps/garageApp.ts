@@ -17,7 +17,7 @@ export function renderGarage(body: HTMLElement, ctx: AppContext): void {
       : h('button', {
         class: 'btn primary block', disabled: lockedLevel || !s.economy.canAfford(def.price),
         text: lockedLevel ? `🔒 Cần cấp ${def.levelRequired}` : `Mua ${money(def.price)}`,
-        onClick: () => { s.bus.emit('vehicle:buy', { type: def.id }); ctx.rerender(); },
+        onClick: () => { s.bus.emit('vehicle:buy', { type: def.id }); s.bus.emit('sound', { name: 'coin' }); ctx.rerender(); },
       });
     return h('div', { class: `product-card ${owned ? 'in-cart' : ''}` }, [
       h('div', { class: 'swatch big', text: def.icon, style: { background: '#e8eef5' } }),

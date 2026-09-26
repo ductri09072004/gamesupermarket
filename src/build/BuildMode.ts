@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import { bindWheelSteps } from './wheelSteps';
 import { FEEL } from '../config/feel';
-import { getFurniture, isCeiling } from '../config/furniture';
+import { getFurniture, isPassable } from '../config/furniture';
 import { makeFurniture, type FurnitureData } from '../core/GameState';
 import { canPlace } from '../systems/BuildSystem';
 import { BuildPanel } from '../ui/buildPanel';
-import { buildGrid, dropContents, ghostModel } from './BuildHelpers';
-import { footprintCells, type GridPoint } from '../world/Footprint';
+import { buildGrid, commitFurniture, dropContents, ghostModel, setCarried } from './BuildHelpers';
+import { footprintCells, ROT_STEP, rotatedSize, stepRot, type GridPoint } from '../world/Footprint';
 import { worldToCell } from '../world/NavGrid';
 import { furnitureMatrix } from '../world/Placement';
 import type { GameCtx } from '../game/Ctx';
@@ -16,7 +17,7 @@ interface Holding {
   from: FurnitureData | null;
 }
 
-/** Build mode: camera nhìn từ trên, lưới 0.5m, ghost xanh/đỏ, R xoay, click đặt/nhấc, Delete bán 50%. */
+/** Build mode: camera nhìn từ trên, lưới 0.5m, ghost xanh/đỏ, R xoay 90° / lăn chuột xoay 15°, click đặt/nhấc, Delete bán 50%. */
 export class BuildMode {
   active = false;
   private holding: Holding | null = null;
@@ -28,15 +29,11 @@ export class BuildMode {
   private panel = new BuildPanel();
   private ray = new THREE.Raycaster();
   private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  /** Vào Build mode bằng phím M (dời nhanh) → tự thoát sau khi đặt xong / huỷ. */
-  private quick = false;
+  private offWheel: () => void;
 
   constructor(private c: GameCtx, private peopleCells: () => GridPoint[], private onChanged: () => void) {
     c.input.onMouseDown((e) => { if (this.active && e.button === 0 && !(e.target as HTMLElement).closest?.('.build-panel')) this.click(); });
-    c.s.bus.on('build:hold', ({ furnitureId }) => {
-      if (!this.active) this.enter();
-      this.holdFromStock(furnitureId);
-    });
+    this.offWheel = bindWheelSteps((dir) => this.rotate(dir * ROT_STEP), (e) => this.active && !!this.holding && !(e.target as HTMLElement).closest?.('.build-panel'));
   }
 
   toggle(): void {
@@ -47,8 +44,8 @@ export class BuildMode {
   enter(): void {
     const c = this.c;
     if (this.active || c.mode !== 'play') return;
-    if (c.held.box) {
-      c.toast('Đặt thùng xuống trước khi vào chế độ xây dựng', 'error');
+    if (c.held.box || c.fp.active) {
+      c.toast('Đặt thùng / đồ đang bê xuống trước khi vào chế độ xây dựng', 'error');
       return;
     }
     this.active = true;
@@ -73,7 +70,6 @@ export class BuildMode {
     const c = this.c;
     this.cancel();
     this.active = false;
-    this.quick = false;
     this.grid?.removeFromParent();
     this.grid = null;
     this.panel.close();
@@ -105,11 +101,11 @@ export class BuildMode {
     this.refresh();
   }
 
-  /** Click ô: ưu tiên nội thất trên sàn, không có thì nhấc đèn trần phía trên ô đó. */
+  /** Click ô: ưu tiên nội thất trên sàn, không có thì nhấc cổng an ninh / đèn trần ở ô đó. */
   private pickUp(cell: GridPoint): void {
     const uid = this.c.s.grid.occupant(cell.gx, cell.gy) ?? this.c.s.data.furniture.find((f) => {
       const def = getFurniture(f.type);
-      return isCeiling(def) && footprintCells(def, f.gx, f.gy, f.rot).some((p) => p.gx === cell.gx && p.gy === cell.gy);
+      return isPassable(def) && footprintCells(def, f.gx, f.gy, f.rot).some((p) => p.gx === cell.gx && p.gy === cell.gy);
     })?.uid;
     if (uid) this.pickUpUid(uid);
   }
@@ -129,20 +125,8 @@ export class BuildMode {
     c.sound('pop');
   }
 
-  /** Ẩn kệ cùng hàng/thùng trên đó khi đang cầm. */
   private setCarried(uid: string, carried: boolean): void {
-    this.c.furniture.get(uid)?.setVisible(!carried);
-    this.c.products.setHidden(uid, carried);
-    this.c.boxes.setHolderHidden(uid, carried);
-  }
-
-  /** Dời nhanh từ góc nhìn thứ nhất (phím M khi nhìn vào nội thất). */
-  moveFurniture(uid: string): void {
-    if (this.active || this.c.mode !== 'play') return;
-    this.enter();
-    if (!this.active) return;
-    this.quick = true;
-    this.pickUpUid(uid);
+    setCarried(this.c, uid, carried);
   }
 
   private cancel(): void {
@@ -153,7 +137,7 @@ export class BuildMode {
     if (!h) return;
     if (h.from) {
       const def = getFurniture(h.from.type);
-      if (!isCeiling(def)) this.c.s.grid.occupy(footprintCells(def, h.from.gx, h.from.gy, h.from.rot), h.from.uid);
+      if (!isPassable(def)) this.c.s.grid.occupy(footprintCells(def, h.from.gx, h.from.gy, h.from.rot), h.from.uid);
       this.setCarried(h.from.uid, false);
     } else {
       this.c.s.data.furnitureStock.push(h.type);
@@ -169,11 +153,15 @@ export class BuildMode {
     this.onChanged();
   }
 
-  rotate(): void {
+  /** step: số 1/4 vòng (R = 90°, lăn chuột = 15°). */
+  rotate(step = 1): void {
     if (!this.holding) return;
-    this.holding.rot = (this.holding.rot + 1) % 4;
+    this.holding.rot = stepRot(this.holding.rot, step);
+    this.c.sound('click');
     this.refresh();
   }
+
+
 
   sell(): void {
     const c = this.c;
@@ -197,7 +185,6 @@ export class BuildMode {
     }
     c.toast(`Đã bán ${def.name} (+$${refund.toFixed(2)})${packed ? ` — hàng đã đóng vào ${packed} thùng` : ''}`, 'info');
     c.sound('coin');
-    if (this.quick) this.exit();
   }
 
   /** Ô dưới con trỏ (theo tâm footprint). */
@@ -211,8 +198,7 @@ export class BuildMode {
     const cell = worldToCell(p.x, p.z);
     if (this.holding) {
       const def = getFurniture(this.holding.type);
-      const w = this.holding.rot % 2 === 0 ? def.footprint.w : def.footprint.h;
-      const h = this.holding.rot % 2 === 0 ? def.footprint.h : def.footprint.w;
+      const { w, h } = rotatedSize(def, this.holding.rot);
       return { gx: cell.gx - Math.floor((w - 1) / 2), gy: cell.gy - Math.floor((h - 1) / 2) };
     }
     return cell;
@@ -256,19 +242,11 @@ export class BuildMode {
       placed = makeFurniture(c.s.state.newUid('f'), h.type, this.cell.gx, this.cell.gy, h.rot);
       c.s.data.furniture.push(placed);
     }
-    this.changed();
-    const v = c.furniture.get(placed.uid);
-    if (v) v.model.scale.y = 0.6;
-    c.products.markDirty();
-    c.boxes.markDirty();
-    c.sound('thud');
-    if (this.quick) this.exit();
+    commitFurniture(c, placed.uid, this.onChanged);
   }
 
-  update(dt: number): void {
-    if (!this.active) return;
-    for (const v of this.c.furniture.all()) if (v.model.scale.y < 1) v.model.scale.y = Math.min(1, v.model.scale.y + dt * 3);
-    if (!this.holding) return;
+  update(): void {
+    if (!this.active || !this.holding) return;
     const cell = this.pointerCell();
     if (cell.gx !== this.cell.gx || cell.gy !== this.cell.gy) {
       this.cell = cell;
@@ -276,6 +254,7 @@ export class BuildMode {
     }
   }
 
+  destroy(): void { this.offWheel(); }
   onKey(e: KeyboardEvent): boolean {
     if (!this.active) return false;
     if (e.code === 'KeyR') { this.rotate(); return true; }
@@ -283,7 +262,7 @@ export class BuildMode {
     if (e.code === 'Escape') {
       const wasHolding = !!this.holding;
       this.cancel();
-      if (!wasHolding || this.quick) this.exit();
+      if (!wasHolding) this.exit();
       return true;
     }
     if (e.code === 'KeyB') { this.exit(); return true; }

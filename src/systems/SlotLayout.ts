@@ -34,7 +34,8 @@ interface ShelfGeom {
 }
 
 const GEOM: Record<string, ShelfGeom> = {
-  shelf: { side: 0.04, base: 0.12, top: 0.06, board: 0.03, inset: 0.03 },
+  // khớp 4 tấm gỗ dưới của kệ thép steel_frame_shelves_01 (mặt tầng ở 6.5% / 30% / 53.5% / 77% chiều cao)
+  shelf: { side: 0.035, base: 0.1, top: 0.004, board: 0.012, inset: 0.03 },
   fridge: { side: 0.07, base: 0.22, top: 0.2, board: 0.02, inset: 0.06 },
   // đáy lòng tủ đông cao 0.55m để đứng xa vẫn thấy hàng (lòng tủ sâu ~32cm như tủ đảo thật)
   freezer: { side: 0.08, base: 0.55, top: 0.05, board: 0, inset: 0.08 },

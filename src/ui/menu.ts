@@ -41,7 +41,7 @@ export function showMainMenu(handlers: MenuHandlers, settings: Settings, onSetti
     h('button', { class: 'btn block big', text: '✨ Game mới', onClick: confirmNew(false) }),
     h('button', { class: 'btn block big', text: '🛠️ Chế độ developer', onClick: confirmNew(true) }),
     h('button', { class: 'btn block big', text: '⚙️ Cài đặt', onClick: () => showSettings(settings, onSettings) }),
-    h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>E</kbd> tương tác · <kbd>Chuột trái</kbd> đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>M</kbd> dời kệ · <kbd>B</kbd> xây dựng · <kbd>1-3</kbd> tốc độ · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
+    h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>M</kbd> dời kệ · <kbd>B</kbd> xây dựng · <kbd>1-3</kbd> tốc độ · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
   ]));
   uiRoot().append(root);
   return close;

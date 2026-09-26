@@ -73,6 +73,12 @@ export class GameUI {
     w.input.keys.onKey((e) => { if (!e.defaultPrevented) this.play.onKey(e); });
     w.input.onMouseDown((e) => {
       if ((w.mode === 'play' || w.mode === 'drive') && !this.isUiOpen() && !w.input.locked && !w.input.dragLook && (e.target as HTMLElement).tagName === 'CANVAS') this.relock();
+      // chuột trái = tương tác (khi đã khoá chuột; chế độ kéo-để-nhìn xử lý lúc nhả chuột)
+      else if (e.button === 0 && w.input.locked) this.play.onPrimaryClick();
+      else if (e.button === 2 && w.fp.active && w.mode === 'play' && !this.isUiOpen()) w.fp.cancel();
+    });
+    w.input.onMouseUp((e) => {
+      if (e.button === 0 && !w.input.locked && w.input.dragLook && !w.input.dragged && (e.target as HTMLElement).tagName === 'CANVAS') this.play.onPrimaryClick();
     });
     w.input.onLock((locked) => {
       if (locked) this.clickToPlay.hide();
