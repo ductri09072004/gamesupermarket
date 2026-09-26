@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { CLIPS, RECOLOR_MODELS, WALK_CLIP_SPEED } from '../config/characters';
+import { CLIPS, HAND_BONES, RECOLOR_MODELS } from '../config/characters';
 import { contactShadow } from '../world/ContactShadow';
-import { characterClip, characterScale, characterScene, hasCharacters } from './CharacterModels';
+import { characterClip, characterScale, characterScene, characterWalkSpeed, hasCharacters } from './CharacterModels';
 import { Human, type HumanBody, type HumanLook } from './Human';
 
 const PICK_S = 0.9;
+/** Thời lượng hiển thị động tác ngắn: đấm (bảo vệ tóm trộm), trúng đòn (kẻ trộm) */
+const ONESHOT_S = { punch: 0.7, hit: 0.8 } as const;
 const qa = new THREE.Quaternion();
 const qb = new THREE.Quaternion();
 const matCache = new Map<string, THREE.Material>();
@@ -35,8 +37,9 @@ function recolor(model: string, mat: THREE.Material, look: HumanLook): THREE.Mat
 }
 
 /**
- * Người rig (model Quaternius) với AnimationMixer: Idle ↔ Walk trộn theo tốc độ, Walk_Carry khi bê thùng,
- * PickUp khi lấy hàng. Cùng API với Human để Walker/Customer/Staff không phải đổi.
+ * Người rig (model Quaternius) với AnimationMixer: Idle ↔ Walk trộn theo tốc độ, Walk_Carry khi bê thùng (nếu model có),
+ * Interact khi lấy hàng, Punch / Hit cho cảnh tóm trộm. Mỗi model tự mang clip & tỉ lệ riêng.
+ * Cùng API với Human để Walker/Customer/Staff không phải đổi.
  */
 export class RiggedHuman implements HumanBody {
   readonly root = new THREE.Group();
@@ -50,14 +53,18 @@ export class RiggedHuman implements HumanBody {
   private mixer: THREE.AnimationMixer;
   private idle: THREE.AnimationAction;
   private walk: THREE.AnimationAction;
-  private carry: THREE.AnimationAction;
+  private carry: THREE.AnimationAction | null;
   private pick: THREE.AnimationAction | null;
+  private oneShots = new Map<string, THREE.AnimationAction>();
   private carrying = false;
   private pickT = 0;
+  private shot: { act: THREE.AnimationAction; t: number; dur: number } | null = null;
+  private walkSpeed: number;
 
   constructor(model: string, look: HumanLook) {
     const body = cloneSkinned(characterScene(model)!) as THREE.Group;
-    body.scale.setScalar(characterScale());
+    body.scale.setScalar(characterScale(model));
+    this.walkSpeed = characterWalkSpeed(model);
     body.rotation.y = Math.PI; // model Quaternius quay mặt +Z, quy ước game là -Z
     body.traverse((o) => {
       const mesh = o as THREE.Mesh;
@@ -68,28 +75,38 @@ export class RiggedHuman implements HumanBody {
     });
     this.root.add(body, contactShadow(0.62, 0.62, 0.5, true));
     body.updateMatrixWorld(true);
-    // gắn tay vào xương nắm tay; bù tỉ lệ để đồ cầm (giỏ, túi) giữ kích thước thật
-    for (const [hand, bone] of [[this.handL, 'Fist.L'], [this.handR, 'Fist.R']] as const) {
-      // GLTFLoader làm sạch tên node (bỏ '.'), "Fist.L" → "FistL"
-      const b = body.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(bone));
+    // gắn tay vào xương cổ tay / bàn tay; bù tỉ lệ để đồ cầm (giỏ, túi) giữ kích thước thật
+    for (const [hand, bones] of [[this.handL, HAND_BONES.L], [this.handR, HAND_BONES.R]] as const) {
+      // GLTFLoader làm sạch tên node (bỏ '.'), "Wrist.L" → "WristL"
+      const b = bones.map((n) => body.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(n))).find((x) => x);
       if (!b) continue;
       const ws = b.getWorldScale(new THREE.Vector3());
       hand.scale.setScalar(1 / ws.x);
       b.add(hand);
     }
     this.mixer = new THREE.AnimationMixer(body);
-    const act = (name: string) => {
-      const a = this.mixer.clipAction(characterClip(name)!);
+    const loop = (name: string) => {
+      const clip = characterClip(model, name);
+      if (!clip) return null;
+      const a = this.mixer.clipAction(clip);
       a.play();
       a.setEffectiveWeight(0);
       return a;
     };
-    this.idle = act(CLIPS.idle);
-    this.walk = act(CLIPS.walk);
-    this.carry = act(CLIPS.carry);
-    const pickClip = characterClip(CLIPS.pick);
-    this.pick = pickClip ? this.mixer.clipAction(pickClip) : null;
-    this.pick?.setLoop(THREE.LoopOnce, 1);
+    const once = (name: string) => {
+      const clip = characterClip(model, name);
+      const a = clip ? this.mixer.clipAction(clip) : null;
+      a?.setLoop(THREE.LoopOnce, 1);
+      return a;
+    };
+    this.idle = loop(CLIPS.idle)!;
+    this.walk = loop(CLIPS.walk) ?? this.idle;
+    this.carry = loop(CLIPS.carry);
+    this.pick = once(CLIPS.pick);
+    for (const k of ['punch', 'hit'] as const) {
+      const a = once(CLIPS[k]);
+      if (a) this.oneShots.set(k, a);
+    }
     this.idle.time = Math.random() * this.idle.getClip().duration;
     this.mixer.update(0);
   }
@@ -100,6 +117,17 @@ export class RiggedHuman implements HumanBody {
     this.pick.reset();
     this.pick.timeScale = this.pick.getClip().duration / PICK_S;
     this.pick.setEffectiveWeight(1).fadeIn(0.12).play();
+  }
+
+  /** Động tác ngắn: đấm / trúng đòn (không có clip thì bỏ qua). */
+  act(kind: 'punch' | 'hit'): void {
+    const a = this.oneShots.get(kind);
+    if (!a) { this.reach(); return; }
+    const dur = ONESHOT_S[kind];
+    a.reset();
+    a.timeScale = a.getClip().duration / dur;
+    a.setEffectiveWeight(1).fadeIn(0.08).play();
+    this.shot = { act: a, t: dur, dur };
   }
 
   update(frameDt: number): void {
@@ -115,13 +143,20 @@ export class RiggedHuman implements HumanBody {
       p = Math.min(1, this.pickT / 0.15, (PICK_S - this.pickT) / 0.12);
       if (this.pickT === 0) this.pick?.stop();
     }
-    const walkAct = this.carrying ? this.carry : this.walk;
-    const other = this.carrying ? this.walk : this.carry;
+    if (this.shot) {
+      this.shot.t = Math.max(0, this.shot.t - dt);
+      p = Math.max(p, Math.min(1, this.shot.t / 0.12, (this.shot.dur - this.shot.t) / 0.08));
+      this.shot.act.setEffectiveWeight(p);
+      if (this.shot.t === 0) { this.shot.act.stop(); this.shot = null; }
+    }
+    // model không có clip bê thùng → vẫn dùng clip đi thường
+    const walkAct = this.carrying && this.carry ? this.carry : this.walk;
+    const other = walkAct === this.walk ? this.carry : this.walk;
     walkAct.setEffectiveWeight(w * (1 - p));
-    walkAct.timeScale = Math.max(0.5, this.speed / WALK_CLIP_SPEED);
-    other.setEffectiveWeight(0);
-    this.idle.setEffectiveWeight((1 - w) * (1 - p));
-    this.pick?.setEffectiveWeight(p);
+    walkAct.timeScale = Math.max(0.5, this.speed / this.walkSpeed);
+    if (other && other !== walkAct) other.setEffectiveWeight(0);
+    if (this.idle !== walkAct) this.idle.setEffectiveWeight((1 - w) * (1 - p));
+    this.pick?.setEffectiveWeight(this.pickT > 0 ? p : 0);
     this.mixer.update(dt);
     this.alignHands();
   }

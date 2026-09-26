@@ -5,6 +5,7 @@ import {
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
 import { SECURITY } from '../config/hygiene';
+import { ELDER_MODELS } from '../config/characters';
 import type { FurnitureData } from '../core/GameState';
 import type { Services } from '../core/Services';
 import type { CheckoutItem } from '../systems/CheckoutSystem';
@@ -62,7 +63,7 @@ export class Customer extends Walker {
     super(world.s, look, cellCenter(spawn.gx, spawn.gy).x, cellCenter(spawn.gx, spawn.gy).z);
     this.human.handL.add(this.basket.group);
     this.human.holding = true;
-    this.elder = !!look.model?.startsWith('Old');
+    this.elder = !!look.model && ELDER_MODELS.has(look.model);
     this.walkTo(world.s.grid.doorInside);
   }
 
@@ -268,12 +269,11 @@ export class Customer extends Walker {
 
   /** Bị tóm: đứng khựng (hàng đã văng ra) rồi đi về tay không. Trả về các món đang giấu. */
   caught(): string[] {
-    const items = this.basketItems.map((i) => i.productId);
-    this.basketItems = [];
+    const items = this.basketItems.splice(0).map((i) => i.productId);
     while (this.basket.takeOut()) { /* xoá hết món trong giỏ */ }
-    this.thief = false;
-    this.alarmed = false;
+    this.thief = this.alarmed = false;
     this.stop();
+    this.human.act?.('hit');
     this.state = 'stunned';
     this.timer = 1.4;
     this.say('😵 Ui da! Em xin lỗi...', 2200);

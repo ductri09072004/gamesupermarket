@@ -72,18 +72,17 @@
     }
   },
   "characters": [
-    "characters/Casual2_Female.glb",
-    "characters/Casual2_Male.glb",
-    "characters/Casual3_Female.glb",
-    "characters/Casual3_Male.glb",
-    "characters/Casual_Female.glb",
-    "characters/Casual_Male.glb",
-    "characters/OldClassy_Female.glb",
-    "characters/OldClassy_Male.glb",
-    "characters/Suit_Female.glb",
-    "characters/Suit_Male.glb",
-    "characters/Worker_Female.glb",
-    "characters/Worker_Male.glb"
+    "characters/Casual_Character.glb",
+    "characters/Punk.glb",
+    "characters/Beach_Character.glb",
+    "characters/Animated_Woman2.glb",
+    "characters/Animated_Woman3.glb",
+    "characters/Worker.glb",
+    "characters/Man.glb",
+    "characters/Man_in_Suit.glb",
+    "characters/Woman_Casual.glb",
+    "characters/Woman_in_Dress.glb",
+    "characters/Woman_Tank_Top.glb"
   ],
   "city": [
     "city/1Story.glb",

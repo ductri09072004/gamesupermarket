@@ -23,6 +23,8 @@ export interface HumanBody {
   animInterval: number;
   holding: boolean;
   reach(): void;
+  /** Động tác ngắn (đấm, trúng đòn) — người khối không có thì bỏ qua */
+  act?(kind: 'punch' | 'hit'): void;
   update(dt: number): void;
   setCarrying(on: boolean): void;
   dispose(): void;

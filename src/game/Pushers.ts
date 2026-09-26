@@ -3,17 +3,6 @@ import { forward } from '../systems/VehicleDrive';
 import type { Pusher } from './BoxPhysics';
 import type { World } from './World';
 
-/** Người chơi đi bộ như thân kinematic đẩy thùng: vận tốc lấy từ độ dời mỗi bước logic (60 Hz). */
-export class WalkPusher {
-  private last: { x: number; z: number } | null = null;
-
-  next(p: { x: number; z: number }): Pusher {
-    const l = this.last ?? p;
-    this.last = { x: p.x, z: p.z };
-    return { x: p.x, z: p.z, vx: (p.x - l.x) * 60, vz: (p.z - l.z) * 60 };
-  }
-}
-
 /** Xe đang lái (hộp theo hướng) đẩy thùng; null khi không lái. */
 export function drivePusher(w: World): Pusher | null {
   const uid = w.driving.uid;

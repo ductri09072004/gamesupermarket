@@ -48,7 +48,17 @@
   riêng vì có animation/raycast; mọi điểm neo (beltStart, scanPoint, drawer...) không đổi.
 - `SelfCheckoutModel.ts`: máy tự tính tiền, màn hình canvas riêng từng máy + đèn gọi nhân viên (material riêng).
 
-## Nhân vật (khách, nhân viên) — ĐÃ LÀM
+## Nhân vật tỉ lệ thật — ĐÃ LÀM (thay bộ chibi, 9/2026)
+- 11 model Quaternius (CC0) tải từ Poly Pizza (itch.io chặn tải tự động bằng Cloudflare — không vượt).
+  2 bộ khung: "CharacterArmature" (Ultimate Modular: Casual_Character, Punk, Beach_Character, Animated_Woman2/3, Worker;
+  tay = Wrist, có Interact/Punch/Hit) và "HumanArmature" (Animated Men/Women: Man, Man_in_Suit, Woman_Casual,
+  Woman_in_Dress, Woman_Tank_Top; file ở tỉ lệ ~4.8m, tay = Palm, không có Interact/Hit).
+- Script scratchpad `tools/chars.mjs`: bỏ tiền tố armature & Man_/Female_, đổi tên clip → Idle/Walk/Run/Interact/Punch/Hit/Wave,
+  xoá clip thừa + prune. Mỗi model tự mang clip; registry tính scale theo chiều cao đích (nam 1.78 / nữ 1.68).
+- Tốc độ bước clip Walk đo bằng vận tốc bàn chân lúc chạm đất: modular ≈ 1.23 m/s, animated ≈ 1.63 m/s.
+- Không bộ nào có Walk_Carry → bê thùng dùng Walk thường. Bộ chibi cũ đã gỡ khỏi manifest (còn trong git).
+
+## Nhân vật chibi cũ (đã thay)
 Đang dùng Quaternius *Ultimate Animated Character Pack* (CC0) trong `public/assets/models/characters/`:
 `src/entities/RiggedHuman.ts` (AnimationMixer Idle/Walk/Walk_Carry/PickUp, cùng API với `Human` qua interface
 `HumanBody`, fallback người khối qua `createHuman()`), registry `CharacterModels.ts`, danh sách model ở

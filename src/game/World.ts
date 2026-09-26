@@ -43,7 +43,7 @@ import { CrateManager } from './CrateManager';
 import { DeliveryTrucks } from './DeliveryTrucks';
 import { FpPlace } from '../build/FpPlace';
 import { BoxPhysics } from './BoxPhysics';
-import { drivePusher, WalkPusher } from './Pushers';
+import { drivePusher } from './Pushers';
 import { applyTimeOfDay } from './TimeOfDay';
 
 /** Toàn bộ cảnh 3D của 1 ván chơi (hoặc cảnh nền của main menu). */
@@ -82,7 +82,6 @@ export class World implements GameCtx {
   readonly trucks: DeliveryTrucks;
   readonly fp: FpPlace;
   readonly physics: BoxPhysics;
-  private walkFeed = new WalkPusher();
   mode: Mode = 'play';
   private colliderCache: AABB[] | null = null;
   private cityDepth: number;
@@ -127,6 +126,7 @@ export class World implements GameCtx {
     this.crates = new CrateManager(s);
     this.physics = new BoxPhysics(s, () => this.colliders(), (u) => this.boxes.isAnimating(u));
     this.boxes.physicsPose = (u) => this.physics.pose(u);
+    this.player.onPush = (u, dx, dz) => this.physics.push(u, dx, dz, this.player.y, 1 / 60);
     this.life.traffic.statics = () => this.colliders();
     this.trucks = new DeliveryTrucks(this, () => this.city.layout);
     for (const o of d.orders) o.dispatched = false; // đơn chờ xe từ lần chơi trước → gọi xe tải lại
@@ -223,7 +223,7 @@ export class World implements GameCtx {
     this.trucks.update(s.time.paused ? 0 : dt, [...this.life.traffic.positions(), onRoad]);
     this.life.update(dt, onRoad, !!this.driving.uid, this.camera.position, this.trucks.obstacles());
     this.crates.update(dt);
-    this.physics.update(dt, this.walkFeed.next(this.player), drivePusher(this));
+    this.physics.update(dt, drivePusher(this), this.player);
     if (playing) this.fp.update();
     this.tween.update(dt);
     this.interaction.enabled = playing;

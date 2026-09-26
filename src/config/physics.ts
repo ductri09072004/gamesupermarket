@@ -14,6 +14,9 @@ export const BOX_PHYSICS = {
   staticHeight: 2.6,
   /** Tốc độ ném khi thả thùng (m/s) */
   throwSpeed: 1.2,
+  /** Người chơi tì vào đẩy thùng: lực tối đa (N), đẩy tới tối đa tốc độ này (m/s) */
+  pushForce: 95,
+  pushSpeed: 1.3,
 };
 
 export const CAR_IMPACT = {

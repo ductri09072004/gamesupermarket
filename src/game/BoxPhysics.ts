@@ -1,17 +1,17 @@
 import * as CANNON from 'cannon-es';
 import * as THREE from 'three';
-import { PLAYER_RADIUS } from '../config/constants';
 import { BOX_PHYSICS } from '../config/physics';
 import type { BoxData } from '../core/GameState';
 import type { Services } from '../core/Services';
 import { BOX_D, BOX_H, BOX_W } from '../entities/Box';
 import type { AABB } from '../world/Colliders';
+import type { Support } from '../player/StepSupport';
 
 const P = BOX_PHYSICS;
 const tmpQ = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
 
-/** Thân kinematic đẩy thùng (người chơi đi bộ / xe đang lái). */
+/** Thân kinematic đẩy thùng (xe đang lái). */
 export interface Pusher {
   x: number;
   z: number;
@@ -30,7 +30,6 @@ export class BoxPhysics {
   private bodies = new Map<string, CANNON.Body>();
   private statics: CANNON.Body[] = [];
   private staticSrc: AABB[] | null = null;
-  private walker: CANNON.Body;
   private car: CANNON.Body | null = null;
   private carKey = '';
   private boxMat = new CANNON.Material('box');
@@ -43,8 +42,6 @@ export class BoxPhysics {
     this.world.addBody(ground);
     this.world.defaultContactMaterial.friction = P.friction;
     this.world.defaultContactMaterial.restitution = P.restitution;
-    this.walker = new CANNON.Body({ type: CANNON.Body.KINEMATIC, shape: new CANNON.Cylinder(PLAYER_RADIUS * 0.9, PLAYER_RADIUS * 0.9, 1.6, 10) });
-    this.world.addBody(this.walker);
   }
 
   private massOf(b: BoxData): number {
@@ -138,10 +135,7 @@ export class BoxPhysics {
     body.wakeUp();
   }
 
-  private setPusher(p: Pusher | null, walk: Pusher): void {
-    this.walker.position.set(walk.x, 0.8, walk.z);
-    this.walker.velocity.set(walk.vx, 0, walk.vz);
-    this.walker.collisionResponse = !p;
+  private setPusher(p: Pusher | null): void {
     if (!p?.car) {
       if (this.car) { this.world.removeBody(this.car); this.car = null; }
       return;
@@ -158,12 +152,16 @@ export class BoxPhysics {
     this.car.velocity.set(p.vx, 0, p.vz);
   }
 
-  /** walk: người chơi đi bộ; drive: xe đang lái (null nếu không lái). */
-  update(dt: number, walk: Pusher, drive: Pusher | null): void {
+  /**
+   * drive: xe đang lái đẩy thùng (null nếu không lái). walker: người chơi đi bộ — nhận danh sách thùng quanh mình
+   * để bước lên / bị chặn (đẩy thùng qua push()).
+   */
+  update(dt: number, drive: Pusher | null, walker?: { x: number; z: number; supports: Support[] }): void {
     this.syncStatics();
     this.syncBoxes();
+    if (walker) walker.supports = this.supports(walker);
     if (this.bodies.size === 0) return;
-    this.setPusher(drive, walk);
+    this.setPusher(drive);
     this.world.step(1 / 60, dt, 3);
     this.writeT -= dt;
     if (this.writeT > 0) return;
@@ -176,6 +174,34 @@ export class BoxPhysics {
       const q = body.quaternion;
       b.pose = { y: Math.round(body.position.y * 1000) / 1000, q: [q.x, q.y, q.z, q.w] };
     }
+  }
+
+  /** Thùng trên sàn dưới dạng hộp bao XZ + độ cao nóc — người chơi bước lên / bị chặn. */
+  supports(near: { x: number; z: number }, radius = 4): Support[] {
+    const out: Support[] = [];
+    for (const [uid, b] of this.bodies) {
+      if (Math.abs(b.position.x - near.x) > radius || Math.abs(b.position.z - near.z) > radius) continue;
+      b.updateAABB();
+      const a = b.aabb;
+      out.push({ uid, minX: a.lowerBound.x, maxX: a.upperBound.x, minZ: a.lowerBound.z, maxZ: a.upperBound.z, top: a.upperBound.y });
+    }
+    return out;
+  }
+
+  /**
+   * Người chơi tì vào thùng theo hướng (dx, dz): đẩy tới tối đa tốc độ đi chậm, lực có giới hạn.
+   * Điểm đặt lực ở tâm thùng → thùng trượt thẳng; chồng thùng thì thùng dưới trượt ra, thùng trên đổ.
+   */
+  push(uid: string, dx: number, dz: number, _feet: number, dt: number): void {
+    const b = this.bodies.get(uid);
+    if (!b || b.type !== CANNON.Body.DYNAMIC) return;
+    const along = b.velocity.x * dx + b.velocity.z * dz;
+    const need = P.pushSpeed - along;
+    if (need <= 0) return;
+    const j = Math.min(need * b.mass, P.pushForce * dt);
+    b.wakeUp();
+    // điểm đặt lực TƯƠNG ĐỐI so với tâm (API cannon-es): ngay tâm → trượt thẳng, không tự quay
+    b.applyImpulse(new CANNON.Vec3(dx * j, 0, dz * j), new CANNON.Vec3(0, 0, 0));
   }
 
   /** Tư thế hiện tại (tâm hộp) — BoxManager dùng để đặt model. */

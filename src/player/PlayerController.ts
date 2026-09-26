@@ -6,6 +6,7 @@ import {
 import { FEEL } from '../config/feel';
 import type { Input } from '../engine/Input';
 import { moveCircle, type AABB } from '../world/Colliders';
+import { blockers, groundHeight, pushedBy, type Support } from './StepSupport';
 
 /** Người chơi góc nhìn thứ nhất: di chuyển, chạy, ngồi xổm, headbob, bước chân. */
 export class PlayerController {
@@ -26,8 +27,14 @@ export class PlayerController {
   private bobOffset = 0;
   private lastStep = 0;
   speed = 0;
-  /** Độ cao chân so với sàn (m) khi nhảy */
+  /** Độ cao chân (m): 0 = sàn, > 0 khi nhảy hoặc đứng trên thùng */
   y = 0;
+  /** Độ cao mặt đỡ dưới chân (sàn hoặc nóc thùng) */
+  groundH = 0;
+  /** Thùng hàng quanh đây (World cập nhật mỗi bước từ vật lý) */
+  supports: Support[] = [];
+  /** Đi tì vào thùng cao → đẩy nó (hướng đơn vị) */
+  onPush: (uid: string, dx: number, dz: number) => void = () => {};
   vy = 0;
   private jumpHeld = false;
   private landDip = 0;
@@ -45,7 +52,7 @@ export class PlayerController {
   }
 
   get grounded(): boolean {
-    return this.y <= 0 && this.vy <= 0;
+    return this.y <= this.groundH + 1e-3 && this.vy <= 0;
   }
 
   /** Nhảy (Space). Chỉ nhảy khi đang đứng trên sàn, không nhảy khi ngồi. */
@@ -55,12 +62,17 @@ export class PlayerController {
       this.onJump();
     }
     this.jumpHeld = wantJump;
+    // bước lên thùng: nâng chân lên mượt (không dựng đứng camera)
+    if (this.y < this.groundH && this.vy <= 0) {
+      this.y = Math.min(this.groundH, this.y + dt * 3.2);
+      return;
+    }
     if (this.grounded) return;
     this.vy -= GRAVITY * dt;
     this.y += this.vy * dt;
-    if (this.y <= 0) {
+    if (this.y <= this.groundH) {
       const impact = -this.vy;
-      this.y = 0;
+      this.y = this.groundH;
       this.vy = 0;
       this.landDip = Math.min(0.08, impact * 0.012);
       this.onLand(impact);
@@ -105,11 +117,18 @@ export class PlayerController {
     const accel = 1 - Math.exp(-dt * 14 * (this.grounded ? 1 : AIR_CONTROL));
     this.vx += (wx - this.vx) * accel;
     this.vz += (wz - this.vz) * accel;
-    const p = moveCircle(this.x, this.z, this.vx * dt, this.vz * dt, PLAYER_RADIUS, colliders);
+    // thùng thấp bước lên được; thùng cao chặn lại (đi tiếp thì đẩy)
+    const boxWalls = blockers(this.y, this.supports);
+    const p = moveCircle(this.x, this.z, this.vx * dt, this.vz * dt, PLAYER_RADIUS, boxWalls.length ? [...colliders, ...boxWalls] : colliders);
+    if (target > 0 && boxWalls.length) {
+      const wl = Math.hypot(wx, wz);
+      for (const uid of pushedBy(p.x, p.z, PLAYER_RADIUS, wx / wl, wz / wl, this.y, this.supports)) this.onPush(uid, wx / wl, wz / wl);
+    }
     const moved = Math.hypot(p.x - this.x, p.z - this.z);
     this.speed = moved / dt;
     this.x = p.x;
     this.z = p.z;
+    this.groundH = groundHeight(this.x, this.z, PLAYER_RADIUS, this.y, this.supports);
     const eyeTarget = this.crouching ? CROUCH_EYE_HEIGHT : EYE_HEIGHT;
     this.eye += (eyeTarget - this.eye) * (1 - Math.exp(-dt * 10));
     // headbob + bước chân

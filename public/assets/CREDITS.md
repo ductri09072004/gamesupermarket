@@ -19,18 +19,6 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `textures/floor/marble_01_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
 | `textures/floor/marble_01_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
 | `textures/floor/marble_01_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
-| `models/characters/Casual2_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Casual2_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Casual3_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Casual3_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Casual_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Casual_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/OldClassy_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/OldClassy_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Suit_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Suit_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Worker_Female.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
-| `models/characters/Worker_Male.glb` | Quaternius — Ultimate Animated Character Pack (https://quaternius.com/packs/ultimatedanimatedcharacter.html), đã bỏ bớt clip & lượng tử hoá | CC0 |
 | `textures/asphalt/asphalt_02_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
 | `textures/asphalt/asphalt_02_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
 | `textures/asphalt/asphalt_02_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
@@ -97,3 +85,14 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `models/props/truck.glb` | Quaternius — Truck, qua Poly Pizza (https://poly.pizza/m/cXw6oiFtZ8); pivot bánh xe tách riêng | CC0 |
 | `models/city/vehicle_pickup.glb` | Quaternius — Pickup Truck, qua Poly Pizza (https://poly.pizza/m/qn4grQgHm8) | CC0 |
 | `models/city/vehicle_car.glb` | Quaternius — Car, qua Poly Pizza (https://poly.pizza/m/unqqkULtRU) | CC0 |
+| `models/characters/Casual_Character.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/kZ3DmIoGip); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Punk.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/BTALZymknF); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Beach_Character.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/DojKLcO34E); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Animated_Woman2.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/qJ2gsTUBHL); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Animated_Woman3.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/nIItLV9nxS); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Worker.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/Yg2bQZO6Hj); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Man.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/HMnuH5geEG); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Man_in_Suit.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/mQnGoME1ez); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Woman_Casual.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/jpKRgGDxhk); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Woman_in_Dress.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/zMyPlQXBzq); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |
+| `models/characters/Woman_Tank_Top.glb` | Quaternius — qua Poly Pizza (https://poly.pizza/m/XqzeZGB7iU); đổi tên clip về Idle/Walk/Run/Interact/Punch/Hit/Wave, bỏ clip thừa | CC0 |

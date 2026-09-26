@@ -1,35 +1,47 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
-import { CHARACTER_HEIGHT } from '../config/characters';
+import { CHARACTER_HEIGHT, FEMALE_MODELS, WALK_CLIP_SPEED } from '../config/characters';
 
-/** Registry model nhân vật đã nạp. Mọi file dùng chung khung xương → clip lấy từ file nào có animation. */
-const scenes = new Map<string, THREE.Group>();
-const clips = new Map<string, THREE.AnimationClip>();
-let scale = 1;
+/** Registry nhân vật: mỗi model tự mang clip của nó (2 bộ khung xương khác nhau) và tỉ lệ riêng. */
+interface Entry {
+  scene: THREE.Group;
+  clips: Map<string, THREE.AnimationClip>;
+  scale: number;
+  /** Tốc độ bước của clip Walk (m/s) theo bộ khung xương */
+  walkSpeed: number;
+}
+
+const entries = new Map<string, Entry>();
 
 export function registerCharacter(name: string, gltf: GLTF): void {
-  scenes.set(name, gltf.scene);
-  for (const c of gltf.animations) clips.set(c.name, c);
-  if (scenes.size === 1 || name === 'Casual_Male') {
-    // tỉ lệ chung tính từ model không đội mũ (cùng khung xương nên áp cho mọi model)
-    gltf.scene.updateMatrixWorld(true);
-    const h = new THREE.Box3().setFromObject(gltf.scene).getSize(new THREE.Vector3()).y;
-    if (h > 0) scale = CHARACTER_HEIGHT / h;
-  }
+  gltf.scene.updateMatrixWorld(true);
+  // chiều cao lấy theo hộp bao ở tư thế gốc (tay dang ngang không ảnh hưởng trục Y)
+  const h = new THREE.Box3().setFromObject(gltf.scene).getSize(new THREE.Vector3()).y;
+  const target = FEMALE_MODELS.has(name) ? CHARACTER_HEIGHT.female : CHARACTER_HEIGHT.male;
+  const modular = !!gltf.scene.getObjectByName('WristR');
+  entries.set(name, {
+    scene: gltf.scene, clips: new Map(gltf.animations.map((c) => [c.name, c])), scale: h > 0 ? target / h : 1,
+    walkSpeed: modular ? WALK_CLIP_SPEED.modular : WALK_CLIP_SPEED.animated,
+  });
 }
 
 export function characterScene(name: string | undefined): THREE.Group | null {
-  return (name && scenes.get(name)) || null;
+  return (name && entries.get(name)?.scene) || null;
 }
 
-export function characterClip(name: string): THREE.AnimationClip | null {
-  return clips.get(name) ?? null;
+/** Clip của model (null nếu model không có clip đó). */
+export function characterClip(model: string, clip: string): THREE.AnimationClip | null {
+  return entries.get(model)?.clips.get(clip) ?? null;
 }
 
-export function characterScale(): number {
-  return scale;
+export function characterScale(model: string): number {
+  return entries.get(model)?.scale ?? 1;
+}
+
+export function characterWalkSpeed(model: string): number {
+  return entries.get(model)?.walkSpeed ?? WALK_CLIP_SPEED.modular;
 }
 
 export function hasCharacters(): boolean {
-  return scenes.size > 0 && clips.size > 0;
+  return entries.size > 0;
 }

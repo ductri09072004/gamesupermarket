@@ -37,7 +37,7 @@ export class GuardBrain implements StaffBrain {
     if (Math.hypot(t.x - this.npc.x, t.z - this.npc.z) < SECURITY.catchDist) {
       this.npc.stop();
       this.npc.face(t.x, t.z);
-      this.npc.human.reach();
+      this.npc.human.act?.('punch');
       this.w.security.catchThief(t, 'guard');
       this.npc.setStatus('💪 Tóm được rồi!');
       this.endChase();

@@ -13,8 +13,7 @@ function setup(boxes: Array<Partial<BoxData>>) {
   const ph = new BoxPhysics(s, () => none, () => false);
   return { data, ph };
 }
-const idle = { x: 50, z: 50, vx: 0, vz: 0 };
-const run = (ph: BoxPhysics, frames: number, walk = () => idle) => { for (let i = 0; i < frames; i++) ph.update(1 / 60, walk(), null); };
+const run = (ph: BoxPhysics, frames: number, each: () => void = () => {}) => { for (let i = 0; i < frames; i++) { each(); ph.update(1 / 60, null); } };
 
 describe('vật lý thùng hàng', () => {
   it('thùng nằm yên (đang ngủ) khi không ai đụng — không trôi, không ghi tư thế', () => {
@@ -24,14 +23,23 @@ describe('vật lý thùng hàng', () => {
     expect(data.boxes[0].pose).toBeUndefined();
   });
 
-  it('người chơi chạy xuyên qua: thùng bị xô đi, ghi lại vị trí mới', () => {
+  it('người chơi tì vào đẩy: thùng trượt đi theo hướng đẩy, ghi lại vị trí mới', () => {
     const { data, ph } = setup([{}]);
-    let x = 3;
-    run(ph, 150, () => { x = Math.min(8, x + 4 / 60); return { x, z: 5, vx: 4, vz: 0 }; });
+    run(ph, 90, () => ph.push('b1', 1, 0, 0, 1 / 60));
     run(ph, 120);
     const b = data.boxes[0];
-    expect(b.gx).toBeGreaterThan(5.5);
+    expect(b.gx).toBeGreaterThan(5.3);
+    expect(Math.abs(b.gy - 5)).toBeLessThan(0.2);
     expect(b.pose).toBeDefined();
+  });
+
+  it('cung cấp hộp bao + độ cao nóc cho người chơi (1 thùng ≈ 0.3m, chồng 2 ≈ 0.6m)', () => {
+    const { ph } = setup([{}, {}, { gx: 7, gy: 5 }]);
+    run(ph, 5);
+    const sup = ph.supports({ x: 6, z: 5 });
+    const tops = sup.map((s) => s.top).sort();
+    expect(tops[0]).toBeCloseTo(0.3, 1);
+    expect(tops[2]).toBeCloseTo(0.6, 1);
   });
 
   it('chồng 3 thùng: rút thùng dưới cùng thì 2 thùng trên rơi xuống sàn', () => {
