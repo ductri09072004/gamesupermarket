@@ -65,6 +65,17 @@ export function infillBlocks(rng: Rng, blocks: Rect[], walk: number, taken: Rect
 }
 
 /**
+ * Dãy cửa hiệu bên kia đường, ngay đối diện siêu thị (mặt phố người chơi nhìn nhiều nhất): nhà ống Việt có biển hiệu.
+ * `facade`: đường mặt tiền phía bên kia (lề đường + vỉa hè), nhà lùi về +Z, quay mặt -Z.
+ */
+export function oppositeShops(facade: number, from: number, to: number, taken: Rect[], out: Placement[], addSolid: AddSolid): void {
+  const rng = mulberry32(CITY_SEED + 31);
+  let n = 4;
+  const edge: Edge = { rot: Math.PI, along: 'x', from, to, line: facade - 0.3, sign: 1 };
+  fillEdge(rng, edge, taken, out, addSolid, SHOP_BUILDINGS, 0.2, () => SHOP_NAMES[n++ % SHOP_NAMES.length]);
+}
+
+/**
  * Dãy cửa hiệu sát hai bên siêu thị, mặt tiền thẳng hàng với mặt tiền cửa hàng, phía sau là nhà cao hơn.
  * Bên phải phụ thuộc chiều rộng cửa hàng W (mở rộng → dãy co lại). Rect đã chiếm được thêm vào `taken`.
  */

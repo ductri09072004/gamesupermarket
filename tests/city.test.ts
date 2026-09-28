@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILDINGS } from '../src/config/city';
+import { BUILDINGS, ROAD_WIDTH, WALK_WIDTH } from '../src/config/city';
 import { MAX_STORE_H, MAX_STORE_W, WAREHOUSE } from '../src/config/constants';
 import { cityLayout, curbZ, footprint, rectsOverlap, type Rect } from '../src/world/CityLayout';
 
@@ -12,7 +12,13 @@ describe('Bố cục thành phố', () => {
       const shops = L.placements.filter((p) => p.sign);
       expect(shops.some((p) => p.x < 0)).toBe(true);
       if (W < MAX_STORE_W) expect(shops.some((p) => p.x > W)).toBe(true);
-      for (const p of shops) expect(Math.abs(p.z + BUILDINGS[p.model][2] / 2 - (D + 0.2))).toBeLessThan(0.01);
+      // dãy cạnh siêu thị (quay +Z) thẳng hàng mặt tiền; dãy bên kia đường (quay -Z) sát vỉa hè đối diện
+      const near = shops.filter((p) => p.rot === 0);
+      const far = shops.filter((p) => p.rot !== 0);
+      for (const p of near) expect(Math.abs(p.z + BUILDINGS[p.model][2] / 2 - (D + 0.2))).toBeLessThan(0.01);
+      expect(far.length).toBeGreaterThan(5);
+      const farFacade = L.hz[1] + ROAD_WIDTH / 2 + WALK_WIDTH;
+      for (const p of far) expect(Math.abs(p.z - BUILDINGS[p.model][2] / 2 - farFacade)).toBeLessThan(0.01);
     });
 
     it(`D=${D}: nhà không đè lên đường, cửa hàng, bãi đỗ, kho sỉ, và không đè nhau`, () => {

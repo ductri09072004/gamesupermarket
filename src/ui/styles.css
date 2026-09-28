@@ -93,7 +93,8 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 .win-title { display: flex; justify-content: space-between; align-items: center; background: var(--pink); color: #fff; font-weight: 900; padding: 8px 12px; border-bottom: 3px solid var(--ink); text-shadow: 0 1px 0 rgba(0,0,0,.2); }
 .win-close { font-family: inherit; border: 2px solid var(--ink); background: #fff; border-radius: 8px; width: 28px; height: 26px; cursor: pointer; font-weight: 900; color: var(--ink); }
 .win-body { padding: 14px; overflow: auto; }
-.modal-backdrop { position: absolute; inset: 0; background: rgba(61, 53, 81, 0.35); display: flex; align-items: center; justify-content: center; animation: fadeIn 0.15s; z-index: 50; }
+/* trên menu chính (60) để modal mở từ menu bấm được; dưới màn hình tải (100) */
+.modal-backdrop { position: absolute; inset: 0; background: rgba(61, 53, 81, 0.35); display: flex; align-items: center; justify-content: center; animation: fadeIn 0.15s; z-index: 70; }
 .modal-backdrop.closing { opacity: 0; transition: opacity 0.15s; }
 .modal { width: min(560px, 94vw); max-height: 88vh; animation: popIn 0.22s cubic-bezier(.2,1.4,.5,1); }
 .modal.wide { width: min(720px, 96vw); }

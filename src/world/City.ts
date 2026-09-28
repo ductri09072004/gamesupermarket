@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ROAD_WIDTH, WALK_WIDTH } from '../config/city';
 import type { AABB } from './Colliders';
-import { buildCityInstances } from './CityInstances';
+import { buildCityInstances, type Scheduled } from './CityInstances';
+import { buildWires } from './CityWires';
+import { buildTanks, houseDetails } from './HouseDetails';
+import { buildRoadDamage } from './RoadDamage';
 import { cityLayout, V_ROADS, type CityLayout, type Rect } from './CityLayout';
 import { buildDepot } from './Depot';
 import { applyPbr, pbrSet } from './Materials';
@@ -43,6 +46,8 @@ export class City {
   private lampMats: THREE.MeshStandardMaterial[] = [];
   private signMats: THREE.MeshStandardMaterial[] = [];
   private lights: THREE.PointLight[] = [];
+  /** Hàng rong chỉ hiện trong khung giờ */
+  private scheduled: Scheduled[] = [];
   private kiosk: THREE.Object3D | null = null;
   /** Gọi sau mỗi lần dựng lại (xe & người đi bộ cần tuyến mới) */
   onBuilt: (L: CityLayout) => void = () => {};
@@ -67,7 +72,13 @@ export class City {
     this.group.add(mergedMesh([...L.roads, L.lot, { x0: L.lot.x0 + 4, x1: L.lot.x1 - 4, z0: L.lot.z1, z1: L.lot.z1 + WALK_WIDTH }, yard], -0.03, 3, road));
     this.addMarkings(L);
     this.addCurbs(L);
-    this.lampMats = buildCityInstances(L.placements, this.group);
+    const extra = houseDetails(L.placements);
+    const inst = buildCityInstances([...L.placements, ...extra.props], this.group);
+    this.lampMats = inst.lamps;
+    this.scheduled = inst.scheduled;
+    buildTanks(extra.tanks, this.group);
+    buildRoadDamage(L.damage, this.group);
+    buildWires(L.wiring, this.group);
     this.signMats = buildShopSigns(L.placements, this.group);
     this.kiosk = buildDepot(L, this.group);
     // đèn đường thật (PointLight) chỉ cho vài cột gần cửa hàng — còn lại chỉ phát sáng (emissive)
@@ -142,7 +153,9 @@ export class City {
     return out;
   }
 
-  setNight(night: number): void {
+  /** hour: giờ game — bật/tắt hàng rong theo khung giờ bán. */
+  setNight(night: number, hour = 12): void {
+    for (const s of this.scheduled) s.object.visible = hour >= s.hours[0] && hour < s.hours[1];
     for (const m of this.lampMats) m.emissiveIntensity = 0.3 + night * 3;
     for (const m of this.signMats) m.emissiveIntensity = 0.1 + night * 1.2;
     for (const l of this.lights) l.intensity = night * 14;

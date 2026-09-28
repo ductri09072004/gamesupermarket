@@ -1,10 +1,14 @@
 import {
-  BUSHES, CITY_SEED, LAMP_SPACING, PARKED_CARS, ROAD_WIDTH, TREES, TREE_SPACING, WALK_WIDTH,
+  BUSHES, CITY_SEED, LAMP_SPACING, PARKED_CARS, ROAD_WIDTH, STREET_BUILDINGS, TREES, TREE_SPACING, WALK_WIDTH,
 } from '../config/city';
 import { SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
 import { mulberry32, pick } from '../core/Random';
 import type { AABB } from './Colliders';
-import { fillEdge, infillBlocks, ringEdges, sideShops } from './CityFill';
+import { fillEdge, infillBlocks, oppositeShops, ringEdges, sideShops } from './CityFill';
+import { streetLife, type StallArea } from './CityStreetLife';
+import { roadDamage, type RoadMark } from './RoadDamage';
+import { polePlan, type PoleSpot, type Wire } from './CityWires';
+import { STREET_LIFE } from '../config/city';
 
 export interface Rect {
   x0: number;
@@ -25,6 +29,10 @@ export interface Placement {
   variant: number;
   /** Chữ biển hiệu (cửa hiệu cạnh siêu thị) */
   sign?: string;
+  /** Độ cao đặt (m), mặc định 0 — vd. dừa trên mặt bàn */
+  y?: number;
+  /** Chỉ hiện trong khung giờ game [từ, đến) — hàng rong theo giờ */
+  hours?: [number, number];
 }
 
 export interface Spot {
@@ -48,6 +56,12 @@ export interface CityLayout {
   bounds: Rect;
   /** Tim các đường ngang (Z) — cùng V_ROADS tạo lưới đường cho xe chạy */
   hz: number[];
+  /** Vùng sạp hàng rong (không có va chạm vì theo giờ) — cột điện né, người đi bộ bước xuống đường vòng qua */
+  stalls: StallArea[];
+  /** Ổ gà, miếng vá, nắp cống trên mặt đường */
+  damage: RoadMark[];
+  /** Cột điện & dây điện chằng chịt */
+  wiring: { poles: PoleSpot[]; wires: Wire[] };
 }
 
 const HALF = ROAD_WIDTH / 2;
@@ -116,11 +130,12 @@ export function cityLayout(D: number, W = 12): CityLayout {
   addSolid({ x0: depot.kiosk.x - 0.6, x1: depot.kiosk.x + 0.6, z0: depot.kiosk.z - 0.4, z1: depot.kiosk.z + 0.4 }, 'kiosk');
   // hàng xóm sát hai bên siêu thị trước, rồi mới tới nhà ven các khối phố
   sideShops(D, W, lot.x0 - 1.5, taken, placements, addSolid);
+  oppositeShops(hz[1] + HALF + walk, -24, 58, taken, placements, addSolid);
 
   // nhà dọc 4 cạnh mỗi khối, mặt tiền quay ra đường
   for (const b of blocks) {
     const inner: Rect = { x0: b.x0 + walk, x1: b.x1 - walk, z0: b.z0 + walk, z1: b.z1 - walk };
-    for (const e of ringEdges(b, walk)) fillEdge(rng, e, taken, placements, addSolid);
+    for (const e of ringEdges(b, walk)) fillEdge(rng, e, taken, placements, addSolid, STREET_BUILDINGS);
     // bụi cây trong sân sau
     for (let k = 0; k < 6; k++) {
       const x = inner.x0 + 10 + rng() * (inner.x1 - inner.x0 - 20);
@@ -160,6 +175,14 @@ export function cityLayout(D: number, W = 12): CityLayout {
       addSolid({ x0: p.x - 0.25, x1: p.x + 0.25, z0: p.z - 0.25, z1: p.z + 0.25 }, 'lamp');
     }
   }
+  // quán bánh mì, ghế đẩu nhựa, xe máy đỗ vỉa hè (hạt giống riêng → không xáo trộn bố cục nhà)
+  // cột điện đặt trước (ưu tiên mép lề), né chỗ hàng rong & lối cửa siêu thị; xe máy đỗ sau sẽ né cột
+  const far = F + 2 * HALF + walk;
+  const stallAvoid = [...STREET_LIFE.near.stalls.map((s) => ({ x0: s.x - 3.6, x1: s.x + 3.6, z0: F - walk, z1: F })),
+    ...STREET_LIFE.far.stalls.map((s) => ({ x0: s.x - 3.6, x1: s.x + 3.6, z0: far - walk, z1: far }))];
+  const wiring = polePlan(blocks, colliders, [...stallAvoid, { x0: -1.5, x1: 7.5, z0: D, z1: F }]);
+  for (const p of wiring.poles) addSolid({ x0: p.x - 0.2, x1: p.x + 0.2, z0: p.z - 0.2, z1: p.z + 0.2 }, 'pole');
+  const stalls = streetLife(mulberry32(CITY_SEED + 7), F, HALF, colliders, placements, addSolid);
   // xe đỗ trang trí: 3 chỗ cuối bãi (lòng đường để cho xe NPC chạy — xem Traffic)
   lotSpots.slice(3).forEach((s, i) => placements.push({ kind: 'car', model: PARKED_CARS[i % PARKED_CARS.length], x: s.x, z: s.z, rot: s.yaw, variant: 0 }));
   for (const p of placements) if (p.kind === 'car') addSolid(footprint(p.x, p.z, 1.9, 4.3, p.rot), 'car');
@@ -171,7 +194,11 @@ export function cityLayout(D: number, W = 12): CityLayout {
     { minX: bounds.x0, maxX: bounds.x1, minZ: bounds.z0 - 10, maxZ: bounds.z0, tag: 'bound' },
     { minX: bounds.x0, maxX: bounds.x1, minZ: bounds.z1, maxZ: bounds.z1 + 10, tag: 'bound' },
   );
-  return { roads, centerLines, blocks, lot, lotSpots, depot, placements, colliders, bounds, hz };
+  // đoạn đường ngay trước cửa hàng luôn có cụm ổ gà & miếng vá (người chơi thấy ngay)
+  const hot = { x0: -10, x1: 30, z0: roads[1].z0, z1: roads[1].z1 };
+  const crosswalk = { x0: -7, x1: -3, z0: roads[1].z0, z1: roads[1].z1 };
+  const damage = roadDamage(roads, [hot], [crosswalk]);
+  return { roads, centerLines, blocks, lot, lotSpots, depot, placements, colliders, bounds, hz, stalls, damage, wiring };
 }
 
 /** Các dải vỉa hè dọc đường: hàm at(t, lề) trả điểm cách mép đường `lề` mét. facing: hướng quay ra đường. */
