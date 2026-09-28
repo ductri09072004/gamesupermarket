@@ -35,3 +35,16 @@ export const CAR_IMPACT = {
   /** Va chạm dưới tốc độ tương đối này (m/s) không kêu / không rung */
   quietSpeed: 1.5,
 };
+
+/** Ổ gà khi lái xe: dưới minSpeed chỉ xóc nhẹ; nhanh hơn thì thùng hàng có thể văng ra & vỡ món. */
+export const POTHOLE = {
+  /** m/s (~11 km/h) */
+  minSpeed: 3,
+  /** Xác suất rơi 1 thùng ở tốc độ minSpeed + 8 m/s qua ổ gà cỡ 0.35m, theo loại xe (baga xe máy dễ rơi nhất) */
+  dropBase: { moto: 0.2, pickup: 0.1, car: 0.025 } as Record<string, number>,
+  maxDrop: 0.7,
+  /** Bánh xe lọt ổ gà khi tâm bánh cách tâm ổ < r × hệ số này */
+  wheelInset: 0.85,
+  /** Mất tốc độ khi xóc (tỉ lệ × độ mạnh cú xóc) */
+  speedLoss: 0.18,
+};

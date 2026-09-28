@@ -7,6 +7,7 @@ import { freezer, fridge, gondola } from './DisplayModels';
 import { mergedModel } from './MergeStatic';
 import { buildSelfCheckout } from './SelfCheckoutModel';
 import { buildLamp } from './LampModels';
+import { buildAltar } from './AltarModel';
 
 const box = new THREE.BoxGeometry(1, 1, 1);
 const mats = new Map<string, THREE.Material>();
@@ -145,6 +146,7 @@ export function buildFurnitureModel(def: FurnitureDef): { group: THREE.Group; sc
   }) };
   else if (def.kind === 'selfcheckout') return { group: buildSelfCheckout(def).group };
   else if (def.kind === 'lamp') return { group: buildLamp(def) };
+  else if (def.kind === 'altar') return { group: buildAltar(def).group };
   else if (def.kind === 'computer') screen = desk(def, g).screen;
   else if (def.kind === 'trash') trash(def, g);
   return { group: g, screen };

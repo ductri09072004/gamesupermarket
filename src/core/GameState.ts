@@ -116,6 +116,8 @@ export interface DayStats {
   purchases: number;
   repStart: number;
   xpGained: number;
+  /** Số món khách mua ngoài hàng rong thay vì trong cửa hàng */
+  vendorLost: number;
 }
 
 export type Quality = 'low' | 'medium' | 'high';
@@ -174,12 +176,14 @@ export interface SaveData {
   lightsOn: boolean;
   /** Chế độ developer: nhiều tiền, bỏ qua giới hạn cấp độ */
   devMode: boolean;
+  /** Lần thắp nhang Thần Tài gần nhất (ngày, giờ game) */
+  incense?: { day: number; hour: number };
 }
 
 export function emptyStats(rep: number): DayStats {
   return {
     revenue: 0, cogs: 0, customers: 0, walkouts: 0, itemsSold: 0,
-    changeLoss: 0, purchases: 0, repStart: rep, xpGained: 0,
+    changeLoss: 0, purchases: 0, repStart: rep, xpGained: 0, vendorLost: 0,
   };
 }
 

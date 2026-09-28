@@ -146,7 +146,8 @@
     "city/vn_coconut.glb",
     "city/vn_hammock.glb",
     "city/vn_lanterns.glb",
-    "city/vn_ac_unit.glb"
+    "city/vn_ac_unit.glb",
+    "city/vn_altar.glb"
   ],
   "cityTextures": [
     "textures/buildings/Texture_Blue.png",

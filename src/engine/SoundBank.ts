@@ -1,4 +1,5 @@
 import type { SoundName } from '../core/EventBus';
+import { addStreetSounds } from './StreetSoundBank';
 
 /** Sinh AudioBuffer bằng code (không cần file âm thanh). */
 type Gen = (t: number, i: number, n: number) => number;
@@ -98,5 +99,6 @@ export function buildSoundBank(ctx: BaseAudioContext): Map<SoundName | 'hum' | '
     const edge = Math.min(1, i / 4000, (n - i) / 4000);
     return c1() * (0.6 + 0.4 * Math.sin(TAU * 2.3 * t) * Math.sin(TAU * 0.7 * t)) * edge;
   }));
+  addStreetSounds(ctx, m as Map<string, AudioBuffer>);
   return m;
 }

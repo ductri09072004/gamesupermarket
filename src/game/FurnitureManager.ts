@@ -5,6 +5,7 @@ import type { Services } from '../core/Services';
 import type { Assets } from '../engine/Assets';
 import type { AudioEngine } from '../engine/Audio';
 import { FurnitureView } from '../entities/Shelf';
+import { incenseBurning } from '../systems/VendorSystem';
 import { rotatedExtent } from '../world/Footprint';
 import type { AABB } from '../world/Colliders';
 import { furnitureCenter, furnitureMatrix } from '../world/Placement';
@@ -89,7 +90,12 @@ export class FurnitureManager {
   }
 
   update(dt: number): void {
-    for (const v of this.views.values()) v.update(dt);
+    const d = this.s.data;
+    const burning = incenseBurning(d.incense, d.day, this.s.time.hour);
+    for (const v of this.views.values()) {
+      v.update(dt);
+      v.altar?.update(dt, burning);
+    }
   }
 
   destroy(): void {

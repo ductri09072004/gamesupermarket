@@ -28,12 +28,14 @@ export class Pedestrians {
   /** Mép đường chính trước cửa hàng (z) và đoạn mặt tiền không có cây */
   private front = { z: 0, x0: -4, x1: 30 };
   /** Sạp hàng rong chiếm hết vỉa hè → bước xuống lòng đường (z đích) để đi vòng qua */
-  private detours: Array<{ x0: number; x1: number; z0: number; z1: number; target: number }> = [];
+  private detours: Array<{ x0: number; x1: number; z0: number; z1: number; target: number; hours: [number, number] }> = [];
+  /** Giờ game (CityLife cập nhật) — chỉ vòng xuống đường khi sạp đang bày hàng */
+  hour = 12;
 
   reset(L: CityLayout): void {
     this.clear();
     this.front.z = L.roads[1].z0;
-    this.detours = L.stalls.map((s) => ({ x0: s.x0, x1: s.x1, z0: s.z0, z1: s.z1, target: s.curb + s.dir * 0.7 }));
+    this.detours = L.stalls.map((s) => ({ x0: s.x0, x1: s.x1, z0: s.z0, z1: s.z1, target: s.curb + s.dir * 0.7, hours: s.hours }));
     const routes = walkLoops(L.blocks, PEDESTRIANS.inset);
     for (let i = 0; i < PEDESTRIANS.count; i++) {
       const route = routes[i % routes.length];
@@ -51,6 +53,7 @@ export class Pedestrians {
   /** Trước siêu thị: kéo người đi bộ sát lề (thùng hàng giao nằm sát cửa), chuyển tiếp mượt 3m ở 2 đầu. */
   private nudge(w: Walker, x: number, z: number): number {
     for (const d of this.detours) {
+      if (this.hour < d.hours[0] || this.hour >= d.hours[1]) continue;
       if (z < d.z0 - 0.3 || z > d.z1 + 0.3 || x < d.x0 - 3 || x > d.x1 + 3) continue;
       const k = Math.min(smooth((x - (d.x0 - 3)) / 3), smooth((d.x1 + 3 - x) / 3));
       return z + (d.target - z) * k;

@@ -46,6 +46,21 @@ export type VnProp = keyof typeof VN_PROPS;
 export const VENDOR_HOURS = { morning: [6, 11.5], market: [6, 12.5], afternoon: [11, 18], evening: [16.5, 24], allday: [0, 24] } as const;
 export type VendorShift = keyof typeof VENDOR_HOURS;
 /**
+ * Hàng rong cạnh tranh: khi sạp đang bán, khách định mua các món này có thể mua ngoài sạp thay vì trong siêu thị.
+ * `say`: câu khách nói khi bỏ món.
+ */
+export const VENDOR_GOODS: Record<VendorShift, { goods: string[]; say: string }> = {
+  morning: { goods: ['bread', 'soymilk', 'cookies'], say: '🥖 Ăn bánh mì ngoài xe rồi!' },
+  market: { goods: ['meat', 'eggs', 'sausage'], say: '🥩 Mua ngoài chợ cóc rẻ hơn' },
+  afternoon: { goods: ['juice', 'soda', 'water'], say: '🥥 Uống dừa ngoài kia rồi' },
+  evening: { goods: ['noodles', 'cupnoodle', 'dumplings'], say: '🍜 Ăn hủ tiếu gõ rồi, khỏi mua mì' },
+  allday: { goods: ['coffee', 'milktea', 'tea'], say: '☕ Ghé cà phê võng rồi' },
+};
+/** Xác suất khách bỏ món cho hàng rong; bán ≤ VENDOR_CHEAP × giá thị trường thì còn VENDOR_TAKE_CHEAP */
+export const VENDOR_TAKE = 0.35;
+export const VENDOR_TAKE_CHEAP = 0.12;
+export const VENDOR_CHEAP = 0.9;
+/**
  * Vị trí quán vỉa hè & bãi xe máy (toạ độ X, m). Phía cửa hàng phải nằm ngoài lưới đi lại của khách
  * (x < -8.2 hoặc > 32), để khách không đi xuyên ghế/xe.
  */

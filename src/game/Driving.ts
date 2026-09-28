@@ -7,6 +7,7 @@ import { resolveCircle, type AABB } from '../world/Colliders';
 import { h, uiRoot } from '../ui/dom';
 import type { World } from './World';
 import { DriveImpact } from './DriveImpact';
+import { PotholeBumps } from './PotholeBumps';
 
 const SUBSTEPS = 3;
 
@@ -21,10 +22,12 @@ export class Driving {
   private engine: THREE.PositionalAudio | null = null;
   private lamp: THREE.SpotLight | null = null;
   private impact: DriveImpact;
+  private bumps: PotholeBumps;
   private shakeV = new THREE.Vector3();
 
   constructor(private w: World) {
     this.impact = new DriveImpact(w);
+    this.bumps = new PotholeBumps(w);
   }
 
   get active(): boolean {
@@ -164,6 +167,7 @@ export class Driving {
       }
     }
     this.impact.hitTraffic(this.state, def);
+    this.impact.jolt(this.bumps.check(this.state, def, v));
     v.x = this.state.x;
     v.z = this.state.z;
     v.yaw = this.state.yaw;

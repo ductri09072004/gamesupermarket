@@ -5,6 +5,7 @@ import { getProduct } from '../config/products';
 import { getVehicle } from '../config/vehicles';
 import { cargoUsed } from '../systems/VehicleSystem';
 import type { World } from './World';
+import { altarHint, lightIncense } from './Altar';
 
 /** Gợi ý nút tương tác chính */
 export const CLICK = '<kbd>Chuột trái</kbd>';
@@ -142,6 +143,7 @@ export class PlayInput {
         if (w.selfCheckout.assist(f.uid)) w.toast('🤝 Đã hướng dẫn khách — máy chạy tiếp', 'success');
         else w.toast('Máy đang hoạt động bình thường', 'info');
         break;
+      case 'altar': lightIncense(w, f.uid); break;
       case 'trash':
         if (held) w.actions.trash(f.uid);
         break;
@@ -276,6 +278,7 @@ export class PlayInput {
         if (def.kind === 'computer') out.push(`${CLICK} Dùng máy tính`);
         if (def.kind === 'checkout') out.push(held ? 'Đặt thùng xuống trước (Q)' : `${CLICK} Vào quầy thu ngân`);
         if (def.kind === 'selfcheckout') out.push(w.selfCheckout.hint(f.uid));
+        if (def.kind === 'altar') out.push(altarHint(w, CLICK));
         if (def.kind === 'lamp') out.push(`${def.icon} ${def.name} · ${w.s.data.lightsOn ? 'đang bật' : 'đang tắt'}`);
         if (def.kind === 'trash' && held) out.push(held.qty === 0 ? `${CLICK} Gập & vứt thùng rỗng` : 'Thùng còn hàng!');
         if (def.kind === 'rack') out.push(held ? `${CLICK} Cất thùng lên kệ kho` : f.boxes.length ? `${CLICK} Lấy thùng` : 'Kệ kho trống');

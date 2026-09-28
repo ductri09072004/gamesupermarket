@@ -12,6 +12,7 @@ import { furnitureMatrix } from '../world/Placement';
 import { buildCounter, type CounterParts } from './CheckoutCounter';
 import { buildFurnitureModel } from './FurnitureModels';
 import { buildSelfCheckout, type KioskParts } from './SelfCheckoutModel';
+import { buildAltar, type AltarParts } from './AltarModel';
 import { buildGate, type GateParts } from './GateModel';
 import { drawLcd } from '../game/CheckoutProps';
 import { prop } from '../engine/Props';
@@ -37,6 +38,7 @@ export class FurnitureView {
   private tagKeys: string[] = [];
   counter: CounterParts | null = null;
   kiosk: KioskParts | null = null;
+  altar: AltarParts | null = null;
   gate: GateParts | null = null;
   screen: THREE.Mesh | null = null;
   private shakeT = 0;
@@ -53,6 +55,9 @@ export class FurnitureView {
     } else if (def.kind === 'selfcheckout') {
       this.kiosk = buildSelfCheckout(def);
       this.model = this.kiosk.group;
+    } else if (def.kind === 'altar') {
+      this.altar = buildAltar(def);
+      this.model = this.altar.group;
     } else if (def.kind === 'gate') {
       this.gate = buildGate(def);
       this.model = this.gate.group;

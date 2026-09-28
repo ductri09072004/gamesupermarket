@@ -17,6 +17,8 @@ export interface DayReport {
   grossProfit: number;
   customers: number;
   walkouts: number;
+  /** Món khách mua ngoài hàng rong */
+  vendorLost: number;
   itemsSold: number;
   changeLoss: number;
   expenses: Expenses;
@@ -58,6 +60,7 @@ export function buildReport(d: SaveData, expenses: Expenses): DayReport {
     grossProfit,
     customers: s.customers,
     walkouts: s.walkouts,
+    vendorLost: s.vendorLost ?? 0,
     itemsSold: s.itemsSold,
     changeLoss: round2(s.changeLoss),
     expenses,

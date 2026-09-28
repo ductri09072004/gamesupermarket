@@ -12,6 +12,9 @@ import { generateWishlist, SpawnAccumulator, spawnRatePerHour } from '../systems
 import { stockedProductIds } from '../systems/InventorySystem';
 import { chooseCheckout } from '../systems/SelfCheckoutSystem';
 import { interiorLight, lampCoverage, nightAt, storeBrightness } from '../systems/LightingSystem';
+import { competingShift, incenseLitToday, vendorTakeChance } from '../systems/VendorSystem';
+import { VENDOR_GOODS } from '../config/city';
+import { INCENSE } from '../config/constants';
 import type { GridPoint } from '../world/Footprint';
 import { furnitureMatrix } from '../world/Placement';
 import { computeQueueTiles } from '../world/Queue';
@@ -37,6 +40,14 @@ export class CustomerManager implements CustomerWorld {
 
   shakeFurniture(uid: string): void {
     this.c.furniture.get(uid)?.shake();
+  }
+
+  vendorTakes(productId: string): string | null {
+    const s = this.s;
+    const shift = competingShift(productId, s.time.hour);
+    if (!shift || s.rng() >= vendorTakeChance(s.state.priceOf(productId), s.market(productId))) return null;
+    s.data.stats.vendorLost += 1;
+    return VENDOR_GOODS[shift].say;
   }
 
   brightness(): number {
@@ -152,7 +163,8 @@ export class CustomerManager implements CustomerWorld {
   update(sim: number, dt: number): void {
     const s = this.s;
     if (sim > 0 && s.data.storeOpen && s.time.isOpenHours()) {
-      const rate = spawnRatePerHour(s.time.hour, s.data.reputation, s.data.storeW, s.data.storeH);
+      const lucky = incenseLitToday(s.data.incense, s.data.day) ? INCENSE.spawnBonus : 1;
+      const rate = spawnRatePerHour(s.time.hour, s.data.reputation, s.data.storeW, s.data.storeH) * lucky;
       const n = this.spawner.tick(sim * MINUTES_PER_SECOND, rate);
       for (let i = 0; i < n && this.customers.length < MAX_CUSTOMERS; i++) this.spawn();
     }

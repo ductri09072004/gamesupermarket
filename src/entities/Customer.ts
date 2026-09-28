@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  CUSTOMER_SPEED, DARK_THRESHOLD, PICK_TIME_S, QUEUE_PATIENCE_S, REP_OUT_OF_STOCK, REP_TOO_DARK, REP_TOO_EXPENSIVE, REP_WALKOUT,
+  CUSTOMER_SPEED, PICK_TIME_S, QUEUE_PATIENCE_S, REP_OUT_OF_STOCK, REP_TOO_EXPENSIVE, REP_WALKOUT,
 } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
@@ -20,6 +20,7 @@ import { furnitureCenter } from '../world/Placement';
 import { Basket } from './Basket';
 import type { HumanLook } from './Human';
 import { Walker } from './Walker';
+import { entryRefusal } from './CustomerRules';
 
 export type CustomerState = 'enter' | 'browse' | 'toShelf' | 'pick' | 'toQueue' | 'queue' | 'served' | 'flee' | 'stunned' | 'leave' | 'gone';
 
@@ -33,6 +34,8 @@ export interface CustomerWorld {
   doorBell(): void;
   /** Độ sáng trong cửa hàng 0..1 (ánh ngày + đèn) */
   brightness(): number;
+  /** Hàng rong ngoài vỉa hè giành mất món này? Trả về câu khách nói (null = vẫn mua trong cửa hàng) */
+  vendorTakes(productId: string): string | null;
 }
 
 let nextId = 1;
@@ -84,17 +87,11 @@ export class Customer extends Walker {
     }
     if (moving || sim <= 0) return;
     switch (this.state) {
-      case 'enter':
-        if (!this.s.data.storeOpen) {
-          this.say('Đóng cửa rồi à... 😕');
-          this.leave();
-        } else if (this.world.brightness() < DARK_THRESHOLD) {
-          this.say('😨 Tối om vậy, thôi về...', 2000);
-          this.s.data.stats.walkouts += 1;
-          this.s.progression.changeReputation(REP_TOO_DARK);
-          this.leave();
-        } else this.state = 'browse';
+      case 'enter': {
+        const no = entryRefusal(this.s, this.world);
+        if (no) { this.say(no, 2000); this.leave(); } else this.state = 'browse';
         break;
+      }
       case 'browse':
         this.timer -= sim;
         if (this.timer <= 0) this.nextWish();
@@ -137,6 +134,8 @@ export class Customer extends Walker {
       return;
     }
     const p = getProduct(wish.productId);
+    const lost = this.world.vendorTakes(wish.productId);
+    if (lost) { this.say(lost, 1800); this.timer = 0.9; return; }
     const shelves = findProductLocations(this.s.data.furniture, wish.productId);
     if (shelves.length === 0) {
       this.say(`${p.icon} Hết hàng :(`);

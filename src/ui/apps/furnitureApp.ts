@@ -15,7 +15,8 @@ export function renderFurniture(body: HTMLElement, ctx: AppContext): void {
       : def.kind === 'rack' ? `Chứa ${def.slots} thùng · chỉ đặt trong kho` : def.kind === 'checkout' ? 'Khách xếp hàng thanh toán'
         : def.kind === 'selfcheckout' ? 'Khách tự quét & trả tiền · có khách cần hỗ trợ'
           : def.kind === 'lamp' ? `Gắn trần · chiếu sáng ~${def.light?.area ?? 0} m²`
-            : def.kind === 'gate' ? 'Đặt ở cửa · hú còi khi khách mang hàng chưa trả tiền đi qua' : 'Vứt thùng rỗng';
+            : def.kind === 'gate' ? 'Đặt ở cửa · hú còi khi khách mang hàng chưa trả tiền đi qua'
+              : def.kind === 'altar' ? 'Thắp nhang mỗi ngày: khách đông hơn, uy tín tăng nhẹ' : 'Vứt thùng rỗng';
     grid.append(h('div', { class: `shop-card ${locked ? 'locked' : ''}` }, [
       h('div', { class: 'shop-icon', text: def.icon }),
       h('b', { text: def.name }),

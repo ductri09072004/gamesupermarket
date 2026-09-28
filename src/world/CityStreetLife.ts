@@ -6,7 +6,7 @@ import { footprint, rectsOverlap, type Placement, type Rect } from './CityLayout
 type AddSolid = (r: Rect, tag: string) => void;
 
 /** Vùng sạp hàng rong chiếm cả vỉa hè; `curb`: z mép lề, `dir`: +1 nếu lòng đường ở phía +Z. */
-export type StallArea = Rect & { curb: number; dir: number };
+export type StallArea = Rect & { curb: number; dir: number; hours: [number, number] };
 
 /** Vỉa hè phía cửa hàng: khách đi lại trong lưới NavGrid ở khoảng X này → không đặt gì cản đường. */
 const STORE_ZONE = { x0: -8.2, x1: 32 };
@@ -49,7 +49,7 @@ export function streetLife(rng: Rng, F: number, roadHalf: number, colliders: AAB
     const curb = at(3);
     for (const st of s.stalls) {
       const hours = VENDOR_HOURS[st.shift];
-      const area = { x0: st.x - 3.2, x1: st.x + 3.2, z0: Math.min(s.facade, curb), z1: Math.max(s.facade, curb), curb, dir: s.dir };
+      const area = { x0: st.x - 3.2, x1: st.x + 3.2, z0: Math.min(s.facade, curb), z1: Math.max(s.facade, curb), curb, dir: s.dir, hours: [hours[0], hours[1]] as [number, number] };
       if (s.store && area.x1 > STORE_ZONE.x0 && area.x0 < STORE_ZONE.x1) continue;
       stallAreas.push(area);
       stall(st.shift, st.x);

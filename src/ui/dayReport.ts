@@ -31,6 +31,7 @@ export function showDayReport(r: DayReport, onNext: () => void): void {
     stats,
     table,
     h('div', { class: `report-balance ${r.moneyEnd < 0 ? 'neg' : ''}` }, ['Số dư cuối ngày: ', h('b', { text: money(r.moneyEnd) })]),
+    r.vendorLost > 0 ? h('div', { class: 'muted', text: `🥖 Hàng rong ngoài vỉa hè giành mất ${r.vendorLost} món — bán rẻ hơn giá thị trường để giữ khách.` }) : null,
     r.debtDays > 0 && !r.gameOver ? h('div', { class: 'warn', text: `⚠ Bạn đang nợ ${r.debtDays} ngày. Nợ quá 3 ngày sẽ phá sản!` }) : null,
   ]);
   const btn = h('button', { class: 'btn primary block big', text: r.gameOver ? 'Xem kết quả' : '☀️ Bắt đầu ngày mới', onClick: () => { m.close(); } });

@@ -6,6 +6,7 @@ export function applyTimeOfDay(w: World, hour: number): void {
   const night = w.lighting.night;
   w.exterior.setNight(night);
   w.city.setNight(night, hour);
+  w.life.clock(hour, w.s.bus);
   w.vehicles.setHeadlights(night);
   w.sign.setNight(night);
 }

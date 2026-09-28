@@ -2,7 +2,8 @@ import type { DayReport } from '../systems/DayReport';
 
 export type SoundName =
   | 'beep' | 'ching' | 'door' | 'doorbell' | 'click' | 'error' | 'pop' | 'place' | 'levelup' | 'whoosh' | 'coin'
-  | 'tock' | 'footstep' | 'truck' | 'drawerOpen' | 'drawerClose' | 'fold' | 'thud' | 'scan' | 'paper' | 'alarm' | 'mop' | 'punch' | 'crash';
+  | 'tock' | 'footstep' | 'truck' | 'drawerOpen' | 'drawerClose' | 'fold' | 'thud' | 'scan' | 'paper' | 'alarm' | 'mop' | 'punch' | 'crash'
+  | 'horn' | 'vendorCall' | 'bell';
 
 export interface GameEvents {
   'money:changed': { money: number; delta: number; reason: string };

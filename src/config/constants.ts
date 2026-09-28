@@ -125,6 +125,9 @@ export const LAMP_POOL = 8;
 export const DARK_THRESHOLD = 0.3;
 export const REP_TOO_DARK = -0.02;
 
+// Bàn thờ Thần Tài: thắp nhang mỗi ngày 1 lần → khách đông hơn cả ngày, uy tín tăng nhẹ; khói nhang cháy vài giờ
+export const INCENSE = { spawnBonus: 1.12, rep: 0.02, burnHours: 3 };
+
 // Chế độ developer
 export const DEV_MONEY = 1_000_000;
 export const DEV_MONEY_BONUS = 100_000;
