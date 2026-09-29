@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, PBR_TILE_M, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
 import type { AABB } from './Colliders';
 import { applyPbr, pbrSet, setRepeat } from './Materials';
-import { ceilingTexture, concreteTexture, floorTexture, wallTexture } from './Textures';
+import { ceilingTexture, concreteTexture, floorTexture } from './Textures';
+import { StoreWalls } from './StoreWalls';
+import { warehouseProps } from './InteriorDecor';
 
 const H = CEILING_HEIGHT;
 const T = WALL_THICKNESS;
@@ -19,10 +21,6 @@ function place(m: THREE.Object3D, x0: number, x1: number, y0: number, y1: number
   m.scale.set(Math.max(1e-3, x1 - x0), Math.max(1e-3, y1 - y0), Math.max(1e-3, z1 - z0));
 }
 
-function wallMat(tex: THREE.Texture): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
-}
-
 /** Vỏ cửa hàng: sàn bóng, tường, trần, dải đèn, mặt kính trước, cửa trượt, kho phía sau. */
 export class Store {
   readonly group = new THREE.Group();
@@ -32,12 +30,12 @@ export class Store {
   private floor: THREE.Mesh;
   private ceiling: THREE.Mesh;
   private walls: Record<string, THREE.Mesh> = {};
-  private wallTex: Record<string, THREE.Texture> = {};
+  private wallSet = new StoreWalls();
+  private ceilMaps: THREE.Texture[] = [];
   private floorTex = floorTexture();
   /** Texture sàn cần đổi repeat khi mở rộng (canvas hoặc bộ PBR) */
   private floorMaps: THREE.Texture[] = [];
   private floorTile = 1.2;
-  private wallPbr: Record<string, THREE.Texture[]> = {};
   private mullions: THREE.InstancedMesh;
   private doorL: THREE.Group;
   private doorR: THREE.Group;
@@ -49,42 +47,32 @@ export class Store {
   constructor() {
     const floorMat = new THREE.MeshStandardMaterial({ map: this.floorTex, roughness: 0.28, metalness: 0.0 });
     this.floorMaps = [this.floorTex];
-    const fs = pbrSet('floor');
+    const fs = pbrSet('floor_tile') ?? pbrSet('floor');
     if (fs) {
       // đá bóng: roughnessMap nhân với roughness → vệt phản chiếu đèn trần mờ nhưng vẫn có vân
-      floorMat.roughness = 0.55;
+      floorMat.roughness = pbrSet('floor_tile') ? 0.9 : 0.55;
       floorMat.normalScale.set(0.6, 0.6);
       this.floorMaps = applyPbr(floorMat, fs, ['map', 'normalMap', 'roughnessMap', 'aoMap']);
       if (!fs.map) this.floorMaps.push(this.floorTex);
-      this.floorTile = PBR_TILE_M.floor;
+      this.floorTile = pbrSet('floor_tile') ? PBR_TILE_M.floorTile : PBR_TILE_M.floor;
     }
     this.floor = new THREE.Mesh(unitPlane, floorMat);
     this.floor.rotation.x = -Math.PI / 2;
     this.floor.receiveShadow = true;
-    const ceilTex = ceilingTexture();
-    this.ceiling = new THREE.Mesh(unitPlane, new THREE.MeshStandardMaterial({ map: ceilTex, roughness: 0.95 }));
-    this.ceiling.rotation.x = Math.PI / 2;
-    this.group.add(this.floor, this.ceiling);
-    const baseWall = wallTexture();
-    for (const name of ['backL', 'backR', 'backFill', 'backLintel', 'left', 'right', 'header']) {
-      const tex = baseWall.clone();
-      tex.needsUpdate = true;
-      this.wallTex[name] = tex;
-      const mat = wallMat(tex);
-      const ws = pbrSet('wall');
-      if (ws) {
-        // giữ màu sơn vẽ bằng code, thêm vân vữa thật (normal + roughness) có repeat riêng theo kích thước tường
-        mat.roughness = 1;
-        mat.normalScale.set(0.45, 0.45);
-        this.wallPbr[name] = applyPbr(mat, ws, ['normalMap', 'roughnessMap'], true);
-      }
-      const m = new THREE.Mesh(unitBox, mat);
-      m.castShadow = true;
-      m.receiveShadow = true;
-      this.walls[name] = m;
-      this.group.add(m);
+    const ceilMat = new THREE.MeshStandardMaterial({ map: ceilingTexture(), roughness: 0.95 });
+    const cs = pbrSet('ceiling');
+    if (cs) {
+      ceilMat.roughness = 1;
+      this.ceilMaps = applyPbr(ceilMat, cs, ['map', 'normalMap', 'roughnessMap', 'aoMap']);
     }
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, metalness: 0.7, roughness: 0.35 });
+    this.ceiling = new THREE.Mesh(unitPlane, ceilMat);
+    this.ceiling.rotation.x = Math.PI / 2;
+    this.ceiling.castShadow = true;
+    this.group.add(this.floor, this.ceiling);
+    for (const name of ['backL', 'backR', 'backFill', 'backLintel', 'left', 'right']) this.wallSet.add(name);
+    this.wallSet.add('header', 'shutter');
+    this.group.add(this.wallSet.group);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0xaeb4bb, metalness: 0.75, roughness: 0.35 });
     const glassMat = new THREE.MeshStandardMaterial({ color: 0xcfe8f5, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0.2, depthWrite: false });
     for (const name of ['glassL', 'glassR']) {
       const m = new THREE.Mesh(unitBox, glassMat);
@@ -155,7 +143,7 @@ export class Store {
     add(x0 - T, x0 + w + T, z0 - T, z0);
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.18), this.lightStripMat);
     lamp.position.set(x0 + w / 2, H - 0.03, z0 + d / 2);
-    this.whGroup.add(floor, ceil, lamp);
+    this.whGroup.add(floor, ceil, lamp, warehouseProps());
   }
 
   /** Đèn cố định của kho theo công tắc (đèn cửa hàng là nội thất mua/dời được). */
@@ -200,19 +188,14 @@ export class Store {
     setRepeat(this.floorMaps, W / this.floorTile, D / this.floorTile);
     this.ceiling.scale.set(W, D, 1);
     this.ceiling.position.set(W / 2, H, D / 2);
+    setRepeat(this.ceilMaps, W / PBR_TILE_M.ceiling, D / PBR_TILE_M.ceiling);
     const w = this.walls;
-    const wall = (name: string, x0: number, x1: number, y0: number, y1: number, z0: number, z1: number) => {
-      place(w[name], x0, x1, y0, y1, z0, z1);
-      const len = Math.max(x1 - x0, z1 - z0);
-      this.wallTex[name]?.repeat.set(Math.max(1, len / 2), (y1 - y0) / H);
-      this.wallTex[name]?.offset.set(0, y0 / H);
-      if (this.wallPbr[name]) setRepeat(this.wallPbr[name], len / PBR_TILE_M.wall, (y1 - y0) / PBR_TILE_M.wall);
-    };
+    const wall = (name: string, x0: number, x1: number, y0: number, y1: number, z0: number, z1: number) => this.wallSet.set(name, x0, x1, y0, y1, z0, z1);
     wall('backL', -T, WH_GAP.x0, 0, H, -T, 0);
     wall('backR', WH_GAP.x1, W + T, 0, H, -T, 0);
     wall('backLintel', WH_GAP.x0, WH_GAP.x1, WH_GAP.h, H, -T, 0);
     wall('backFill', WH_GAP.x0, WH_GAP.x1, 0, WH_GAP.h, -T, 0);
-    w.backFill.visible = !warehouse;
+    this.wallSet.setVisible('backFill', !warehouse);
     wall('left', -T, 0, 0, H, 0, D + T);
     wall('right', W, W + T, 0, H, 0, D + T);
     wall('header', -T, W + T, GLASS_H, H, D, D + T);

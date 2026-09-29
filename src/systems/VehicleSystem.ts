@@ -1,4 +1,5 @@
-import { BULKY_BOX_VOLUME, getVehicle, type VehicleDef } from '../config/vehicles';
+import { getVariant } from '../config/fleet';
+import { BULKY_BOX_VOLUME, getVehicle, vehicleDef, type VehicleDef } from '../config/vehicles';
 import { getProduct } from '../config/products';
 import type { EventBus, GameEvents } from '../core/EventBus';
 import type { BoxData, GameState, VehicleData } from '../core/GameState';
@@ -53,12 +54,13 @@ export class VehicleSystem {
     return this.list.some((v) => v.type === type);
   }
 
-  buy(type: string, spot: { x: number; z: number; yaw: number }): { ok: boolean; reason?: string; vehicle?: VehicleData } {
-    const def = getVehicle(type);
+  buy(type: string, spot: { x: number; z: number; yaw: number }, variant?: string): { ok: boolean; reason?: string; vehicle?: VehicleData } {
+    const k = getVariant(type, variant);
+    const def = { ...vehicleDef({ type, variant: k?.id }), price: Math.round(getVehicle(type).price * (k?.priceMul ?? 1)) };
     if (this.owns(type)) return { ok: false, reason: 'Đã có xe này' };
     if (!this.state.levelAtLeast(def.levelRequired)) return { ok: false, reason: `Cần cấp ${def.levelRequired}` };
     if (!this.economy.spend(def.price, `Mua ${def.name}`)) return { ok: false, reason: 'Không đủ tiền' };
-    const v: VehicleData = { uid: this.state.newUid('v'), type: def.id, x: spot.x, z: spot.z, yaw: spot.yaw, cargo: [] };
+    const v: VehicleData = { uid: this.state.newUid('v'), type: def.id, variant: k?.id, x: spot.x, z: spot.z, yaw: spot.yaw, cargo: [] };
     this.state.data.vehicles.push(v);
     this.bus.emit('vehicles:changed', {});
     this.bus.emit('toast', { message: `${def.icon} Đã mua ${def.name}! Xe đang đỗ ở bãi cạnh cửa hàng.`, kind: 'success' });

@@ -12,6 +12,9 @@ export interface Knock {
 
 export interface KnockCar {
   route: Route;
+  /** Nửa bề ngang / nửa chiều dài thân va chạm */
+  hw: number;
+  hl: number;
   d: number;
   speed: number;
   x: number;
@@ -25,11 +28,11 @@ export interface KnockCar {
 export const yawOf = (dx: number, dz: number) => Math.atan2(-dx, -dz);
 
 export function carBody(c: KnockCar, mass: number): CarBody {
-  return { x: c.x, z: c.z, yaw: yawOf(c.dx, c.dz), vx: c.dx * c.speed, vz: c.dz * c.speed, w: 0, hw: 0.92, hl: 2.05, mass };
+  return { x: c.x, z: c.z, yaw: yawOf(c.dx, c.dz), vx: c.dx * c.speed, vz: c.dz * c.speed, w: 0, hw: c.hw, hl: c.hl, mass };
 }
 
 /** Quãng đường trên tuyến gần vị trí (x, z) nhất. */
-function nearestD(r: Route, x: number, z: number): number {
+export function nearestD(r: Route, x: number, z: number): number {
   let best = 0;
   let bd = Infinity;
   for (let d = 0; d < r.total; d += 1) {

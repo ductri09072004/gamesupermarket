@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ROAD_WIDTH } from '../config/city';
 import type { OrderData } from '../core/GameState';
-import { buildTruck, TRUCK_LEN, type TruckModel } from '../entities/TruckModel';
+import { buildTruck, type TruckModel } from '../entities/TruckModel';
 import type { AABB } from '../world/Colliders';
 import { LANE_OFFSET } from '../world/CityRoutes';
 import type { CityLayout } from '../world/CityLayout';
@@ -51,9 +51,13 @@ export class DeliveryTrucks {
     this.c.toast('🚚 Xe tải đang chở hàng tới cửa hàng...', 'info');
   }
 
-  /** Tâm xe khi đuôi xe ở REAR_STOP_X; xe thứ i trong hàng đứng lùi sau. */
-  private stopX(i: number): number {
-    return REAR_STOP_X - TRUCK_LEN / 2 + i * (TRUCK_LEN + 2.5);
+  /** Tâm xe khi đuôi xe ở REAR_STOP_X; xe thứ i trong hàng đứng lùi sau các xe trước (mỗi xe dài khác nhau). */
+  private stopX(queue: Truck[], i: number): number {
+    if (i === 0) return REAR_STOP_X - queue[0].m.len / 2;
+    // đầu xe thứ i cách đuôi xe đứng trước 2.5m
+    let front = REAR_STOP_X + 2.5;
+    for (let k = 1; k < i; k++) front += queue[k].m.len + 2.5;
+    return front + queue[i].m.len / 2;
   }
 
   /** others: xe NPC & người chơi — dừng khi có vật cản phía trước cùng làn. */
@@ -64,7 +68,7 @@ export class DeliveryTrucks {
       const tr = this.trucks[i];
       let target = MAX_SPEED;
       if (tr.phase === 'arrive') {
-        const gap = tr.x - this.stopX(queue.indexOf(tr));
+        const gap = tr.x - this.stopX(queue, queue.indexOf(tr));
         target = Math.min(MAX_SPEED, Math.sqrt(Math.max(0, 2 * BRAKE * 0.8 * gap)));
         if (gap < 0.05 && tr.speed < 0.3 && queue.indexOf(tr) === 0) this.startUnload(tr);
       } else if (tr.phase === 'unload') {
@@ -73,7 +77,7 @@ export class DeliveryTrucks {
       }
       // xe NPC / người đứng trước đầu xe (phía -X) cùng làn
       for (const o of others) {
-        const ahead = tr.x - TRUCK_LEN / 2 - o.x;
+        const ahead = tr.x - tr.m.len / 2 - o.x;
         if (Math.abs(o.z - z) < 1.8 && ahead > -0.5 && ahead < 10) target = Math.min(target, Math.max(0, (ahead - 2.5) * 1.2));
       }
       const dv = target - tr.speed;
@@ -117,13 +121,13 @@ export class DeliveryTrucks {
 
   colliders(): AABB[] {
     const z = this.laneZ;
-    return this.trucks.map((t) => ({ minX: t.x - TRUCK_LEN / 2, maxX: t.x + TRUCK_LEN / 2, minZ: z - 1.2, maxZ: z + 1.2, tag: 'truck' }));
+    return this.trucks.map((t) => ({ minX: t.x - t.m.len / 2, maxX: t.x + t.m.len / 2, minZ: z - 1.2, maxZ: z + 1.2, tag: 'truck' }));
   }
 
   /** Vật cản cho xe NPC phía sau (vài điểm dọc thân xe). */
   obstacles(): Array<{ x: number; z: number; lat: number }> {
     const z = this.laneZ;
-    return this.trucks.flatMap((t) => [-1, 0, 1].map((k) => ({ x: t.x + k * (TRUCK_LEN / 2 - 0.5), z, lat: 1.8 })));
+    return this.trucks.flatMap((t) => [-1, 0, 1].map((k) => ({ x: t.x + k * (t.m.len / 2 - 0.5), z, lat: 1.8 })));
   }
 
   destroy(): void {

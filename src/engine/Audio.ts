@@ -23,6 +23,9 @@ export class AudioEngine {
   private step = 0;
   private crowd: AudioBufferSourceNode | null = null;
   private crowdGain!: GainNode;
+  private rain: AudioBufferSourceNode | null = null;
+  private rainGain!: GainNode;
+  private rainFilter!: BiquadFilterNode;
   private settings: Settings | null = null;
   private offs: Array<() => void> = [];
 
@@ -35,6 +38,12 @@ export class AudioEngine {
     this.crowdGain.gain.value = 0;
     for (const g of [this.sfx, this.music, this.ambient]) g.connect(this.listener.getInput());
     this.crowdGain.connect(this.ambient);
+    this.rainGain = ctx.createGain();
+    this.rainGain.gain.value = 0;
+    this.rainFilter = ctx.createBiquadFilter();
+    this.rainFilter.type = 'lowpass';
+    this.rainFilter.frequency.value = 9000;
+    this.rainGain.connect(this.rainFilter).connect(this.ambient);
     const unlock = () => {
       void ctx.resume();
       this.ensureBank();
@@ -158,8 +167,22 @@ export class AudioEngine {
     this.crowdGain.gain.setTargetAtTime(v, this.context.currentTime, 1);
   }
 
+  /** Tiếng mưa: level 0..1; trong nhà nghe đục và nhỏ hơn (lọc thấp). */
+  setRain(level: number, indoor: boolean): void {
+    const t = this.context.currentTime;
+    this.rainGain.gain.setTargetAtTime(level * (indoor ? 0.32 : 0.7), t, 0.4);
+    this.rainFilter.frequency.setTargetAtTime(indoor ? 700 : 9000, t, 0.3);
+  }
+
   private startLoops(): void {
     this.humStarters.forEach((s) => s());
+    if (!this.rain && this.context.state === 'running') {
+      this.rain = this.context.createBufferSource();
+      this.rain.buffer = this.ensureBank().get('rain')!;
+      this.rain.loop = true;
+      this.rain.connect(this.rainGain);
+      this.rain.start();
+    }
     if (!this.crowd && this.context.state === 'running') {
       this.crowd = this.context.createBufferSource();
       this.crowd.buffer = this.ensureBank().get('crowd')!;

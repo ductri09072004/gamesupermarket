@@ -1,19 +1,9 @@
 import * as THREE from 'three';
-import { textCanvas } from '../products/LabelTexture';
+import { signTexture } from '../world/SignFactory';
 
-function face(open: boolean): THREE.CanvasTexture {
-  return textCanvas(256, 128, (g) => {
-    g.fillStyle = open ? '#2a9d8f' : '#e63946';
-    g.fillRect(0, 0, 256, 128);
-    g.strokeStyle = '#ffffff';
-    g.lineWidth = 8;
-    g.strokeRect(8, 8, 240, 112);
-    g.fillStyle = '#ffffff';
-    g.font = '900 52px "Nunito", Arial';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(open ? 'MỞ CỬA' : 'ĐÓNG', 128, 66);
-  });
+/** Bảng sơn tay Mở cửa / Đóng cửa (phông Lobster, hơi bạc màu) */
+function face(open: boolean): THREE.Texture {
+  return signTexture({ text: open ? 'MỞ CỬA' : 'ĐÓNG', style: 'paint', bg: open ? '#2a7d6f' : '#b3323c', ink: '#fff6dc', accent: '#fff6dc', w: 512, h: 256, seed: open ? 21 : 22, wear: 0.25 });
 }
 
 /** Biển Mở/Đóng cửa treo trên cột cạnh cửa ra vào; lật khi đổi trạng thái. */

@@ -16,6 +16,12 @@ const NIGHT = new THREE.Color(0x04060d);
 /** Ánh trăng xanh lạnh ban đêm (mặt trời thay màu & cường độ) */
 const MOON = new THREE.Color(0x7d8fc4);
 const MOON_INTENSITY = 0.12;
+/** Trời mưa: mây xám phủ kín, nắng yếu, sương mù gần hơn */
+const OVERCAST = new THREE.Color(0x87949e);
+const FOG_NEAR = 45;
+const FOG_FAR = 120;
+/** Đèn trần cửa hàng hơi vàng & yếu — tiệm cũ, u tối */
+const INTERIOR_K = 1.0;
 
 /** Màu trời & mặt trời theo giờ: bình minh hồng cam → trưa → vàng chiều → tối xanh. */
 export function skyAt(hour: number): Sky {
@@ -46,13 +52,31 @@ export class Lighting {
   readonly ceiling: THREE.SpotLight;
   readonly sun: THREE.DirectionalLight;
   readonly hemi: THREE.HemisphereLight;
+  private overcast = new THREE.Color();
   night = 0;
+  /** Chớp sét 0..1 (Weather đặt, tự tắt dần ở đó) */
+  flash = 0;
+  /** Đèn tuýp cũ chập chờn: hệ số 0..1 nhân vào đèn trần */
+  flick = 1;
+  private flickIn = 8;
+  private flickT = 0;
+
+  /** Thỉnh thoảng đèn tuýp trong cửa hàng nháy chập chờn ~0.4s. */
+  tick(dt: number): void {
+    this.flickIn -= dt;
+    if (this.flickIn <= 0) {
+      this.flickT = 0.4;
+      this.flickIn = 7 + Math.random() * 18;
+    }
+    this.flickT = Math.max(0, this.flickT - dt);
+    this.flick = this.flickT > 0 ? (Math.random() < 0.55 ? 0.35 + Math.random() * 0.3 : 1) : 1;
+  }
 
   constructor(private scene: THREE.Scene) {
     this.hemi = new THREE.HemisphereLight(0xfffaf0, 0x8a8070, 0.55);
     scene.add(this.hemi);
     // decay 0: không suy giảm theo khoảng cách → trong nón sáng đều như đèn định hướng cũ
-    this.ceiling = new THREE.SpotLight(0xfff5e8, 1.1, 0, Math.PI / 4, 0.35, 0);
+    this.ceiling = new THREE.SpotLight(0xffe4bc, 1.1, 0, Math.PI / 4, 0.35, 0);
     this.ceiling.castShadow = true;
     this.ceiling.shadow.bias = -0.0004;
     this.ceiling.shadow.normalBias = 0.02;
@@ -60,6 +84,11 @@ export class Lighting {
     scene.add(this.ceiling, this.ceiling.target);
     this.sun = new THREE.DirectionalLight(0xfff4e0, 2);
     this.sun.position.set(-20, 30, 40);
+    // mặt trời đổ bóng lên cửa hàng: nắng chỉ lọt qua kính mặt tiền, phía trong sâu tối như tiệm tạp hóa cũ
+    this.sun.castShadow = true;
+    this.sun.shadow.bias = -0.0004;
+    this.sun.shadow.normalBias = 0.04;
+    this.sun.shadow.radius = 3;
     scene.add(this.sun, this.sun.target);
     scene.fog = new THREE.Fog(DAY.clone(), 45, 120);
     scene.background = DAY.clone();
@@ -81,6 +110,13 @@ export class Lighting {
     cam.far = h + 2;
     cam.updateProjectionMatrix();
     this.sun.target.position.set(cx, 0, D + 4);
+    const sr = Math.hypot(W / 2, D / 2 + 4) + 5;
+    const sc = this.sun.shadow.camera;
+    sc.left = sc.bottom = -sr;
+    sc.right = sc.top = sr;
+    sc.near = 5;
+    sc.far = 120;
+    sc.updateProjectionMatrix();
   }
 
   dispose(): void {
@@ -89,19 +125,25 @@ export class Lighting {
   }
 
   /** interior: độ sáng do đèn trần (0 = tắt hết / không có đèn, 1 = phủ kín cửa hàng). */
-  setHour(hour: number, interior = 1): void {
+  setHour(hour: number, interior = 1, cloud = 0): void {
     const s = skyAt(hour);
     this.night = s.night;
     const day = 1 - s.night;
-    (this.scene.background as THREE.Color).copy(s.sky);
-    this.scene.fog?.color.copy(s.sky);
-    this.sun.intensity = s.sun;
+    const sky = s.sky.lerp(this.overcast.copy(OVERCAST).multiplyScalar(0.2 + 0.8 * day), cloud * 0.85);
+    (this.scene.background as THREE.Color).copy(sky);
+    const fog = this.scene.fog as THREE.Fog | null;
+    if (fog) {
+      fog.color.copy(sky);
+      fog.near = FOG_NEAR * (1 - 0.55 * cloud);
+      fog.far = FOG_FAR * (1 - 0.5 * cloud);
+    }
+    this.sun.intensity = s.sun * (1 - 0.6 * cloud) + this.flash * 3;
     this.sun.color.copy(s.sunColor);
     // ánh sáng nền & môi trường áp cho cả phố → không cộng theo đèn trong nhà (trong nhà đã có đèn trần + đèn từng bóng)
-    this.hemi.intensity = 0.03 + day * 0.42 + interior * 0.04;
+    this.hemi.intensity = 0.03 + day * 0.42 * (1 + 0.2 * cloud) + interior * 0.04 + this.flash * 1.2;
     this.hemi.color.set(0xfffaf0).lerp(new THREE.Color(0x5a6a9a), s.night * 0.8);
     this.hemi.groundColor.set(0x8a8070).lerp(new THREE.Color(0x151518), s.night);
-    this.ceiling.intensity = 1.35 * interior;
-    this.scene.environmentIntensity = ENV_INTENSITY * (0.05 + day * 0.6 + interior * 0.12);
+    this.ceiling.intensity = INTERIOR_K * interior * this.flick;
+    this.scene.environmentIntensity = ENV_INTENSITY * (0.05 + day * 0.6 * (1 - 0.3 * cloud) + interior * 0.12 + this.flash * 0.8);
   }
 }

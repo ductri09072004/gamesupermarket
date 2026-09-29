@@ -11,9 +11,12 @@ import { productMesh } from '../products/PackagingFactory';
 import { generateWishlist, SpawnAccumulator, spawnRatePerHour } from '../systems/CustomerSystem';
 import { stockedProductIds } from '../systems/InventorySystem';
 import { chooseCheckout } from '../systems/SelfCheckoutSystem';
+import { rainSpawnFactor } from '../systems/WeatherSystem';
 import { interiorLight, lampCoverage, nightAt, storeBrightness } from '../systems/LightingSystem';
-import { competingShift, incenseLitToday, vendorTakeChance } from '../systems/VendorSystem';
+import { competingShift, incenseLitToday, vendorTakeChance, walkingVendorSays } from '../systems/VendorSystem';
 import { VENDOR_GOODS } from '../config/city';
+import { BUS } from '../config/traffic';
+import { worldToCell } from '../world/NavGrid';
 import { INCENSE } from '../config/constants';
 import type { GridPoint } from '../world/Footprint';
 import { furnitureMatrix } from '../world/Placement';
@@ -29,6 +32,8 @@ export class CustomerManager implements CustomerWorld {
   private spawner: SpawnAccumulator;
   private lastCount = -1;
   private debugLines: THREE.LineSegments | null = null;
+  /** Hành khách buýt đang chờ bước xuống (vị trí cửa xe, giây chờ) */
+  private alighting: Array<{ x: number; z: number; wait: number }> = [];
 
   constructor(private c: GameCtx) {
     this.spawner = new SpawnAccumulator(c.s.rng);
@@ -44,10 +49,11 @@ export class CustomerManager implements CustomerWorld {
 
   vendorTakes(productId: string): string | null {
     const s = this.s;
-    const shift = competingShift(productId, s.time.hour);
-    if (!shift || s.rng() >= vendorTakeChance(s.state.priceOf(productId), s.market(productId))) return null;
+    const shift = competingShift(productId, s.time.hour, s.weather.rain);
+    const say = shift ? VENDOR_GOODS[shift].say : walkingVendorSays(productId, s.walkingVendorNear);
+    if (!say || s.rng() >= vendorTakeChance(s.state.priceOf(productId), s.market(productId))) return null;
     s.data.stats.vendorLost += 1;
-    return VENDOR_GOODS[shift].say;
+    return say;
   }
 
   brightness(): number {
@@ -148,26 +154,44 @@ export class CustomerManager implements CustomerWorld {
     this.assignQueueTiles();
   }
 
-  spawn(): void {
+  /** Khách xuống xe buýt tại (x, z): mỗi người có xác suất ghé cửa hàng (nếu đang mở cửa). */
+  busPassengers(x: number, z: number, n: number): void {
+    const s = this.s;
+    if (!s.data.storeOpen || !s.time.isOpenHours()) return;
+    // lần lượt bước xuống (cách nhau ~0.9s) để khỏi dồn cục ở cửa xe
+    for (let i = 0; i < n; i++) if (s.rng() < BUS.shopChance) this.alighting.push({ x: x + (s.rng() - 0.5) * 0.8, z, wait: this.alighting.length * 0.9 });
+  }
+
+  private stepAlighting(dt: number): void {
+    for (const p of this.alighting) p.wait -= dt;
+    while (this.alighting.length && this.alighting[0].wait <= 0) {
+      const p = this.alighting.shift()!;
+      if (this.customers.length < MAX_CUSTOMERS) this.spawn(worldToCell(p.x, p.z)).say('🚌 ...', 1400);
+    }
+  }
+
+  spawn(fromCell?: GridPoint): Customer {
     const s = this.s;
     const spawns = s.grid.spawnPoints();
-    const from = pick(s.rng, spawns);
+    const from = fromCell ?? pick(s.rng, spawns);
     const exit = pick(s.rng, spawns);
     const wishes = generateWishlist(s.state.unlockedProducts(), stockedProductIds(s.data.furniture), s.rng);
     const look = { shirt: pick(s.rng, SHIRTS), pants: pick(s.rng, PANTS), skin: pick(s.rng, SKINS), hair: pick(s.rng, HAIRS), female: s.rng() < 0.5, model: pick(s.rng, CUSTOMER_MODELS) };
     const cu = new Customer(this, look, from, exit, wishes);
     this.group.add(cu.human.root);
     this.customers.push(cu);
+    return cu;
   }
 
   update(sim: number, dt: number): void {
     const s = this.s;
     if (sim > 0 && s.data.storeOpen && s.time.isOpenHours()) {
       const lucky = incenseLitToday(s.data.incense, s.data.day) ? INCENSE.spawnBonus : 1;
-      const rate = spawnRatePerHour(s.time.hour, s.data.reputation, s.data.storeW, s.data.storeH) * lucky;
+      const rate = spawnRatePerHour(s.time.hour, s.data.reputation, s.data.storeW, s.data.storeH) * lucky * rainSpawnFactor(s.weather.rain, s.weather.flood);
       const n = this.spawner.tick(sim * MINUTES_PER_SECOND, rate);
       for (let i = 0; i < n && this.customers.length < MAX_CUSTOMERS; i++) this.spawn();
     }
+    this.stepAlighting(dt);
     const cam = this.c.camera.position;
     for (const cu of this.customers) {
       cu.tick(sim, dt);
@@ -216,6 +240,7 @@ export class CustomerManager implements CustomerWorld {
   clear(): void {
     for (const cu of this.customers) cu.dispose();
     this.customers = [];
+    this.alighting = [];
     this.queues.clear();
   }
 

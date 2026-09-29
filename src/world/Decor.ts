@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { prop } from '../engine/Props';
 import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X } from '../config/constants';
 import { textCanvas } from '../products/LabelTexture';
+import { buildInterior, type InteriorParts } from './InteriorDecor';
+import { signMaterial, type SignSpec } from './SignFactory';
 
 function plant(): THREE.Group {
   // chậu cây Quaternius (GLB) — thu về cỡ chậu cạnh cửa
@@ -26,18 +28,33 @@ function plant(): THREE.Group {
   return g;
 }
 
-function sign(text: string, color: string, w = 1.6): THREE.Mesh {
-  const tex = textCanvas(512, 128, (g) => {
-    g.fillStyle = color;
-    g.fillRect(0, 0, 512, 128);
-    g.fillStyle = '#ffffff';
-    g.font = '900 64px "Nunito", Arial, sans-serif';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(text, 256, 68);
-  });
-  const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, side: THREE.DoubleSide });
-  return new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), mat);
+/** Bảng, poster bạc màu: phủ lớp ố vàng + vài vệt nước chảy */
+function ageCanvas(g: CanvasRenderingContext2D, w: number, h: number): void {
+  g.fillStyle = 'rgba(120,96,52,0.32)';
+  g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 9; i++) {
+    const x = ((i * 137) % 100) / 100 * w;
+    const grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(60,45,20,0.35)');
+    grad.addColorStop(1, 'rgba(60,45,20,0)');
+    g.fillStyle = grad;
+    g.fillRect(x, 0, 2 + (i % 3) * 2, h * (0.4 + (i % 4) * 0.15));
+  }
+}
+
+const ZONE_SIGNS: Record<string, Partial<SignSpec>> = {
+  'Thực phẩm': { style: 'paint', bg: '#f2e0bd', ink: '#9c2a1a', accent: '#6b3a1a', sub: 'Mì · Gạo · Gia vị · Bánh kẹo' },
+  'Đồ uống': { style: 'enamel', bg: '#1a5fa8', ink: '#ffffff', accent: '#ffd23f', sub: 'Nước ngọt · Bia · Trà · Cà phê' },
+  'Đông lạnh': { style: 'lightbox', bg: '#2b6cb0', ink: '#2b6cb0', accent: '#2b6cb0', sub: 'Kem · Thịt · Há cảo' },
+  'Xin chào!': { style: 'paint', bg: '#e9dcc0', ink: '#1f7a6d', accent: '#b3541e', sub: 'Cảm ơn quý khách' },
+};
+
+/** Bảng treo dày 5cm, hai mặt cùng chữ, kiểu biển theo khu vực (xem SignFactory). */
+function sign(text: string, _color: string, w = 1.6): THREE.Mesh {
+  const z = ZONE_SIGNS[text] ?? {};
+  const mat = signMaterial({ text, style: 'paint', bg: '#f2e0bd', ink: '#9c2a1a', seed: text.length, w: 1024, h: 288, ...z });
+  const edge = new THREE.MeshStandardMaterial({ color: 0x4a3a2c, roughness: 0.8 });
+  return new THREE.Mesh(new THREE.BoxGeometry(w, (w * 288) / 1024, 0.05), [edge, edge, edge, edge, mat, mat]);
 }
 
 function poster(title: string, sub: string, bg: string): THREE.Mesh {
@@ -58,15 +75,27 @@ function poster(title: string, sub: string, bg: string): THREE.Mesh {
     g.fillText(sub, 128, 260);
     g.font = '600 20px "Nunito", Arial, sans-serif';
     g.fillText('Chỉ có tại Mini Mart', 128, 310);
+    ageCanvas(g, 256, 360);
   });
-  return new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.98), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }));
+  return new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.98), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
 }
 
 /** Trang trí trong cửa hàng: biển khu vực treo trần, poster khuyến mãi, chậu cây. */
 export class Decor {
   readonly group = new THREE.Group();
+  private interior: InteriorParts | null = null;
+
+  /** Bật đồ trang trí Tết (đèn lồng, bánh chưng…) */
+  setTet(on: boolean): void {
+    if (this.interior) this.interior.tet.visible = on;
+  }
+
+  update(dt: number): void {
+    this.interior?.update(dt);
+  }
 
   build(W: number, D: number): void {
+    const tetOn = this.interior?.tet.visible ?? false;
     this.group.clear();
     const zones: Array<[string, string, number, number]> = [
       ['Thực phẩm', '#e76f51', W * 0.3, 1.2],
@@ -105,6 +134,9 @@ export class Decor {
       cam.rotation.set(0, yaw, 0);
       this.group.add(cam);
     }
+    this.interior = buildInterior(W, D);
+    this.interior.tet.visible = tetOn;
+    this.group.add(this.interior.group);
     const welcome = sign('Xin chào!', '#1f7a6d', 1.2);
     welcome.position.set(DOOR_X, 2.62, D - 0.02);
     welcome.rotation.y = Math.PI;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { DOOR_WIDTH, DOOR_X, EYE_HEIGHT, PLAYER_RADIUS, WALL_THICKNESS } from '../config/constants';
-import { getVehicle } from '../config/vehicles';
+import { vehicleDef } from '../config/vehicles';
 import { cargoUsed } from '../systems/VehicleSystem';
 import { forward, stepDrive, type DriveState } from '../systems/VehicleDrive';
 import { resolveCircle, type AABB } from '../world/Colliders';
@@ -8,6 +8,7 @@ import { h, uiRoot } from '../ui/dom';
 import type { World } from './World';
 import { DriveImpact } from './DriveImpact';
 import { PotholeBumps } from './PotholeBumps';
+import { WadeDrive } from './WadeDrive';
 
 const SUBSTEPS = 3;
 
@@ -23,11 +24,13 @@ export class Driving {
   private lamp: THREE.SpotLight | null = null;
   private impact: DriveImpact;
   private bumps: PotholeBumps;
+  private wade: WadeDrive;
   private shakeV = new THREE.Vector3();
 
   constructor(private w: World) {
     this.impact = new DriveImpact(w);
     this.bumps = new PotholeBumps(w);
+    this.wade = new WadeDrive(w);
   }
 
   get active(): boolean {
@@ -36,6 +39,7 @@ export class Driving {
 
   enter(uid: string): void {
     this.impact.reset();
+    this.wade.reset();
     const w = this.w;
     const v = w.s.vehicles.get(uid);
     if (!v || w.mode !== 'play') return;
@@ -47,7 +51,7 @@ export class Driving {
     Object.assign(this.state, { x: v.x, z: v.z, yaw: v.yaw, speed: 0, steer: 0 });
     w.mode = 'drive';
     w.player.cameraOverride = true;
-    const def = getVehicle(v.type);
+    const def = vehicleDef(v);
     const f = forward(v.yaw);
     this.camPos.set(v.x - f.x * def.camDist, def.camHeight, v.z - f.z * def.camDist);
     this.orbit = 0;
@@ -72,7 +76,7 @@ export class Driving {
       w.toast('Dừng xe hẳn rồi mới xuống (S / Space)', 'error');
       return;
     }
-    const def = getVehicle(v.type);
+    const def = vehicleDef(v);
     // bước xuống phía bên trái xe; bị chắn thì thử bên phải / phía sau
     const f = forward(v.yaw);
     const left = { x: f.z, z: -f.x };
@@ -126,7 +130,7 @@ export class Driving {
     const w = this.w;
     const v = this.uid ? w.s.vehicles.get(this.uid) : undefined;
     if (!v) return;
-    const def = getVehicle(v.type);
+    const def = vehicleDef(v);
     const k = w.input.keys;
     const throttle = (k.isDown('KeyW') || k.isDown('ArrowUp') ? 1 : 0) - (k.isDown('KeyS') || k.isDown('ArrowDown') ? 1 : 0);
     const steer = (k.isDown('KeyA') || k.isDown('ArrowLeft') ? 1 : 0) - (k.isDown('KeyD') || k.isDown('ArrowRight') ? 1 : 0);
@@ -137,7 +141,8 @@ export class Driving {
     const n = Math.max(2, Math.round(length / width));
     for (let i = 0; i < SUBSTEPS; i++) {
       const sdt = dt / SUBSTEPS;
-      stepDrive(this.state, input, def, sdt);
+      stepDrive(this.state, input, def, sdt, w.s.weather.wet);
+      this.impact.wet = w.s.weather.wet;
       this.impact.integrate(this.state, sdt);
       const f = forward(this.state.yaw);
       // vật cản tĩnh: thân xe = chuỗi hình tròn dọc thân; lấy vòng bị đẩy mạnh nhất làm điểm va
@@ -168,6 +173,7 @@ export class Driving {
     }
     this.impact.hitTraffic(this.state, def);
     this.impact.jolt(this.bumps.check(this.state, def, v));
+    this.wade.apply(this.state, def, dt);
     v.x = this.state.x;
     v.z = this.state.z;
     v.yaw = this.state.yaw;

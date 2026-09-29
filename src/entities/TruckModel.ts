@@ -3,6 +3,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { textCanvas } from '../products/LabelTexture';
 import { findWheels, wheel } from './VehicleModels';
 import { prop } from '../engine/Props';
+import { DELIVERY_TRUCKS } from '../config/fleet';
+import { cityModel } from '../world/CityModels';
 
 /** Xe tải thùng giao hàng: gốc giữa đáy, đầu xe hướng -Z (như xe người chơi). */
 export interface TruckModel {
@@ -14,6 +16,8 @@ export interface TruckModel {
   /** Điểm thùng bay ra (local, sau đuôi xe) */
   rear: THREE.Vector3;
   lights: THREE.MeshStandardMaterial;
+  /** Chiều dài thân xe (m) */
+  len: number;
 }
 
 export const TRUCK_LEN = 5.4;
@@ -49,16 +53,22 @@ function box(geo: THREE.BufferGeometry, mat: THREE.Material | THREE.Material[], 
   return m;
 }
 
-/** Xe tải Quaternius (GLB): không có cửa cuốn → cửa giả để logic dỡ hàng không đổi. */
+/** Xe tải tiếp tế cổ (GAZ-66, ZIL-131…): chọn ngẫu nhiên mỗi chuyến; không có cửa cuốn → cửa giả để logic dỡ hàng không đổi. */
 function glbTruck(): TruckModel | null {
-  const m = prop('truck');
+  const kinds = DELIVERY_TRUCKS.filter((k) => cityModel(k.model));
+  const kind = kinds[Math.floor(Math.random() * kinds.length)];
+  const src = kind ? cityModel(kind.model) : null;
+  const m = src ? src.clone(true) : prop('truck');
   if (!m) return null;
+  const len = kind && src ? kind.len : TRUCK_LEN;
+  if (kind?.flip) m.rotation.y = Math.PI;
+  m.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
   const g = new THREE.Group();
   g.add(m);
   const wheels = findWheels(m);
   const r = wheels.length ? new THREE.Box3().setFromObject(wheels[0]).getSize(new THREE.Vector3()).y / 2 : 0.45;
   const lights = new THREE.MeshStandardMaterial();
-  return { group: g, wheels, wheelRadius: r, door: new THREE.Object3D(), rear: new THREE.Vector3(0, 1.2, TRUCK_LEN / 2 + 0.4), lights };
+  return { group: g, wheels, wheelRadius: r, door: new THREE.Object3D(), rear: new THREE.Vector3(0, 1.2, len / 2 + 0.4), lights, len };
 }
 
 export function buildTruck(): TruckModel {
@@ -120,5 +130,5 @@ export function buildTruck(): TruckModel {
       wheels.push(wh);
     }
   }
-  return { group: g, wheels, wheelRadius: r, door, rear: new THREE.Vector3(0, 1.2, TRUCK_LEN / 2 + 0.4), lights };
+  return { group: g, wheels, wheelRadius: r, door, rear: new THREE.Vector3(0, 1.2, TRUCK_LEN / 2 + 0.4), lights, len: TRUCK_LEN };
 }

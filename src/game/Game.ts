@@ -19,6 +19,8 @@ import { slotCapacity } from '../systems/SlotLayout';
 import { DebugPanel } from './Debug';
 import { GameUI } from './GameUI';
 import { World } from './World';
+import { loadSignFonts } from '../world/SignFactory';
+import { loadSignWear } from '../world/SignWear';
 
 const DEFAULT_SETTINGS: Settings = createNewState(1).settings;
 
@@ -60,6 +62,7 @@ export class Game {
     await this.assets.run([
       ['Đang đọc danh sách asset', () => this.assets.loadManifest()],
       ['Đang nạp ánh sáng môi trường', () => this.loadEnvironment()],
+      ['Đang nạp phông chữ biển hiệu', () => Promise.all([loadSignFonts(), loadSignWear()]).then(() => undefined)],
       ['Đang in nhãn sản phẩm', () => { for (const p of PRODUCTS) labelTexture(p); }],
       ['Đang tạo bao bì 3D', () => { for (const p of PRODUCTS) packaging(p.id); }],
       ['Đang dựng cửa hàng', () => this.buildMenuWorld()],

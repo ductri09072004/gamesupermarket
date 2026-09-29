@@ -1,18 +1,21 @@
 import { DIRT } from '../config/hygiene';
+import { WEATHER } from '../config/weather';
 import type { EventBus, GameEvents } from '../core/EventBus';
 import type { DirtData, DirtKind, GameState } from '../core/GameState';
 import type { Rng } from '../core/Random';
 import type { ProgressionSystem } from './ProgressionSystem';
 
-/** Số vết bẩn mới mỗi giờ game theo lượng khách đang ở trong cửa hàng và diện tích. */
-export function dirtRatePerHour(customers: number, areaM2: number): number {
-  return DIRT.basePerHour + DIRT.perCustomerPerHour * Math.max(0, customers) + DIRT.perAreaPerHour * Math.max(0, areaM2);
+/** Số vết bẩn mới mỗi giờ game theo lượng khách đang ở trong cửa hàng và diện tích; wet (0..1): trời mưa khách mang nước vào. */
+export function dirtRatePerHour(customers: number, areaM2: number, wet = 0): number {
+  const base = DIRT.basePerHour + DIRT.perCustomerPerHour * Math.max(0, customers) + DIRT.perAreaPerHour * Math.max(0, areaM2);
+  return base * (1 + WEATHER.dirtBoost * wet);
 }
 
-export function pickDirtKind(rng: Rng): DirtKind {
+export function pickDirtKind(rng: Rng, wet = 0): DirtKind {
   const w = DIRT.weights;
-  const r = rng() * (w.litter + w.spill + w.smudge);
-  return r < w.litter ? 'litter' : r < w.litter + w.spill ? 'spill' : 'smudge';
+  const spill = w.spill * (1 + WEATHER.spillBias * wet);
+  const r = rng() * (w.litter + spill + w.smudge);
+  return r < w.litter ? 'litter' : r < w.litter + spill ? 'spill' : 'smudge';
 }
 
 /** Chỗ đặt chất bẩn: trả null nếu không tìm được chỗ hợp lệ. */
@@ -30,14 +33,14 @@ export class CleanlinessSystem {
   }
 
   /** minutes: phút game vừa trôi qua. */
-  update(minutes: number, customersInside: number, spot: DirtSpot): void {
+  update(minutes: number, customersInside: number, spot: DirtSpot, wet = 0): void {
     if (minutes <= 0) return;
     const d = this.state.data;
-    this.acc += (minutes / 60) * dirtRatePerHour(customersInside, d.storeW * d.storeH);
+    this.acc += (minutes / 60) * dirtRatePerHour(customersInside, d.storeW * d.storeH, wet);
     while (this.acc >= 1) {
       this.acc -= 1;
       if (this.list.length >= DIRT.max) continue;
-      const kind = pickDirtKind(this.rng);
+      const kind = pickDirtKind(this.rng, wet);
       const p = spot(kind);
       if (p) this.add(kind, p.x, p.z);
     }

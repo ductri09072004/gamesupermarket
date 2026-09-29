@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getVehicle, type VehicleType } from '../config/vehicles';
+import { vehicleDef, type VehicleType } from '../config/vehicles';
 import type { VehicleData } from '../core/GameState';
 import type { Services } from '../core/Services';
 import { BoxModel } from '../entities/Box';
@@ -18,8 +18,8 @@ interface View {
 }
 
 /** Hộp thẳng trục bao quanh xe (xe xoay góc bất kỳ). */
-export function vehicleAABB(v: { x: number; z: number; yaw: number }, type: string, pad = 0): AABB {
-  const [w, , l] = getVehicle(type).size;
+export function vehicleAABB(v: { x: number; z: number; yaw: number; type: string; variant?: string }, pad = 0): AABB {
+  const [w, , l] = vehicleDef(v).size;
   const c = Math.abs(Math.cos(v.yaw));
   const s = Math.abs(Math.sin(v.yaw));
   const hx = (c * w + s * l) / 2 + pad;
@@ -61,7 +61,7 @@ export class VehicleManager {
       alive.add(v.uid);
       let view = this.views.get(v.uid);
       if (!view) {
-        const model = buildVehicleModel(v.type as VehicleType);
+        const model = buildVehicleModel(v.type as VehicleType, v.variant);
         const root = new THREE.Group();
         root.add(model.group);
         root.userData = { kind: 'vehicle', uid: v.uid };
@@ -128,7 +128,7 @@ export class VehicleManager {
   }
 
   colliders(exclude?: string): AABB[] {
-    return this.s.data.vehicles.filter((v) => v.uid !== exclude).map((v) => vehicleAABB(v, v.type));
+    return this.s.data.vehicles.filter((v) => v.uid !== exclude).map((v) => vehicleAABB(v));
   }
 
   destroy(): void {

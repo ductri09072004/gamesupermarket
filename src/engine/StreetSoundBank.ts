@@ -67,8 +67,72 @@ function bell(ctx: BaseAudioContext): AudioBuffer {
   });
 }
 
+/** Tiếng mưa rơi lặp được: nhiễu băng rộng (hạt mưa) + ù trầm ở xa; nối đầu–cuối bằng crossfade công suất đều. */
+function rainLoop(ctx: BaseAudioContext): AudioBuffer {
+  const sr = ctx.sampleRate;
+  const n = Math.floor(sr * 4);
+  const fade = Math.floor(sr * 0.5);
+  const raw = new Float32Array(n + fade);
+  let a = 0;
+  let b = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const white = Math.random() * 2 - 1;
+    a += (white - a) * 0.45;
+    b += (white - b) * 0.03;
+    raw[i] = ((white - a) * 0.5 + a * 0.55 + b * 1.6) * 0.3 + (Math.random() < 0.003 ? (Math.random() - 0.5) * 0.5 : 0);
+  }
+  const buf = ctx.createBuffer(1, n, sr);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) {
+    if (i >= fade) { d[i] = raw[i]; continue; }
+    const t = i / fade;
+    d[i] = raw[i] * Math.sin((t * Math.PI) / 2) + raw[n + i] * Math.cos((t * Math.PI) / 2);
+  }
+  return buf;
+}
+
+/** Sấm: tiếng nổ khô rồi ù trầm lăn dài, biên độ dập dềnh. */
+function thunder(ctx: BaseAudioContext): AudioBuffer {
+  let brown = 0;
+  let low = 0;
+  return render(ctx, 4.2, (t) => {
+    const white = Math.random() * 2 - 1;
+    brown = brown * 0.996 + white * 0.05;
+    low += (brown - low) * 0.06;
+    const crack = t < 0.18 ? white * Math.exp(-t / 0.05) * 0.5 : 0;
+    const roll = low * 7 * Math.exp(-t / 1.5) * (0.65 + 0.35 * Math.sin(TAU * 2.6 * t + 1.2)) * Math.min(1, t / 0.06);
+    return crack + roll;
+  });
+}
+
+/** Bì bõm lội nước: hạt nước bắn + thịch trầm. */
+function splash(ctx: BaseAudioContext): AudioBuffer {
+  let lp = 0;
+  return render(ctx, 0.5, (t) => {
+    const white = Math.random() * 2 - 1;
+    lp += (white - lp) * 0.2;
+    const env = Math.min(1, t / 0.006) * Math.exp(-t / 0.11);
+    return ((white - lp) * 0.55 + Math.sin(TAU * (110 - 50 * t) * t) * 0.5) * env * 0.6;
+  });
+}
+
+/** Xe buýt xả hơi khi dừng / rời trạm: xì dài, tắt dần, có thịch nhỏ lúc đầu. */
+function airBrake(ctx: BaseAudioContext): AudioBuffer {
+  let lp = 0;
+  return render(ctx, 1.4, (t) => {
+    const white = Math.random() * 2 - 1;
+    lp += (white - lp) * 0.3;
+    const env = Math.min(1, t / 0.03) * Math.exp(-t / 0.5);
+    return (white - lp) * 0.7 * env * 0.5 + Math.sin(TAU * 70 * t) * Math.exp(-t / 0.05) * 0.4;
+  });
+}
+
 export function addStreetSounds(ctx: BaseAudioContext, m: Map<string, AudioBuffer>): void {
   m.set('horn', horn(ctx));
   m.set('vendorCall', vendorCall(ctx));
   m.set('bell', bell(ctx));
+  m.set('rain', rainLoop(ctx));
+  m.set('thunder', thunder(ctx));
+  m.set('splash', splash(ctx));
+  m.set('airBrake', airBrake(ctx));
 }

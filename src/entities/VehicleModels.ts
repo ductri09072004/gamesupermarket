@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { getVariant, type VehicleVariant } from '../config/fleet';
 import type { VehicleType } from '../config/vehicles';
 import { BOX_D, BOX_H, BOX_W } from './Box';
 import { cityModel } from '../world/CityModels';
@@ -152,7 +153,26 @@ export function findWheels(root: THREE.Object3D): THREE.Object3D[] {
   return out;
 }
 
-export function buildVehicleModel(type: VehicleType): VehicleModel {
+/** Xe kiểu cổ từ model thành phố: thân xe + lưới chỗ xếp thùng theo cấu hình; xe máy nghiêng cả thân khi vào cua. */
+function glbVehicle(type: VehicleType, k: VehicleVariant, src: THREE.Group): VehicleModel {
+  const g = new THREE.Group();
+  const body = src.clone(true);
+  if (k.flip) body.rotation.y = Math.PI;
+  body.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+  const lean = type === 'moto' ? new THREE.Group() : null;
+  (lean ?? g).add(body);
+  if (lean) g.add(lean);
+  const { cols, rows, layers, y, z } = k.cargo;
+  const x0 = -((cols - 1) * (BOX_W + 0.03)) / 2;
+  const wheels = findWheels(body);
+  const r = wheels.length ? new THREE.Box3().setFromObject(wheels[0]).getSize(new THREE.Vector3()).y / 2 : 0.33;
+  return { group: g, wheels, wheelRadius: r, slots: slotGrid(cols, rows, layers, x0, y, z, 0.03, 0.04), lean, headlights: [] };
+}
+
+export function buildVehicleModel(type: VehicleType, variant?: string): VehicleModel {
+  const k = getVariant(type, variant);
+  const glb = k ? cityModel(k.model) : null;
+  if (k && glb) return glbVehicle(type, k, glb);
   const custom = cityModel(`vehicle_${type}`);
   if (custom) {
     const g = new THREE.Group();

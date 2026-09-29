@@ -24,7 +24,7 @@ export const CAR_IMPACT = {
   restitution: 0.28,
   friction: 0.35,
   /** Khối lượng (kg) theo loại */
-  mass: { moto: 180, car: 1250, pickup: 1900, traffic: 1300, truck: 6500 },
+  mass: { moto: 180, car: 1250, pickup: 1900, traffic: 1300, truck: 6500, bus: 9000 },
   /** Lực bám lốp dập tắt trượt ngang / xoay sau va chạm (1/s) */
   slipGrip: 3.2,
   spinDamping: 2.6,

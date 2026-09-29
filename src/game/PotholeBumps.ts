@@ -45,7 +45,7 @@ export class PotholeBumps {
       this.w.sound('thud', new THREE.Vector3(s.x, 0.2, s.z), 0.7 + Math.random() * 0.15);
       if (!this.rolled.has(i)) {
         this.rolled.add(i);
-        if (v.cargo.length && Math.random() < dropChance(s.speed, h.r, def.id)) this.dropBox(s, def, v);
+        if (v.cargo.length && Math.random() < dropChance(s.speed, h.r, def.id) * (this.w.s.weather.flood > 0.04 ? 1.4 : 1)) this.dropBox(s, def, v);
       }
     }
     this.inside = under;

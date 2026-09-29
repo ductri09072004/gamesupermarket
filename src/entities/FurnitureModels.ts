@@ -8,6 +8,7 @@ import { mergedModel } from './MergeStatic';
 import { buildSelfCheckout } from './SelfCheckoutModel';
 import { buildLamp } from './LampModels';
 import { buildAltar } from './AltarModel';
+import { retroCooler } from './RetroCoolers';
 
 const box = new THREE.BoxGeometry(1, 1, 1);
 const mats = new Map<string, THREE.Material>();
@@ -132,6 +133,8 @@ export function buildFurnitureModel(def: FurnitureDef): { group: THREE.Group; sc
     else if (def.storage === 'clothing') clothingRack(def, g);
     else if (def.storage === 'electronics') electronicsCase(def, g);
     else {
+      const cooler = retroCooler(def);
+      if (cooler) return { group: cooler };
       const build = def.storage === 'fridge' ? fridge : def.storage === 'freezer' ? freezer : gondola;
       return { group: mergedModel(def.id, () => {
         const m = new THREE.Group();

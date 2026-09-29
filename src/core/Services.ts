@@ -7,6 +7,7 @@ import { PathCache } from '../world/Pathfinding';
 import { footprintCells } from '../world/Footprint';
 import { getFurniture, isPassable } from '../config/furniture';
 import { TimeSystem } from '../systems/TimeSystem';
+import { CLEAR, type WeatherNow } from '../systems/WeatherSystem';
 import { EconomySystem } from '../systems/EconomySystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { InventorySystem } from '../systems/InventorySystem';
@@ -40,6 +41,10 @@ export class Services {
   readonly saves = new SaveSystem();
   /** Số khách hiện có trong cửa hàng (do CustomerManager cập nhật). */
   customerCount = 0;
+  /** Thời tiết hiện tại (Weather 3D cập nhật mỗi khung) — hệ thống khác chỉ đọc */
+  weather: WeatherNow = { ...CLEAR };
+  /** Có gánh hàng rong đang đi ngang trước cửa hàng (Pedestrians cập nhật) */
+  walkingVendorNear = false;
 
   constructor(data: SaveData) {
     this.state = new GameState(data);

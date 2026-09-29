@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BUILDINGS, BUILDING_TEXTURES, isVnHouse, SCOOTER_FILTERS, VN_PASTELS } from '../config/city';
+import { BIKE_MODELS } from '../config/fleet';
 import { buildingAtlas, cityModel } from './CityModels';
 import type { Placement } from './CityLayout';
 
@@ -17,7 +18,7 @@ const variantMats = new Map<string, THREE.Material>();
  * Xe máy: texture gốc qua bộ lọc canvas (xoay tông màu) → nhiều màu xe từ 1 model.
  * Model gốc tự phát sáng bằng chính texture (emissiveMap, cường độ 1) → trông như không ăn đèn: hạ còn 0.15.
  */
-function scooterMaterial(base: THREE.Material, variant: number): THREE.Material {
+export function scooterMaterial(base: THREE.Material, variant: number): THREE.Material {
   const filter = SCOOTER_FILTERS[variant % SCOOTER_FILTERS.length];
   const key = `scooter:${base.uuid}:${variant}`;
   let m = variantMats.get(key);
@@ -27,12 +28,14 @@ function scooterMaterial(base: THREE.Material, variant: number): THREE.Material 
   const src = mat.map;
   const img = src?.image as CanvasImageSource & { width: number; height: number } | undefined;
   if (filter !== 'none' && src && img?.width) {
+    // xe đậu nhỏ trên màn hình: bản nhuộm màu chỉ cần ≤256px (nhuộm bằng filter canvas khá tốn)
+    const k = Math.min(1, 256 / Math.max(img.width, img.height));
     const c = document.createElement('canvas');
-    c.width = img.width;
-    c.height = img.height;
+    c.width = Math.max(1, Math.round(img.width * k));
+    c.height = Math.max(1, Math.round(img.height * k));
     const g = c.getContext('2d')!;
     g.filter = filter;
-    g.drawImage(img, 0, 0);
+    g.drawImage(img, 0, 0, c.width, c.height);
     const tex = new THREE.CanvasTexture(c);
     tex.flipY = src.flipY;
     tex.colorSpace = src.colorSpace;
@@ -118,7 +121,8 @@ export function buildCityInstances(placements: Placement[], group: THREE.Group):
   }
   for (const list of byKey.values()) {
     const first = list[0];
-    const scene = cityModel(first.model);
+    // xe máy đậu vỉa hè: mỗi biến thể là 1 kiểu xe cổ khác nhau (Vespa đỏ/trắng, Yamaha, Lambretta) × màu
+    const scene = first.model === 'vn_scooter' ? (cityModel(BIKE_MODELS[first.variant % BIKE_MODELS.length].model) ?? cityModel('vn_scooter')) : cityModel(first.model);
     if (!scene) {
       for (const p of list) {
         const f = fallback(p);

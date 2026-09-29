@@ -1,10 +1,11 @@
+import { RUSH_HOURS } from '../config/traffic';
 import type { SoundName } from '../core/EventBus';
 import type { StallArea } from '../world/CityStreetLife';
 
 type Emit = (e: { name: SoundName; pos?: { x: number; y: number; z: number }; pitch?: number; volume?: number }) => void;
 
 /** Giờ cao điểm: còi xe dày hơn */
-const RUSH = [[7, 9], [17, 19.5]];
+const RUSH = RUSH_HOURS;
 
 /**
  * Âm thanh phố: còi xe máy "tít tít" từ xe đang chạy gần người nghe (giờ cao điểm dày hơn),

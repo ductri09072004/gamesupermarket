@@ -20,6 +20,7 @@ export class Hud {
   private moneyEl: HTMLElement;
   private dayEl: HTMLElement;
   private clockEl: HTMLElement;
+  private weatherEl: HTMLElement;
   private lvlEl: HTMLElement;
   private xpBar: HTMLElement;
   private stars: HTMLElement;
@@ -39,6 +40,7 @@ export class Hud {
     this.moneyEl = h('div', { class: 'hud-money', text: money(d.money) });
     this.dayEl = h('span', { class: 'hud-day' });
     this.clockEl = h('span', { class: 'hud-clock' });
+    this.weatherEl = h('span', { class: 'hud-weather', text: '☀️', title: 'Thời tiết' });
     this.lvlEl = h('span', { class: 'hud-level' });
     this.xpBar = h('div', { class: 'xp-fill' });
     this.stars = h('div', { class: 'hud-stars' });
@@ -54,7 +56,7 @@ export class Hud {
     this.root = h('div', { class: 'hud' }, [
       h('div', { class: 'hud-card' }, [this.moneyEl, h('div', { class: 'hud-sub' }, [this.custEl, this.storeEl])]),
       h('div', { class: 'hud-card' }, [
-        h('div', { class: 'hud-row' }, [this.dayEl, this.clockEl]),
+        h('div', { class: 'hud-row' }, [this.dayEl, this.clockEl, this.weatherEl]),
         h('div', { class: 'hud-row' }, this.speedBtns),
       ]),
       h('div', { class: 'hud-card' }, [
@@ -86,6 +88,10 @@ export class Hud {
       bus.on('day:canEnd', ({ canEnd }) => { this.endBtn.style.display = canEnd ? 'block' : 'none'; }),
       bus.on('customer:count', ({ count }) => { this.custEl.textContent = `👥 ${count}`; }),
       bus.on('settings:changed', () => this.renderAudio()),
+      bus.on('weather:changed', ({ icon, rain, flood }) => {
+        this.weatherEl.textContent = icon;
+        this.weatherEl.title = flood > 0.03 ? 'Đường ngập' : rain > 0.05 ? 'Trời mưa' : 'Thời tiết';
+      }),
       bus.on('day:started', () => { this.renderTime(); this.endBtn.style.display = 'none'; }),
     );
     this.renderTime();

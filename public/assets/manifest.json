@@ -4,7 +4,10 @@
     "furniture/shelf_small.glb",
     "furniture/shelf_large.glb",
     "furniture/computer.glb",
-    "furniture/trash.glb"
+    "furniture/trash.glb",
+    "furniture/shelf_pantry.glb",
+    "furniture/shelf_ladder.glb",
+    "furniture/shelf_hutch.glb"
   ],
   "hdri": "hdri/brown_photostudio_02_1k.hdr",
   "textures": {
@@ -68,6 +71,56 @@
         "diff": "textures/wood/oak_veneer_01_1k_diff.jpg",
         "nor_gl": "textures/wood/oak_veneer_01_1k_nor_gl.jpg",
         "rough": "textures/wood/oak_veneer_01_1k_rough.jpg"
+      }
+    },
+    "floor_tile": {
+      "id": "Tiles139",
+      "maps": {
+        "diff": "textures/floor_tile/tiles139_1k_diff.jpg",
+        "nor_gl": "textures/floor_tile/tiles139_1k_nor_gl.jpg",
+        "rough": "textures/floor_tile/tiles139_1k_rough.jpg"
+      }
+    },
+    "floor_check": {
+      "id": "Tiles074",
+      "maps": {
+        "diff": "textures/floor_check/tiles074_1k_diff.jpg",
+        "nor_gl": "textures/floor_check/tiles074_1k_nor_gl.jpg",
+        "rough": "textures/floor_check/tiles074_1k_rough.jpg"
+      }
+    },
+    "wall_tile": {
+      "id": "Tiles133A",
+      "maps": {
+        "diff": "textures/wall_tile/tiles133a_1k_diff.jpg",
+        "nor_gl": "textures/wall_tile/tiles133a_1k_nor_gl.jpg",
+        "rough": "textures/wall_tile/tiles133a_1k_rough.jpg",
+        "ao": "textures/wall_tile/tiles133a_1k_ao.jpg"
+      }
+    },
+    "wall_paint": {
+      "id": "PaintedPlaster017",
+      "maps": {
+        "diff": "textures/wall_paint/paintedplaster017_1k_diff.jpg",
+        "nor_gl": "textures/wall_paint/paintedplaster017_1k_nor_gl.jpg",
+        "rough": "textures/wall_paint/paintedplaster017_1k_rough.jpg"
+      }
+    },
+    "ceiling": {
+      "id": "OfficeCeiling001",
+      "maps": {
+        "diff": "textures/ceiling/officeceiling001_1k_diff.jpg",
+        "nor_gl": "textures/ceiling/officeceiling001_1k_nor_gl.jpg",
+        "rough": "textures/ceiling/officeceiling001_1k_rough.jpg",
+        "ao": "textures/ceiling/officeceiling001_1k_ao.jpg"
+      }
+    },
+    "shutter": {
+      "id": "painted_metal_shutter",
+      "maps": {
+        "diff": "textures/shutter/painted_metal_shutter_1k_diff.jpg",
+        "nor_gl": "textures/shutter/painted_metal_shutter_1k_nor_gl.jpg",
+        "rough": "textures/shutter/painted_metal_shutter_1k_rough.jpg"
       }
     }
   },
@@ -147,7 +200,31 @@
     "city/vn_hammock.glb",
     "city/vn_lanterns.glb",
     "city/vn_ac_unit.glb",
-    "city/vn_altar.glb"
+    "city/vn_altar.glb",
+    "city/vn_bus.glb",
+    "city/vn_non_la.glb",
+    "city/truck_gaz66.glb",
+    "city/truck_supply.glb",
+    "city/truck_zil131.glb",
+    "city/jeep_uaz469.glb",
+    "city/pickup_peugeot404.glb",
+    "city/moto_vespa_red.glb",
+    "city/moto_vespa_white.glb",
+    "city/moto_yamaha.glb",
+    "city/moto_lambretta.glb",
+    "city/car_volga_low.glb",
+    "city/car_volga.glb",
+    "city/car_willys.glb",
+    "city/car_willys_low.glb",
+    "city/car_c10.glb",
+    "city/car_cadillac.glb",
+    "city/sign_tin_coca.glb",
+    "city/sign_tin_pepsi.glb",
+    "city/sign_vbox.glb",
+    "city/sign_blade.glb",
+    "city/sign_iron.glb",
+    "city/awning_cloth.glb",
+    "city/awning_tin.glb"
   ],
   "cityTextures": [
     "textures/buildings/Texture_Blue.png",
@@ -171,6 +248,43 @@
     "props/security_camera.glb",
     "props/bucket.glb",
     "props/houseplant.glb",
-    "props/truck.glb"
+    "props/truck.glb",
+    "props/in_mam_ngu_qua.glb",
+    "props/in_banh_chung.glb",
+    "props/in_flag_flat.glb",
+    "props/in_flag_wavy.glb",
+    "props/in_mooncake.glb",
+    "props/in_dalat_milk.glb",
+    "props/in_lantern_red.glb",
+    "props/in_lucky_cat.glb",
+    "props/in_incense.glb",
+    "props/in_lottery.glb",
+    "props/in_helmet.glb",
+    "props/in_stool_plant.glb",
+    "props/in_wall_clock.glb",
+    "props/in_ceiling_fan.glb",
+    "props/in_wall_ac.glb",
+    "props/in_meter_box.glb",
+    "props/in_cables.glb",
+    "props/in_exit_sign.glb",
+    "props/in_extinguisher.glb",
+    "props/in_basket.glb",
+    "props/in_wash_basin.glb",
+    "props/in_bucket.glb",
+    "props/in_bamboo_basket.glb",
+    "props/in_candy_jar.glb",
+    "props/in_beer_crate.glb",
+    "props/in_wood_boxes.glb",
+    "props/in_foam_box.glb",
+    "props/in_thermos.glb",
+    "props/in_rice_cooker.glb",
+    "props/in_chalkboard.glb",
+    "props/in_neon_open.glb",
+    "props/in_wood_chair.glb",
+    "props/in_flip_flops.glb",
+    "props/in_table_fan.glb",
+    "props/in_kettle.glb",
+    "props/old_fridge_coke.glb",
+    "props/old_freezer_chest.glb"
   ]
 }

@@ -31,6 +31,9 @@ interface ShelfGeom {
   panel?: number;
   /** Treo hàng từ thanh ngang phía trên thay vì đặt trên mặt đỡ */
   hang?: boolean;
+  /** Ngăn nằm lệch/nông hơn thân kệ (kệ tủ cổ có tủ dưới nhô ra): z mép trước & chiều sâu tuyệt đối (m) */
+  z0?: number;
+  depth?: number;
 }
 
 const GEOM: Record<string, ShelfGeom> = {
@@ -44,12 +47,20 @@ const GEOM: Record<string, ShelfGeom> = {
   clothing: { side: 0.04, base: 0.3, top: 0.2, board: 0, inset: 0.04, hang: true },
   electronics: { side: 0.05, base: 0.5, top: 0.12, board: 0.012, inset: 0.05 },
   vending: { side: 0.05, base: 0.4, top: 0.2, board: 0.015, inset: 0.1, panel: 0.28 },
+  // kệ cổ dựng từ model: base = mặt ván tầng thấp nhất, tầng đều nhau; top âm = tầng trên cùng là mặt ván cao nhất (không có trần)
+  pantry: { side: 0.03, base: 0.281, top: -0.4375, board: 0, inset: 0.02 },
+  ladder: { side: 0.04, base: 0.738, top: -0.518, board: 0, inset: 0.03, z0: -0.23, depth: 0.43 },
+  // tủ mát Coca: ngăn nằm sau ô kính khoét (cao 0.27–1.31m); tủ đông nằm: đáy lòng tủ nâng lên 0.45m
+  coke: { side: 0.15, base: 0.3, top: 0.53, board: 0.012, inset: 0.1 },
+  chest: { side: 0.1, base: 0.45, top: 0.05, board: 0, inset: 0.06 },
+  hutch: { side: 0.125, base: 1.182, top: -0.117, board: 0, inset: 0.03, z0: 0.03, depth: 0.2 },
 };
 
 /** Món có thể lồng vào nhau khi treo/xếp (mũ lưỡi trai) → bước theo chiều sâu nhỏ hơn. */
 const NEST: Partial<Record<string, number>> = { cap: 0.28 };
 
 export function shelfGeom(def: FurnitureDef): ShelfGeom {
+  if (def.geom) return GEOM[def.geom];
   if (def.kind === 'rack') return GEOM.rack;
   if (def.vending) return GEOM.vending;
   return GEOM[def.storage ?? 'shelf'];
@@ -76,8 +87,8 @@ export function slotBox(def: FurnitureDef, index: number): SlotBox {
     width: cw,
     y,
     height: spacing - g.board - 0.02,
-    zFront: -def.size.d / 2 + g.inset,
-    depth: def.size.d - g.inset * 2,
+    zFront: g.z0 ?? -def.size.d / 2 + g.inset,
+    depth: g.depth ?? def.size.d - g.inset * 2,
   };
 }
 

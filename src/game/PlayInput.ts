@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { FEEL } from '../config/feel';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
-import { getVehicle } from '../config/vehicles';
+import { vehicleDef } from '../config/vehicles';
 import { cargoUsed } from '../systems/VehicleSystem';
 import type { World } from './World';
 import { altarHint, lightIncense } from './Altar';
@@ -242,7 +242,7 @@ export class PlayInput {
       case 'vehicle': {
         const v = t.uid ? w.s.vehicles.get(t.uid) : undefined;
         if (!v) break;
-        const def = getVehicle(v.type);
+        const def = vehicleDef(v);
         const load = `${cargoUsed(v, w.s.data.boxes)}/${def.capacity} ${def.countBySize ? 'suất' : 'thùng'}`;
         out.push(held ? `${CLICK} Chất thùng lên ${def.name} (${load})` : `${CLICK} Lái ${def.name}`);
         if (!held && v.cargo.length) out.push(`<kbd>G</kbd> Dỡ 1 thùng (${load})`);

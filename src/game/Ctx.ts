@@ -41,5 +41,5 @@ export interface GameCtx {
   physics: BoxPhysics;
   mode: Mode;
   toast(message: string, kind?: 'info' | 'error' | 'success'): void;
-  sound(name: SoundName, pos?: THREE.Vector3, pitch?: number): void;
+  sound(name: SoundName, pos?: THREE.Vector3, pitch?: number, volume?: number): void;
 }

@@ -1,3 +1,5 @@
+import { getVariant } from './fleet';
+
 /** Xe của người chơi. Đơn vị: m, m/s, giây. Sức chở tính theo "suất": thùng thường 1, thùng cồng kềnh 2. */
 export type VehicleType = 'moto' | 'car' | 'pickup';
 
@@ -42,6 +44,13 @@ export const VEHICLES: VehicleDef[] = [
     camDist: 7.2, camHeight: 3, description: 'Thùng sau rộng: 20 suất chở. Hợp để gom hàng sỉ số lượng lớn.',
   },
 ];
+
+/** Thông số của một xe cụ thể: theo loại, đè kích thước / tên / mô tả bằng kiểu xe (variant) đã chọn khi mua. */
+export function vehicleDef(v: { type: string; variant?: string }): VehicleDef {
+  const base = getVehicle(v.type);
+  const k = getVariant(v.type, v.variant);
+  return k ? { ...base, name: k.name, size: k.size, description: k.description } : base;
+}
 
 export function getVehicle(id: string): VehicleDef {
   const v = VEHICLES.find((x) => x.id === id);

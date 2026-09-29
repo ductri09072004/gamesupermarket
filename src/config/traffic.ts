@@ -28,3 +28,49 @@ export const PEDESTRIANS = {
   hideDist: 55,
   animDist: 25,
 };
+
+/** Giờ cao điểm: phố đông nghẹt xe máy, còi inh ỏi. */
+export const RUSH_HOURS: ReadonlyArray<readonly [number, number]> = [[7, 9], [17, 19.5]];
+
+/** Mật độ xe theo giờ (nhân với số xe tối đa): cao điểm chủ yếu là xe máy đông lên (ô tô chỉ nhỉnh hơn một chút). */
+export const TRAFFIC_DENSITY = { rush: { car: 1.15, moto: 1.6 }, night: 0.3, earlyMorning: 0.7 };
+
+/** Dòng xe máy: đông hơn ô tô, luồn sát lề đường, đi lắc lư. Đơn vị: m, m/s, giây. */
+export const MOTO_TRAFFIC = {
+  max: 24,
+  spawnEvery: 1.6,
+  speed: 8.5,
+  cornerSpeed: 5,
+  /** Cách tim đường (m) — sát lề hơn làn ô tô (2m) */
+  lane: 3.5,
+  cornerR: 4,
+  /** Nửa bề ngang / nửa chiều dài thân va chạm */
+  hw: 0.4,
+  hl: 0.95,
+  /** Lắc ngang so với làn (m) và chu kỳ (giây) */
+  wobble: 0.22,
+  wobbleS: [2.5, 6] as const,
+  /** Xác suất chở thêm 1 người ngồi sau */
+  pillionChance: 0.3,
+  scale: 1.3,
+};
+
+/** Xe buýt: theo lịch, dừng ở trạm trước cửa hàng, thả khách. */
+export const BUS = {
+  firstHour: 6.5,
+  lastHour: 21.5,
+  everyH: 1.25,
+  /** Xe xuất hiện cách trạm N m (đi từ xa tới) */
+  approachM: 95,
+  speed: 7.5,
+  /** Giảm tốc khi vào trạm (m/s²) */
+  decel: 1.8,
+  dwellS: 9,
+  /** Khách xuống xe mỗi chuyến [min, max]; giờ cao điểm cộng thêm rushExtra */
+  passengers: [1, 4] as const,
+  rushExtra: 2,
+  /** Xác suất mỗi hành khách ghé vào cửa hàng (nếu đang mở cửa) */
+  shopChance: 0.75,
+  hw: 1.32,
+  hl: 4.68,
+};

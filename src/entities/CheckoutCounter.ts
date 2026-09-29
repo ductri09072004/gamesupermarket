@@ -6,6 +6,7 @@ import { textCanvas } from '../products/LabelTexture';
 import { block, mat } from './FurnitureModels';
 import { plastic, powder, rblock, steel, wood } from './DisplayMaterials';
 import { mergedModel } from './MergeStatic';
+import { counterProps } from '../world/InteriorDecor';
 
 export interface CounterParts {
   group: THREE.Group;
@@ -95,6 +96,7 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   const { w, d, h } = def.size;
   const g = new THREE.Group();
   g.add(mergedModel(`counter:${def.id}`, () => counterShell(def)));
+  g.add(counterProps(w, d, h));
   // băng chuyền
   const beltTex = textCanvas(64, 64, (c) => {
     c.fillStyle = '#23262b';

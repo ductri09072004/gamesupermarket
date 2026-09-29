@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CEILING_HEIGHT, WALL_THICKNESS } from '../config/constants';
-import { textCanvas } from '../products/LabelTexture';
+import { signMaterial } from './SignFactory';
 
 /** Biển hiệu cửa hàng (đường, vỉa hè, nhà, cây, đèn đường nằm trong City). */
 export class Exterior {
@@ -9,27 +9,20 @@ export class Exterior {
 
   build(W: number, D: number): void {
     this.group.clear();
-    // biển hiệu cửa hàng trên mặt tiền
-    const signTex = textCanvas(1024, 160, (g) => {
-      g.fillStyle = '#1f7a6d';
-      g.fillRect(0, 0, 1024, 160);
-      g.fillStyle = '#ffffff';
-      g.font = '900 96px "Nunito", Arial, sans-serif';
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText('MINI MART', 512, 72);
-      g.font = '700 30px "Nunito", Arial, sans-serif';
-      g.fillStyle = '#ffd166';
-      g.fillText('MỞ CỬA 8:00 – 22:00', 512, 136);
+    // hộp đèn mica lồi khỏi mặt tiền: khung nhôm + mặt biển sáng, chữ MINI MART kèm dòng phụ
+    this.signMat = signMaterial({
+      text: 'MINI MART', sub: 'Hàng Việt chất lượng cao · Mở cửa 8:00 – 22:00', style: 'lightbox',
+      bg: '#1f7a6d', ink: '#1f7a6d', accent: '#e07a1f', w: 1024, h: 176, seed: 42, wear: 0.3,
     });
-    this.signMat = new THREE.MeshStandardMaterial({ map: signTex, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0.15 });
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.66), this.signMat);
-    sign.position.set(Math.min(W / 2, 6), (CEILING_HEIGHT + 2.45) / 2 + 0.05, D + WALL_THICKNESS + 0.01);
-    this.group.add(sign);
+    const frame = new THREE.MeshStandardMaterial({ color: 0x8b9199, roughness: 0.4, metalness: 0.7 });
+    const box = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.74, 0.16), [frame, frame, frame, frame, this.signMat, frame]);
+    box.position.set(Math.min(W / 2, 6), (CEILING_HEIGHT + 2.45) / 2 + 0.05, D + WALL_THICKNESS + 0.09);
+    box.castShadow = true;
+    this.group.add(box);
   }
 
   /** night: 0 (ngày) → 1 (đêm). */
   setNight(night: number): void {
-    if (this.signMat) this.signMat.emissiveIntensity = 0.15 + night * 1.4;
+    if (this.signMat) this.signMat.emissiveIntensity = 0.35 + night * 1.6;
   }
 }

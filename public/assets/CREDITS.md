@@ -19,6 +19,26 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `textures/floor/marble_01_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
 | `textures/floor/marble_01_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
 | `textures/floor/marble_01_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/marble_01 | CC0 |
+| `textures/floor_tile/tiles139_1k_diff.jpg` | ambientCG — https://ambientcg.com/a/Tiles139 | CC0 |
+| `textures/floor_tile/tiles139_1k_nor_gl.jpg` | ambientCG — https://ambientcg.com/a/Tiles139 | CC0 |
+| `textures/floor_tile/tiles139_1k_rough.jpg` | ambientCG — https://ambientcg.com/a/Tiles139 | CC0 |
+| `textures/floor_check/tiles074_1k_diff.jpg` | ambientCG — https://ambientcg.com/a/Tiles074 | CC0 |
+| `textures/floor_check/tiles074_1k_nor_gl.jpg` | ambientCG — https://ambientcg.com/a/Tiles074 | CC0 |
+| `textures/floor_check/tiles074_1k_rough.jpg` | ambientCG — https://ambientcg.com/a/Tiles074 | CC0 |
+| `textures/wall_tile/tiles133a_1k_diff.jpg` | ambientCG — https://ambientcg.com/a/Tiles133A | CC0 |
+| `textures/wall_tile/tiles133a_1k_nor_gl.jpg` | ambientCG — https://ambientcg.com/a/Tiles133A | CC0 |
+| `textures/wall_tile/tiles133a_1k_rough.jpg` | ambientCG — https://ambientcg.com/a/Tiles133A | CC0 |
+| `textures/wall_tile/tiles133a_1k_ao.jpg` | ambientCG — https://ambientcg.com/a/Tiles133A | CC0 |
+| `textures/ceiling/officeceiling001_1k_diff.jpg` | ambientCG — https://ambientcg.com/a/OfficeCeiling001 | CC0 |
+| `textures/ceiling/officeceiling001_1k_nor_gl.jpg` | ambientCG — https://ambientcg.com/a/OfficeCeiling001 | CC0 |
+| `textures/ceiling/officeceiling001_1k_rough.jpg` | ambientCG — https://ambientcg.com/a/OfficeCeiling001 | CC0 |
+| `textures/ceiling/officeceiling001_1k_ao.jpg` | ambientCG — https://ambientcg.com/a/OfficeCeiling001 | CC0 |
+| `textures/shutter/painted_metal_shutter_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/painted_metal_shutter | CC0 |
+| `textures/shutter/painted_metal_shutter_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/painted_metal_shutter | CC0 |
+| `textures/shutter/painted_metal_shutter_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/painted_metal_shutter | CC0 |
+| `textures/wall_paint/paintedplaster017_1k_diff.jpg` | ambientCG — https://ambientcg.com/a/PaintedPlaster017 | CC0 |
+| `textures/wall_paint/paintedplaster017_1k_nor_gl.jpg` | ambientCG — https://ambientcg.com/a/PaintedPlaster017 | CC0 |
+| `textures/wall_paint/paintedplaster017_1k_rough.jpg` | ambientCG — https://ambientcg.com/a/PaintedPlaster017 | CC0 |
 | `textures/asphalt/asphalt_02_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
 | `textures/asphalt/asphalt_02_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
 | `textures/asphalt/asphalt_02_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/asphalt_02 | CC0 |
@@ -130,3 +150,67 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `models/city/vn_non_la.glb` | Vietnamese _ Non La | NNgan | https://sketchfab.com/3d-models/abd86436d03344b9a40c82e127fb6252 | CC BY 4.0 |
 | `models/city/vn_clothesline.glb` | Laundry Clothesline | ngdkh | https://sketchfab.com/3d-models/6f13cc3c463f43888fb5db634cc603aa | CC BY 4.0 |
 | `models/city/vn_altar.glb` | Vietnamese altar | ngdkh | https://sketchfab.com/3d-models/5d65b1d0919c4394808727f461773c11 | CC BY 4.0 |
+| `models/props/in_mam_ngu_qua.glb` | Mâm Ngũ Quả Lowpoly _ The 5-Fruit-Offerings | th.fool_ | https://sketchfab.com/3d-models/95fd8ab13d1746839e70178abb4c1d76 | CC BY 4.0 |
+| `models/props/in_banh_chung.glb` | TWD TN 05 Banh Chung Bo Dau | SEAP VR | https://sketchfab.com/3d-models/650d4f51ced54f7787c88a40c3cd375b | CC BY 4.0 |
+| `models/props/in_flag_flat.glb` | Vietnam's Flag | TrungProex10 | https://sketchfab.com/3d-models/8d91e98db8c44699b8dd479797158e98 | CC BY 4.0 |
+| `models/props/in_flag_wavy.glb` | Vietnam Flag | Where123 | https://sketchfab.com/3d-models/55edbce2f58a43b5b382191ea76ae91d | CC BY 4.0 |
+| `models/props/in_mooncake.glb` | Mooncake in VietNam | Vie Dinh | https://sketchfab.com/3d-models/4005dcca659f42f3a13f319aa86c077b | CC BY 4.0 |
+| `models/props/in_dalat_milk.glb` | Dalat Milk Carton 110ml - Low Poly Milk Box | Vlaxled | https://sketchfab.com/3d-models/1da072fd79e44d8cbc4453178b05ba4b | CC BY 4.0 |
+| `models/props/in_lantern_red.glb` | Chinese Paper Lantern / Red | ItsKevin | https://sketchfab.com/3d-models/927615b30e8f4a2993353ed0dd588c68 | CC BY 4.0 |
+| `models/props/in_lucky_cat.glb` | Lucky cat with animation cute maneki neko | Noth+ Studio | https://sketchfab.com/3d-models/23219ed332694bcd9ba8236b44f3e099 | CC BY 4.0 |
+| `models/props/in_incense.glb` | Incense Burner | Sophie | https://sketchfab.com/3d-models/b52925a8b4bd4307a8bf34bca26dd0e7 | CC BY 4.0 |
+| `models/props/in_lottery.glb` | Lottery tickets and receipt | Sousinho | https://sketchfab.com/3d-models/b6c5a515abb044819b97efcaad5ab624 | CC BY 4.0 |
+| `models/props/in_helmet.glb` | motorcycle helmet classic | zeleniy89 | https://sketchfab.com/3d-models/a4d4ef2f17c843828cf24d538a9edbd3 | CC BY 4.0 |
+| `models/props/in_stool_plant.glb` | Stool Flower Pot | minhnguyenle0712 | https://sketchfab.com/3d-models/d4ea560f813d45de98b863268463b1e7 | CC BY 4.0 |
+| `models/props/in_wall_clock.glb` | Wall Clock | FelipeMSX | https://sketchfab.com/3d-models/2e964ac0242e4b1789adfd9549c653dc | CC BY 4.0 |
+| `models/props/in_ceiling_fan.glb` | Simple Ceiling Fan | Blender3D | https://sketchfab.com/3d-models/226e34b1a7b3470cb0ba095af68af90c | CC BY 4.0 |
+| `models/props/in_wall_ac.glb` | Indoor air conditioner unit | Rylae Shylna | https://sketchfab.com/3d-models/d93c5557a9ba46afbb00e35f48343077 | CC BY 4.0 |
+| `models/props/in_meter_box.glb` | Electric Meter with fuse boxes | BarrySArt | https://sketchfab.com/3d-models/33c41e0176cd41d8bbc40185683ee441 | CC BY 4.0 |
+| `models/props/in_cables.glb` | Tangled/Twisted Cables 4 | PolyDavid | https://sketchfab.com/3d-models/639a84e240ed4c3abae5a2e5cb2bfc74 | CC BY 4.0 |
+| `models/props/in_exit_sign.glb` | Exit Sign | tboiston | https://sketchfab.com/3d-models/46b52e08b8b64b81ad9ff5fb752bcc06 | CC BY 4.0 |
+| `models/props/in_extinguisher.glb` | Fire Extinguisher | Loïc | https://sketchfab.com/3d-models/5676b179b3b744c0aaae53a3dcea2300 | CC BY 4.0 |
+| `models/props/in_basket.glb` | Supermarket Basket | cicinha | https://sketchfab.com/3d-models/6d97495a017b4b24872a5bb6ce9f7208 | CC BY 4.0 |
+| `models/props/in_wash_basin.glb` | CC0 - Plastic Wash Basin | plaggy | https://sketchfab.com/3d-models/37c1b342258648029e65936b79f6269f | CC BY 4.0 |
+| `models/props/in_bucket.glb` | CC0 - Bucket 3 | plaggy | https://sketchfab.com/3d-models/cb484683659d465796ed5af8664cf58f | CC BY 4.0 |
+| `models/props/in_bamboo_basket.glb` | Bamboo_Basket | KOREA HERITAGE SERVICE [KHS] | https://sketchfab.com/3d-models/6c7e1244d46c457fb6f3d6194663073b | CC BY 4.0 |
+| `models/props/in_candy_jar.glb` | Candy Jar | yeeyeeman | https://sketchfab.com/3d-models/1e5534d5bd2d4e60ba18201b895c2704 | CC BY 4.0 |
+| `models/props/in_beer_crate.glb` | Dirty Beer Plastic Crate | Mouch | https://sketchfab.com/3d-models/24329e92a51b41f690fe4bfbd510c9f3 | CC BY 4.0 |
+| `models/props/in_wood_boxes.glb` | Wooden Boxes | MaX3Dd | https://sketchfab.com/3d-models/ddecbe4586594bddb4822a90c0cba222 | CC BY 4.0 |
+| `models/props/in_foam_box.glb` | styrofoam box | tamminh | https://sketchfab.com/3d-models/b7cf5fa80798404a955ade77bce716b1 | CC BY 4.0 |
+| `models/props/in_thermos.glb` | Thermos | Toonz Media Group | https://sketchfab.com/3d-models/db12f86eea324db298416aeedc7c8ef8 | CC BY 4.0 |
+| `models/props/in_rice_cooker.glb` | Rice Cooker (Low Poly) | game_travel | https://sketchfab.com/3d-models/d56b6096305541ae91b3d45a971088ae | CC BY 4.0 |
+| `models/props/in_chalkboard.glb` | Chalkboard menu stand | sdonyxz | https://sketchfab.com/3d-models/3f0da232c28d4825a5037f82a7ba6aee | CC BY 4.0 |
+| `models/props/in_neon_open.glb` | CC0 - Neon Sign Open | plaggy | https://sketchfab.com/3d-models/9a924db296cf4a1eb12991702ab48da5 | CC BY 4.0 |
+| `models/props/in_wood_chair.glb` | Old Wooden Chair | MaX3Dd | https://sketchfab.com/3d-models/3f95ffdc194047ada2d9391828a5d234 | CC BY 4.0 |
+| `models/props/in_flip_flops.glb` | Model flip flops | L7 | https://sketchfab.com/3d-models/592dc1ff663d481a85d1ae85d29af5c0 | CC BY 4.0 |
+| `models/props/in_table_fan.glb` | Table Fan | May | https://sketchfab.com/3d-models/ccb9165d0602489599b5bbbf24ce4c5d | CC BY 4.0 |
+| `models/props/in_kettle.glb` | Electric Kettle | Andrew.Mischenko | https://sketchfab.com/3d-models/d3258646c9884e66a77aab21049af932 | CC BY 4.0 |
+| `models/furniture/shelf_pantry.glb` | Pantry_Shelf | KOREA HERITAGE SERVICE [KHS] | https://sketchfab.com/3d-models/1a8f4af2daf84d42bc2ccb65a9d90eec | CC BY 4.0 |
+| `models/furniture/shelf_hutch.glb` | Mid-Poly Weathered Bookshelf | ch33s3 | https://sketchfab.com/3d-models/6cb93339af5f44e4b36dcf979c8afe31 | CC BY 4.0 |
+| `models/furniture/shelf_ladder.glb` | Old Wooden Storage Shelf | MaX3Dd | https://sketchfab.com/3d-models/eb3dfe43ab884c4fb878db2d97eeea7f | CC BY 4.0 |
+| `models/props/old_fridge_coke.glb` | Eelislay`s Retro Coca Cola Fridge | @sanyabeast | https://sketchfab.com/3d-models/03d5d9552c884d1795cc810f835bd2fe | CC BY 4.0 |
+| `models/props/old_freezer_chest.glb` | FRIDGADAIRE CHEST FREEZER | Solis | https://sketchfab.com/3d-models/3ef76426815844fe80cbcfc1b89962f0 | CC BY 4.0 |
+| `models/city/truck_gaz66.glb` | GAZ-66 Offroad Truck | Yo.Ri | https://sketchfab.com/3d-models/1cc3374ed6874124991c8058ec79c3d3 | CC BY 4.0 |
+| `models/city/truck_supply.glb` | Soviet Supply Truck | Allen508 | https://sketchfab.com/3d-models/1eabdf618eca427f9b97b839ffc0315e | CC BY 4.0 |
+| `models/city/truck_zil131.glb` | Broken Zil 131 3D model | Dzikus | https://sketchfab.com/3d-models/4af3e43c916a4011b3b7e8a8ad897800 | CC BY 4.0 |
+| `models/city/jeep_uaz469.glb` | Military Uaz 469 car 3D model | Dzikus | https://sketchfab.com/3d-models/17f7fa53c9744a33983695f746ad4af8 | CC BY 4.0 |
+| `models/city/pickup_peugeot404.glb` | Peugeot 404 Pick-up ( bâché ) | Mohamed Fsili | https://sketchfab.com/3d-models/5d071f00d81743a09b9c81deac98c76f | CC BY 4.0 |
+| `models/city/moto_vespa_red.glb` | Old Scooter | Nadia Ribitis | https://sketchfab.com/3d-models/5e9b5072b2224ba982366490ad5f31d9 | CC BY 4.0 |
+| `models/city/moto_vespa_white.glb` | Vespa | victorberdugo1 | https://sketchfab.com/3d-models/cc57eaef930e4de897ded51e7b87c3eb | CC BY 4.0 |
+| `models/city/moto_yamaha.glb` | Yamaha Sports650 XS1 1970 | freeReef | https://sketchfab.com/3d-models/a72bb4dc5bd2484d88b3a7fdaeaaa8c8 | CC BY 4.0 |
+| `models/city/moto_lambretta.glb` | Lambretta | Antonio_Adams | https://sketchfab.com/3d-models/6804cbb838c54f43b193aafb0069ea77 | CC BY 4.0 |
+| `models/city/car_volga_low.glb` | Gaz-21 Volga Low Poly | Jorma Rysky | https://sketchfab.com/3d-models/7a6020fd2aed45b087d86705ba65c3b9 | CC BY 4.0 |
+| `models/city/car_volga.glb` | Game-ready asset "GAZ 21 Volga" | Daniel_Bakunin | https://sketchfab.com/3d-models/12c336887d8d4abd908a464fc656cdfd | CC BY 4.0 |
+| `models/city/car_willys.glb` | Jeep Willys | Willy Decarpentrie | https://sketchfab.com/3d-models/a28600c16b9e44bcb160ede0d199180d | CC BY 4.0 |
+| `models/city/car_willys_low.glb` | Willys Jeep Low Poly | InnocentBaraka | https://sketchfab.com/3d-models/57ab28eb0f21472ead1f5dadf4e73a27 | CC BY 4.0 |
+| `models/city/car_c10.glb` | Low Poly Car - Chevrolet C10 Pickup 1963 | ROH3D | https://sketchfab.com/3d-models/679354c151984747bb74310ec5af8995 | CC BY 4.0 |
+| `models/city/car_cadillac.glb` | Low Poly Car - Cadillac 75 Sedan 1953 | ROH3D | https://sketchfab.com/3d-models/2935f8faa5f64ce4a3bd65af0f925c21 | CC BY 4.0 |
+| `models/city/sign_tin_coca.glb` | Coca Cola Sign - Rotten | PolyDavid | https://sketchfab.com/3d-models/55fc1d4f606c4002bf2d5b39a25c4d48 | CC BY 4.0 |
+| `models/city/sign_tin_pepsi.glb` | Pepsi Cola Sign - Rotten | PolyDavid | https://sketchfab.com/3d-models/3937a3eda80248a798c2dc5400974f3a | CC BY 4.0 |
+| `models/city/sign_vbox.glb` | Japanese shop sign | nkei | https://sketchfab.com/3d-models/7daa3004946d45de891a1d0329844fd7 | CC BY 4.0 |
+| `models/city/awning_cloth.glb` | CC0 - Awning | plaggy | https://sketchfab.com/3d-models/47e5fd8a6b194b48aad20425869d15ba | CC BY 4.0 |
+| `models/city/awning_tin.glb` | Shop Awning | Nodeaxis Interactive | https://sketchfab.com/3d-models/e8720eef53cc4202a44657e28dfbda96 | CC BY 4.0 |
+| `models/city/sign_blade.glb` | Signboard | ALICE3000 | https://sketchfab.com/3d-models/c2159475b0bb485aa9ec2c0e7efcf4ec | CC BY 4.0 |
+| `models/city/sign_iron.glb` | Simple Store Sign | Blender3D | https://sketchfab.com/3d-models/9809daf35d80441f91e134496936d162 | CC BY 4.0 |
+| `textures/signs/wear_a.png`, `wear_b.png`, `streak.png` | ambientCG — PaintedMetal006 / PaintedMetal013 / Rust009 (tách kênh alpha, làm vết tróc sơn & vệt nước) | CC0 |
+| `fonts/*.woff2` | Google Fonts — Baloo 2, Alfa Slab One, Lobster, Be Vietnam Pro, Bungee, Patrick Hand (có bộ ký tự tiếng Việt) | SIL OFL 1.1 |

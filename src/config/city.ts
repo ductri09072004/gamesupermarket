@@ -1,3 +1,4 @@
+import { NPC_CAR_MODELS } from './fleet';
 /**
  * Thành phố quanh cửa hàng. Model Quaternius (CC0) trong public/assets/models/city, kích thước thật (m) đo sau khi
  * chuyển đổi: [rộng X, cao, sâu Z], mặt tiền quay +Z.
@@ -56,6 +57,21 @@ export const VENDOR_GOODS: Record<VendorShift, { goods: string[]; say: string }>
   evening: { goods: ['noodles', 'cupnoodle', 'dumplings'], say: '🍜 Ăn hủ tiếu gõ rồi, khỏi mua mì' },
   allday: { goods: ['coffee', 'milktea', 'tea'], say: '☕ Ghé cà phê võng rồi' },
 };
+/**
+ * Gánh hàng rong đi bộ (nón lá, đòn gánh): rao dọc vỉa hè các khối phố. Khi đi ngang trước cửa hàng (trong `nearDoor` m)
+ * khách có thể mua món trên gánh thay vì trong siêu thị. Nghỉ khi trời mưa.
+ */
+export const WALKING_VENDOR = {
+  count: 3,
+  speed: 0.85,
+  hours: [[6, 11], [15, 19.5]] as ReadonlyArray<readonly [number, number]>,
+  goods: ['candy', 'chips', 'springroll', 'icecream'],
+  say: '🧺 Mua của cô gánh hàng rong rồi',
+  nearDoor: 14,
+  /** Cách N giây (ngẫu nhiên [min, max]) lại dừng rao 1 tiếng */
+  callEvery: [9, 20] as readonly [number, number],
+  callPauseS: 1.6,
+};
 /** Xác suất khách bỏ món cho hàng rong; bán ≤ VENDOR_CHEAP × giá thị trường thì còn VENDOR_TAKE_CHEAP */
 export const VENDOR_TAKE = 0.35;
 export const VENDOR_TAKE_CHEAP = 0.12;
@@ -81,12 +97,26 @@ export const POLE = { seed: 424242, height: 8.5, spacing: 22, inset: 0.35, walk:
 /** Hư hỏng mặt đường: ổ gà / miếng vá / nắp cống trên mỗi 100m đường */
 export const ROAD_DAMAGE = { seed: 777, potholesPer100m: 10, patchesPer100m: 6, manholesPer100m: 2 };
 /** Biển hiệu các cửa hiệu hàng xóm */
+/** Dòng phụ & kiểu biển cho từng loại tiệm (bg/ink/accent là màu CSS) — xem world/SignFactory */
+export const SHOP_SIGNS: Record<string, { sub: string; style: 'lightbox' | 'enamel' | 'paint' | 'alu'; bg: string; ink: string; accent: string }> = {
+  'TIỆM BÁNH': { sub: 'Bánh mì · Bánh ngọt · Bánh kem', style: 'paint', bg: '#f6e3c4', ink: '#a3311f', accent: '#7a4a1f' },
+  'CÀ PHÊ': { sub: 'Cà phê phin · Trà đá · Sinh tố', style: 'paint', bg: '#3b2a20', ink: '#f4e3b8', accent: '#d9a441' },
+  'NHÀ THUỐC': { sub: 'Thuốc tây · Dụng cụ y tế', style: 'lightbox', bg: '#1f8a4c', ink: '#1f8a4c', accent: '#1f8a4c' },
+  'PHỞ 24H': { sub: 'Phở bò · Phở gà · Mở cả ngày', style: 'enamel', bg: '#b3261e', ink: '#ffe9a8', accent: '#fff4d6' },
+  'TIỆM HOA': { sub: 'Hoa tươi · Hoa cưới · Giao tận nơi', style: 'paint', bg: '#f3d6dc', ink: '#8a1f46', accent: '#2d6a3e' },
+  'SỬA XE': { sub: 'Vá vỏ · Thay nhớt · Rửa xe', style: 'enamel', bg: '#f0b323', ink: '#1c1c1c', accent: '#1c1c1c' },
+  'TẠP HOÁ': { sub: 'Bán sỉ & lẻ · Giá rẻ mỗi ngày', style: 'enamel', bg: '#1a5fa8', ink: '#ffffff', accent: '#ffd23f' },
+  'TIỆM TÓC': { sub: 'Cắt · Uốn · Nhuộm · Gội đầu', style: 'alu', bg: '#22303f', ink: '#f1f1ee', accent: '#e6b422' },
+  'TRÀ SỮA': { sub: 'Trà sữa · Trân châu · Trà trái cây', style: 'lightbox', bg: '#c2255c', ink: '#c2255c', accent: '#f08c00' },
+  'GIẶT ỦI': { sub: 'Giặt sấy · Ủi · Lấy liền', style: 'alu', bg: '#1a5276', ink: '#ffffff', accent: '#9bd3f0' },
+};
 export const SHOP_NAMES = ['TIỆM BÁNH', 'CÀ PHÊ', 'NHÀ THUỐC', 'PHỞ 24H', 'TIỆM HOA', 'SỬA XE', 'TẠP HOÁ', 'TIỆM TÓC', 'TRÀ SỮA', 'GIẶT ỦI'];
 /** Bảng màu (atlas 32×32) dùng chung cho mọi nhà — phối ngẫu nhiên để phố nhiều màu. */
 export const BUILDING_TEXTURES = ['Blue', 'Dark', 'DarkBlue', 'Green', 'Grey', 'Light', 'Light2', 'Red', 'Yellow'];
 export const TREES = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5', 'BirchTree_1'];
 export const BUSHES = ['Bush_1', 'Bush_2'];
-export const PARKED_CARS = ['NormalCar2', 'SUV', 'Taxi', 'NormalCar1'];
+/** Ô tô đỗ trong bãi & chạy ngoài phố: xe cổ (Volga, Willys, Cadillac…) — cùng bộ với xe người chơi có thể mua */
+export const PARKED_CARS = NPC_CAR_MODELS.map((v) => v.model);
 export const PROPS = ['Streetlight_Single', 'Streetlight_Double', 'TrafficLight', 'TrafficCone', 'Sign_Stop', 'Sign_NoParking'];
 
 export const ROAD_WIDTH = 8;

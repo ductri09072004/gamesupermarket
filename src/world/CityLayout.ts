@@ -8,6 +8,7 @@ import { fillEdge, infillBlocks, oppositeShops, ringEdges, sideShops } from './C
 import { streetLife, type StallArea } from './CityStreetLife';
 import { roadDamage, type RoadMark } from './RoadDamage';
 import { polePlan, type PoleSpot, type Wire } from './CityWires';
+import { LANE_OFFSET } from './CityRoutes';
 import { STREET_LIFE } from '../config/city';
 
 export interface Rect {
@@ -41,6 +42,12 @@ export interface Spot {
   yaw: number;
 }
 
+/** Trạm xe buýt trên vỉa hè cạnh cửa hàng: mái che (chiếm chỗ), điểm xe buýt đỗ (tâm xe) trên làn sát lề. */
+export interface BusStop {
+  shelter: Rect;
+  bay: { x: number; z: number };
+}
+
 export interface CityLayout {
   /** Mặt đường, không chồng nhau (đường dọc cắt ở giao lộ) */
   roads: Rect[];
@@ -62,6 +69,7 @@ export interface CityLayout {
   damage: RoadMark[];
   /** Cột điện & dây điện chằng chịt */
   wiring: { poles: PoleSpot[]; wires: Wire[] };
+  busStop: BusStop;
 }
 
 const HALF = ROAD_WIDTH / 2;
@@ -117,6 +125,10 @@ export function cityLayout(D: number, W = 12): CityLayout {
   const shed: Rect = { x0: 76, x1: 102, z0: F - walk - 26, z1: F - walk - 10 };
   const pad: Rect = { x0: 78, x1: 94, z0: F - walk - 8, z1: F - walk - 2 };
   const depot = { shed, pad, kiosk: { x: 96.5, z: pad.z0 + 3, yaw: 0 } };
+  // trạm xe buýt: bên phải mặt tiền cửa hàng, sát lề; xe đỗ trên làn ngoài cùng (đầu xe hướng -X) — cửa trước xe nằm ngoài mái che, hành khách xuống rồi đi về phía cửa hàng
+  const stopX = 32.6;
+  const busStop: BusStop = { shelter: { x0: stopX - 1.6, x1: stopX + 1.6, z0: F - 1.4, z1: F - 0.3 }, bay: { x: stopX, z: F + LANE_OFFSET } };
+  const busClear: Rect = { x0: busStop.shelter.x0 - 1.2, x1: busStop.shelter.x1 + 1.2, z0: F - walk, z1: F };
   const reserved: Rect[] = [
     // cửa hàng + kho phía sau (chừa lối sau 3m) và vỉa hè trước mặt tiền
     { x0: -0.6, x1: W + 0.6, z0: WAREHOUSE.z0 - 4, z1: F }, { x0: -14.5, x1: 35, z0: D + WALL_THICKNESS, z1: F },
@@ -150,7 +162,7 @@ export function cityLayout(D: number, W = 12): CityLayout {
 
   // cây & đèn dọc vỉa hè (sát lề đường), chừa giao lộ, lối vào bãi, trước cửa hàng
   const noTree: Rect[] = [{ x0: -4, x1: 30, z0: F - walk, z1: F }, { x0: lot.x0, x1: lot.x1, z0: F - walk, z1: F },
-    { x0: pad.x0 - 2, x1: pad.x1 + 2, z0: F - walk, z1: F }];
+    { x0: pad.x0 - 2, x1: pad.x1 + 2, z0: F - walk, z1: F }, busClear];
   const sidewalks = streetSides(blocks, walk);
   for (const s of sidewalks) {
     const len = s.to - s.from;
@@ -163,6 +175,7 @@ export function cityLayout(D: number, W = 12): CityLayout {
     }
     for (let t = 12; t < len - 4; t += LAMP_SPACING) {
       const p = s.at(s.from + t, 0.45);
+      if (rectsOverlap(busClear, { x0: p.x - 0.3, x1: p.x + 0.3, z0: p.z - 0.3, z1: p.z + 0.3 })) continue;
       placements.push({ kind: 'prop', model: 'Streetlight_Single', x: p.x, z: p.z, rot: s.facing, variant: 0 });
       addSolid({ x0: p.x - 0.2, x1: p.x + 0.2, z0: p.z - 0.2, z1: p.z + 0.2 }, 'lamp');
     }
@@ -180,7 +193,8 @@ export function cityLayout(D: number, W = 12): CityLayout {
   const far = F + 2 * HALF + walk;
   const stallAvoid = [...STREET_LIFE.near.stalls.map((s) => ({ x0: s.x - 3.6, x1: s.x + 3.6, z0: F - walk, z1: F })),
     ...STREET_LIFE.far.stalls.map((s) => ({ x0: s.x - 3.6, x1: s.x + 3.6, z0: far - walk, z1: far }))];
-  const wiring = polePlan(blocks, colliders, [...stallAvoid, { x0: -1.5, x1: 7.5, z0: D, z1: F }]);
+  const wiring = polePlan(blocks, colliders, [...stallAvoid, { x0: -1.5, x1: 7.5, z0: D, z1: F }, busClear]);
+  addSolid(busStop.shelter, 'busstop');
   for (const p of wiring.poles) addSolid({ x0: p.x - 0.2, x1: p.x + 0.2, z0: p.z - 0.2, z1: p.z + 0.2 }, 'pole');
   const stalls = streetLife(mulberry32(CITY_SEED + 7), F, HALF, colliders, placements, addSolid);
   // xe đỗ trang trí: 3 chỗ cuối bãi (lòng đường để cho xe NPC chạy — xem Traffic)
@@ -198,7 +212,7 @@ export function cityLayout(D: number, W = 12): CityLayout {
   const hot = { x0: -10, x1: 30, z0: roads[1].z0, z1: roads[1].z1 };
   const crosswalk = { x0: -7, x1: -3, z0: roads[1].z0, z1: roads[1].z1 };
   const damage = roadDamage(roads, [hot], [crosswalk]);
-  return { roads, centerLines, blocks, lot, lotSpots, depot, placements, colliders, bounds, hz, stalls, damage, wiring };
+  return { roads, centerLines, blocks, lot, lotSpots, depot, placements, colliders, bounds, hz, stalls, damage, wiring, busStop };
 }
 
 /** Các dải vỉa hè dọc đường: hàm at(t, lề) trả điểm cách mép đường `lề` mét. facing: hướng quay ra đường. */

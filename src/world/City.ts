@@ -8,8 +8,11 @@ import { buildTanks, houseDetails } from './HouseDetails';
 import { buildRoadDamage } from './RoadDamage';
 import { cityLayout, V_ROADS, type CityLayout, type Rect } from './CityLayout';
 import { buildDepot } from './Depot';
+import { CityWater } from './CityWater';
+import { buildBusStop } from './BusStop';
 import { applyPbr, pbrSet } from './Materials';
 import { buildShopSigns } from './ShopSigns';
+import { vendorsPackUp } from '../systems/WeatherSystem';
 import { asphaltTexture, concreteTexture, grassTexture } from './Textures';
 
 /** Mặt phẳng nằm ngang phủ rect, UV theo toạ độ thế giới / tile (m) → vật liệu dùng chung, không cần repeat riêng. */
@@ -49,6 +52,8 @@ export class City {
   /** Hàng rong chỉ hiện trong khung giờ */
   private scheduled: Scheduled[] = [];
   private kiosk: THREE.Object3D | null = null;
+  private wetMats: Array<{ mat: THREE.MeshStandardMaterial; rough: number; dark: number }> = [];
+  private water: CityWater | null = null;
   /** Gọi sau mỗi lần dựng lại (xe & người đi bộ cần tuyến mới) */
   onBuilt: (L: CityLayout) => void = () => {};
 
@@ -63,6 +68,7 @@ export class City {
     const grass = surface('grass', grassTexture(), 1);
     if (pbrSet('grass')) grass.color.set(0xb8d890); // ảnh cỏ gốc ngả vàng dưới nắng trưa
     const road = surface('asphalt', asphaltTexture(), 0.9);
+    this.wetMats = [{ mat: road, rough: road.roughness, dark: 0.45 }, { mat: pave, rough: pave.roughness, dark: 0.25 }];
     this.group.add(mergedMesh([outer], -0.04, 1.6, pave));
     const inner = L.blocks.map((k) => ({ x0: k.x0 + WALK_WIDTH, x1: k.x1 - WALK_WIDTH, z0: k.z0 + WALK_WIDTH, z1: k.z1 - WALK_WIDTH }));
     const ring = [{ x0: outer.x0, x1: b.x0 + 4, z0: outer.z0, z1: outer.z1 }, { x0: b.x1 - 4, x1: outer.x1, z0: outer.z0, z1: outer.z1 },
@@ -72,6 +78,9 @@ export class City {
     this.group.add(mergedMesh([...L.roads, L.lot, { x0: L.lot.x0 + 4, x1: L.lot.x1 - 4, z0: L.lot.z1, z1: L.lot.z1 + WALK_WIDTH }, yard], -0.03, 3, road));
     this.addMarkings(L);
     this.addCurbs(L);
+    this.water?.dispose();
+    this.water = new CityWater(L.roads);
+    this.group.add(this.water.mesh);
     const extra = houseDetails(L.placements);
     const inst = buildCityInstances([...L.placements, ...extra.props], this.group);
     this.lampMats = inst.lamps;
@@ -79,7 +88,7 @@ export class City {
     buildTanks(extra.tanks, this.group);
     buildRoadDamage(L.damage, this.group);
     buildWires(L.wiring, this.group);
-    this.signMats = buildShopSigns(L.placements, this.group);
+    this.signMats = [...buildShopSigns(L.placements, this.group), buildBusStop(L.busStop, this.group)];
     this.kiosk = buildDepot(L, this.group);
     // đèn đường thật (PointLight) chỉ cho vài cột gần cửa hàng — còn lại chỉ phát sáng (emissive)
     const cx = storeW / 2;
@@ -153,9 +162,19 @@ export class City {
     return out;
   }
 
-  /** hour: giờ game — bật/tắt hàng rong theo khung giờ bán. */
-  setNight(night: number, hour = 12): void {
-    for (const s of this.scheduled) s.object.visible = hour >= s.hours[0] && hour < s.hours[1];
+  /** Mưa: mặt đường & vỉa hè ướt (tối màu, bóng); ngập: nước dâng trên đường. t = giây thực (gợn sóng). */
+  setWet(wet: number, flood: number, t: number): void {
+    for (const { mat, rough, dark } of this.wetMats) {
+      mat.roughness = rough * (1 - 0.7 * wet);
+      mat.color.setScalar(1 - dark * wet);
+    }
+    this.water?.update(flood, t);
+  }
+
+  /** hour: giờ game — bật/tắt hàng rong theo khung giờ bán; rain: hàng rong dọn về khi mưa. */
+  setNight(night: number, hour = 12, rain = 0): void {
+    const packed = vendorsPackUp(rain);
+    for (const s of this.scheduled) s.object.visible = !packed && hour >= s.hours[0] && hour < s.hours[1];
     for (const m of this.lampMats) m.emissiveIntensity = 0.3 + night * 3;
     for (const m of this.signMats) m.emissiveIntensity = 0.1 + night * 1.2;
     for (const l of this.lights) l.intensity = night * 14;

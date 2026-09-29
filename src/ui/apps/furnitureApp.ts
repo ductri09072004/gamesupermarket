@@ -6,7 +6,7 @@ import { h, money } from '../dom';
 export function renderFurniture(body: HTMLElement, ctx: AppContext): void {
   const { s } = ctx;
   const grid = h('div', { class: 'card-grid' });
-  for (const def of FURNITURE.filter((f) => f.buyable)) {
+  for (const def of FURNITURE.filter((f) => f.buyable && !f.legacy)) {
     const check = s.shop.canBuyFurniture(def.id);
     const owned = s.data.furnitureStock.filter((t) => t === def.id).length;
     const locked = !s.state.hasLicense(def.licenseRequired) || (def.warehouseOnly && !s.data.warehouseUnlocked);

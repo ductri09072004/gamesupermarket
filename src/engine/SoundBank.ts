@@ -29,8 +29,8 @@ function lowNoise(k: number): () => number {
   };
 }
 
-export function buildSoundBank(ctx: BaseAudioContext): Map<SoundName | 'hum' | 'crowd', AudioBuffer> {
-  const m = new Map<SoundName | 'hum' | 'crowd', AudioBuffer>();
+export function buildSoundBank(ctx: BaseAudioContext): Map<SoundName | 'hum' | 'crowd' | 'rain', AudioBuffer> {
+  const m = new Map<SoundName | 'hum' | 'crowd' | 'rain', AudioBuffer>();
   m.set('beep', render(ctx, 0.12, (t) => (Math.sin(TAU * 2350 * t) > 0 ? 0.35 : -0.35) * env(t, 0.003, 0.05)));
   m.set('scan', render(ctx, 0.14, (t) => Math.sin(TAU * (1900 + 400 * t) * t) * 0.4 * env(t, 0.002, 0.05)));
   m.set('ching', render(ctx, 0.9, (t) => {

@@ -41,6 +41,8 @@ export interface BoxData {
 export interface VehicleData {
   uid: string;
   type: string;
+  /** Kiểu xe đã chọn khi mua (config/fleet.ts); thiếu → kiểu đầu tiên của loại */
+  variant?: string;
   x: number;
   z: number;
   yaw: number;
@@ -200,9 +202,9 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
   for (const p of PRODUCTS) prices[p.id] = p.marketPrice;
   // Toạ độ theo ô NavGrid 0.5m. Cửa hàng 12m × 10m = 24 × 20 ô, cửa ở x = 4..7, z = 20.
   const layout: Array<[string, number, number, number]> = [
-    ['shelf_large', 3, 1, 0],
-    ['shelf_large', 10, 1, 0],
-    ['fridge', 22, 5, 3],
+    ['shelf_hutch', 3, 1, 0],
+    ['shelf_ladder', 10, 1, 0],
+    ['fridge_coke', 22, 5, 3],
     ['checkout', 9, 13, 0],
     ['computer', 0, 5, 1],
     ['trash', 1, 17, 0],

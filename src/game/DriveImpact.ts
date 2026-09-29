@@ -3,6 +3,7 @@ import { CAR_IMPACT } from '../config/physics';
 import type { VehicleDef } from '../config/vehicles';
 import { obbContact, resolveImpact, type CarBody } from '../systems/CarImpact';
 import { forward, type DriveState } from '../systems/VehicleDrive';
+import { gripFactor } from '../systems/WeatherSystem';
 import type { World } from './World';
 
 const inertia = (m: number, w: number, l: number) => (m * (w * w + l * l)) / 12;
@@ -17,6 +18,8 @@ export class DriveImpact {
   private spin = 0;
   private shake = 0;
   private cd = 0;
+  /** Mặt đường ướt 0..1 — lốp bám kém, trượt lâu hơn */
+  wet = 0;
 
   constructor(private w: World) {}
 
@@ -52,7 +55,7 @@ export class DriveImpact {
     s.x += this.slipX * dt;
     s.z += this.slipZ * dt;
     s.yaw += this.spin * dt;
-    const g = Math.exp(-CAR_IMPACT.slipGrip * dt);
+    const g = Math.exp(-CAR_IMPACT.slipGrip * gripFactor(this.wet) * dt);
     this.slipX *= g;
     this.slipZ *= g;
     this.spin *= Math.exp(-CAR_IMPACT.spinDamping * dt);

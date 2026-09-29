@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { FurnitureDef } from '../config/furniture';
 import { normalizeModel } from '../engine/Assets';
 import { cityModel } from '../world/CityModels';
+import { prop } from '../engine/Props';
 import { block, std } from './FurnitureModels';
 
 /** Bàn thờ Thần Tài – Ông Địa: model (CC-BY, xem CREDITS) + bát nhang có khói khi đang thắp. */
@@ -60,6 +61,13 @@ export function buildAltar(def: FurnitureDef): AltarParts {
   g.add(model);
   // bát nhang + 3 nén nhang
   const at = incenseSpot(model, def);
+  // mâm ngũ quả cúng cạnh bát nhang
+  const fruit = prop('in_mam_ngu_qua');
+  if (fruit) {
+    fruit.scale.setScalar(0.55);
+    fruit.position.set(at.x - 0.3, at.y, at.z + 0.05);
+    g.add(fruit);
+  }
   const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.06, 14), std(0xc9a227, 0.35, 0.7));
   bowl.position.copy(at).add(new THREE.Vector3(0, 0.03, 0));
   g.add(bowl);

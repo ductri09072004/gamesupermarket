@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { prop } from '../engine/Props';
 import { productMesh } from '../products/PackagingFactory';
 
 const wire = new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.5, metalness: 0.2 });
@@ -9,6 +10,15 @@ export class Basket {
   private items: THREE.Mesh[] = [];
 
   constructor() {
+    this.group.position.set(0, -0.2, 0);
+    this.group.rotation.y = Math.PI / 2;
+    // giỏ nhựa đi chợ (model thật); thiếu thì dựng giỏ đỏ bằng khối
+    const model = prop('in_basket');
+    if (model) {
+      model.scale.setScalar(0.9);
+      this.group.add(model);
+      return;
+    }
     const w = 0.34;
     const d = 0.24;
     const h = 0.16;

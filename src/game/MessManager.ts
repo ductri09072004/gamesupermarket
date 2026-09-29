@@ -60,7 +60,7 @@ export class MessManager {
     const s = this.c.s;
     if (sim > 0 && s.data.storeOpen) {
       const inside = this.people().filter((p) => this.floorOk(p.x, p.z)).length;
-      s.cleanliness.update(sim * MINUTES_PER_SECOND, inside, this.spot);
+      s.cleanliness.update(sim * MINUTES_PER_SECOND, inside, this.spot, s.weather.wet);
     }
     if (this.dirty) this.sync();
   }
