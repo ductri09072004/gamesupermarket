@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CUSTOMER_MODELS } from '../config/characters';
-import { MAX_CUSTOMERS, MINUTES_PER_SECOND, NPC_ANIM_CULL_DISTANCE } from '../config/constants';
+import { MINUTES_PER_SECOND, NPC_ANIM_CULL_DISTANCE } from '../config/constants';
+import { activeQuality } from '../config/quality';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
 import type { FurnitureData } from '../core/GameState';
@@ -166,7 +167,7 @@ export class CustomerManager implements CustomerWorld {
     for (const p of this.alighting) p.wait -= dt;
     while (this.alighting.length && this.alighting[0].wait <= 0) {
       const p = this.alighting.shift()!;
-      if (this.customers.length < MAX_CUSTOMERS) this.spawn(worldToCell(p.x, p.z)).say('🚌 ...', 1400);
+      if (this.customers.length < activeQuality().maxCustomers) this.spawn(worldToCell(p.x, p.z)).say('🚌 ...', 1400);
     }
   }
 
@@ -189,7 +190,7 @@ export class CustomerManager implements CustomerWorld {
       const lucky = incenseLitToday(s.data.incense, s.data.day) ? INCENSE.spawnBonus : 1;
       const rate = spawnRatePerHour(s.time.hour, s.data.reputation, s.data.storeW, s.data.storeH) * lucky * rainSpawnFactor(s.weather.rain, s.weather.flood);
       const n = this.spawner.tick(sim * MINUTES_PER_SECOND, rate);
-      for (let i = 0; i < n && this.customers.length < MAX_CUSTOMERS; i++) this.spawn();
+      for (let i = 0; i < n && this.customers.length < activeQuality().maxCustomers; i++) this.spawn();
     }
     this.stepAlighting(dt);
     const cam = this.c.camera.position;

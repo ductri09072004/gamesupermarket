@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BUS, MOTO_TRAFFIC, ONE_WAY_BLOCKS, TRAFFIC } from '../config/traffic';
 import { CAR_IMPACT } from '../config/physics';
+import { activeQuality } from '../config/quality';
 import type { SoundName } from '../core/EventBus';
 import type { CarBody } from '../systems/CarImpact';
 import { busPassengers, trafficDensity, wearsRaincoat } from '../systems/TrafficSystem';
@@ -78,8 +79,9 @@ export class Traffic {
     this.motoRoutes = carLoops(blocks, MOTO_TRAFFIC.lane, MOTO_TRAFFIC.cornerR);
     this.service.reset(this.routes, L.busStop.bay);
     // vào game đã có sẵn một nửa số xe cho phố khỏi vắng
-    for (let i = 0; i < TRAFFIC.maxCars / 2; i++) this.spawn('car', null);
-    for (let i = 0; i < MOTO_TRAFFIC.max / 2; i++) this.spawn('moto', null);
+    const k = activeQuality().traffic;
+    for (let i = 0; i < (TRAFFIC.maxCars * k) / 2; i++) this.spawn('car', null);
+    for (let i = 0; i < (MOTO_TRAFFIC.max * k) / 2; i++) this.spawn('moto', null);
   }
 
   private add(kind: VehicleKind, route: Route, d: number, obj: THREE.Object3D, max: number, life: number, dims?: { hw: number; hl: number }): Car {
@@ -217,11 +219,11 @@ export class Traffic {
     this.motoT -= dt;
     if (this.spawnT <= 0) {
       this.spawnT = TRAFFIC.spawnEvery * (0.6 + this.rng() * 0.8);
-      if (this.count('car') < Math.round(TRAFFIC.maxCars * trafficDensity(this.hour, 'car'))) this.spawn('car', player);
+      if (this.count('car') < Math.round(TRAFFIC.maxCars * activeQuality().traffic * trafficDensity(this.hour, 'car'))) this.spawn('car', player);
     }
     if (this.motoT <= 0) {
       this.motoT = MOTO_TRAFFIC.spawnEvery * (0.6 + this.rng() * 0.8);
-      if (this.count('moto') < Math.round(MOTO_TRAFFIC.max * trafficDensity(this.hour, 'moto'))) this.spawn('moto', player);
+      if (this.count('moto') < Math.round(MOTO_TRAFFIC.max * activeQuality().traffic * trafficDensity(this.hour, 'moto'))) this.spawn('moto', player);
     }
     if (this.service.due(this.hour)) this.dispatchBus(player);
     for (let i = this.cars.length - 1; i >= 0; i--) {

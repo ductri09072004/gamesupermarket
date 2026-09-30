@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PRODUCTS } from '../config/products';
 import { bus } from '../core/EventBus';
 import { ENV_INTENSITY, STORE_FRONT_Z } from '../config/constants';
+import { nextLighter } from '../config/quality';
 import { createDevState, createNewState, type SaveData, type Settings } from '../core/GameState';
 import { SaveSystem } from '../core/SaveSystem';
 import { Services, setServices } from '../core/Services';
@@ -35,6 +36,8 @@ export class Game {
   private ui: GameUI | null = null;
   private menu = false;
   private orbit = 0;
+  private slowT = 0;
+  private slowHinted = false;
   private gallery: Gallery;
   private debug = new DebugPanel();
   private saves = new SaveSystem();
@@ -84,7 +87,10 @@ export class Game {
 
   applySettings(st: Settings): void {
     this.audio.applySettings(st);
-    if (this.r.quality !== st.quality) this.r.setQuality(st.quality);
+    if (this.r.quality !== st.quality) {
+      this.r.setQuality(st.quality);
+      this.world?.rebuildCity(); // bán kính dựng phố & số đèn phụ thuộc mức đồ hoạ
+    }
     this.r.setFov(st.fov);
     if (this.world) {
       this.world.player.sensitivity = st.sensitivity;
@@ -197,8 +203,21 @@ export class Game {
     this.ui?.update();
   }
 
+  /** Máy chậm kéo dài (khung hình > 45ms trong ~8s chơi) → gợi ý chuyển sang chế độ nhẹ hơn, đúng một lần mỗi phiên. */
+  private watchSlow(dt: number): void {
+    if (this.slowHinted || this.menu || !this.world) return;
+    const lighter = nextLighter(this.world.s.data.settings.quality);
+    if (!lighter) return;
+    this.slowT = Math.max(0, this.slowT + (dt > 0.045 ? dt : -dt * 2));
+    if (this.slowT < 8) return;
+    this.slowHinted = true;
+    const name = { lite: 'Siêu nhẹ', low: 'Thấp', medium: 'Trung', high: 'Cao' }[lighter];
+    bus.emit('toast', { message: `Máy đang chạy chậm — thử Cài đặt → Chất lượng → ${name} cho mượt hơn.`, kind: 'info' });
+  }
+
   private render(dt: number): void {
     this.frameDt = dt;
+    this.watchSlow(dt);
     this.r.renderer.info.reset();
     if (this.gallery.active) this.gallery.render(this.r.renderer, dt);
     else this.r.render(dt);

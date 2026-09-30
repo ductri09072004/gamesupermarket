@@ -31,8 +31,8 @@ export function showSettings(st: Settings, onChange: (s: Settings) => void, onCl
     return row(label, h('div', { class: 'set-range' }, [input, val]));
   };
 
-  const quality = h('div', { class: 'seg' }, (['low', 'medium', 'high'] as Quality[]).map((q) => {
-    const b = h('button', { class: `seg-btn ${st.quality === q ? 'on' : ''}`, text: { low: 'Thấp', medium: 'Trung', high: 'Cao' }[q] });
+  const quality = h('div', { class: 'seg' }, (['lite', 'low', 'medium', 'high'] as Quality[]).map((q) => {
+    const b = h('button', { class: `seg-btn ${st.quality === q ? 'on' : ''}`, text: { lite: 'Siêu nhẹ', low: 'Thấp', medium: 'Trung', high: 'Cao' }[q] });
     b.addEventListener('click', () => {
       st.quality = q;
       quality.querySelectorAll('button').forEach((x) => x.classList.remove('on'));

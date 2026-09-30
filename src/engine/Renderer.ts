@@ -1,14 +1,9 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { DEFAULT_FOV } from '../config/constants';
+import { activeQuality, QUALITY_PROFILES, setActiveQuality } from '../config/quality';
 import type { Quality } from '../core/GameState';
 import { Post } from './Post';
-
-const QUALITY: Record<Quality, { pixelRatio: number; shadow: number }> = {
-  low: { pixelRatio: 1, shadow: 512 },
-  medium: { pixelRatio: 1.5, shadow: 1024 },
-  high: { pixelRatio: 2, shadow: 2048 },
-};
 
 /** WebGLRenderer + camera chính + scene riêng cho vật đang cầm (không xuyên tường). */
 export class Renderer {
@@ -18,7 +13,7 @@ export class Renderer {
   readonly camera: THREE.PerspectiveCamera;
   readonly heldCamera: THREE.PerspectiveCamera;
   readonly post: Post;
-  quality: Quality = 'medium';
+  quality: Quality = 'lite';
   private shadowLights: Array<THREE.DirectionalLight | THREE.SpotLight> = [];
 
   constructor(container: HTMLElement) {
@@ -44,7 +39,7 @@ export class Renderer {
     this.heldScene.add(key);
     this.post = new Post(this.renderer, this.scene, this.heldScene, this.camera, this.heldCamera);
     window.addEventListener('resize', this.resize);
-    this.setQuality('medium');
+    this.setQuality('lite');
   }
 
   /** Thay môi trường sinh bằng code bằng HDRI thật (PMREM). */
@@ -64,8 +59,10 @@ export class Renderer {
   }
 
   private applyShadowSize(): void {
-    const s = QUALITY[this.quality].shadow;
+    const p = QUALITY_PROFILES[this.quality];
+    const s = p.shadowMap;
     for (const l of this.shadowLights) {
+      l.castShadow = p.shadows; // không đèn nào đổ bóng → three bỏ luôn lượt vẽ bản đồ bóng
       if (l.shadow.mapSize.x === s) continue;
       l.shadow.mapSize.set(s, s);
       l.shadow.map?.dispose();
@@ -75,6 +72,7 @@ export class Renderer {
 
   setQuality(q: Quality): void {
     this.quality = q;
+    setActiveQuality(q);
     this.post.setQuality(q);
     this.applyShadowSize();
     this.resize();
@@ -90,10 +88,12 @@ export class Renderer {
   resize = (): void => {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const pr = Math.min(window.devicePixelRatio || 1, QUALITY[this.quality].pixelRatio, 2);
+    const prof = activeQuality();
+    const pr = Math.min(window.devicePixelRatio || 1, prof.pixelRatio, 2);
     this.renderer.setPixelRatio(pr);
     this.renderer.setSize(w, h);
     this.post.setSize(w, h, pr);
+    this.camera.far = prof.farPlane;
     for (const c of [this.camera, this.heldCamera]) {
       c.aspect = w / h;
       c.updateProjectionMatrix();

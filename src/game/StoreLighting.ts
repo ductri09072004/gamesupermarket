@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CEILING_HEIGHT, LAMP_POOL, STORE_FRONT_Z } from '../config/constants';
+import { activeQuality } from '../config/quality';
 import { getFurniture, isCeiling } from '../config/furniture';
 import type { FurnitureData } from '../core/GameState';
 import { setLampsGlow } from '../entities/LampModels';
@@ -49,8 +50,11 @@ export class StoreLighting {
     setLampsGlow(d.lightsOn);
     this.c.store.setLightsOn(d.lightsOn);
     this.lightSwitch.set(d.lightsOn);
+    // siêu nhẹ: không dùng đèn điểm cục bộ (mỗi đèn nhân số lần tính ánh sáng trên từng điểm ảnh)
+    const local = activeQuality().pointLights;
+    for (const p of this.pool) p.visible = local;
     this.assignT -= dt;
-    if (this.assignT > 0) return;
+    if (this.assignT > 0 || !local) return;
     this.assignT = 0.25;
     this.assign(d.furniture.filter((f) => isCeiling(getFurniture(f.type))), d.lightsOn);
   }

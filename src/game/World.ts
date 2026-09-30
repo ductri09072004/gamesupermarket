@@ -253,6 +253,12 @@ export class World implements GameCtx {
       : [];
   }
 
+  /** Đổi mức đồ hoạ: dựng lại thành phố theo bán kính / số đèn của mức mới (xe & người đi bộ dựng lại theo). */
+  rebuildCity(): void {
+    this.city.build(STORE_FRONT_Z, MAX_STORE_W);
+    this.setInteractionRoots();
+  }
+
   /** Vị trí mắt người chơi (dùng khi thoát chế độ camera). */
   get eye(): THREE.Vector3 {
     return new THREE.Vector3(this.player.x, EYE_HEIGHT, this.player.z);

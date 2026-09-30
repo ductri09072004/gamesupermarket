@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ROAD_WIDTH, WALK_WIDTH } from '../config/city';
+import { activeQuality } from '../config/quality';
 import type { AABB } from './Colliders';
 import { buildCityInstances, type Scheduled } from './CityInstances';
 import { buildWires } from './CityWires';
@@ -81,14 +82,17 @@ export class City {
     this.water?.dispose();
     this.water = new CityWater(L.roads);
     this.group.add(this.water.mesh);
-    const extra = houseDetails(L.placements);
-    const inst = buildCityInstances([...L.placements, ...extra.props], this.group);
+    // siêu nhẹ: chỉ dựng khu phố quanh cửa hàng (xa hơn đã chìm trong sương mù); va chạm vẫn đủ
+    const R = activeQuality().cityRadius;
+    const shown = R === Infinity ? L.placements : L.placements.filter((p) => Math.hypot(p.x - storeW / 2, p.z - D / 2) <= R);
+    const extra = houseDetails(shown);
+    const inst = buildCityInstances([...shown, ...extra.props], this.group);
     this.lampMats = inst.lamps;
     this.scheduled = inst.scheduled;
     buildTanks(extra.tanks, this.group);
     buildRoadDamage(L.damage, this.group);
     buildWires(L.wiring, this.group);
-    this.signMats = [...buildShopSigns(L.placements, this.group), buildBusStop(L.busStop, this.group)];
+    this.signMats = [...buildShopSigns(shown, this.group), buildBusStop(L.busStop, this.group)];
     this.kiosk = buildDepot(L, this.group);
     // đèn đường thật (PointLight) chỉ cho vài cột gần cửa hàng — còn lại chỉ phát sáng (emissive)
     const cx = storeW / 2;
@@ -166,6 +170,10 @@ export class City {
     for (const s of this.scheduled) s.object.visible = !packed && hour >= s.hours[0] && hour < s.hours[1];
     for (const m of this.lampMats) m.emissiveIntensity = 0.3 + night * 3;
     for (const m of this.signMats) m.emissiveIntensity = 0.1 + night * 1.2;
-    for (const l of this.lights) l.intensity = night * 14;
+    const local = activeQuality().pointLights;
+    for (const l of this.lights) {
+      l.visible = local;
+      l.intensity = night * 14;
+    }
   }
 }

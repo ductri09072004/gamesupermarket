@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { WALKING_VENDOR } from '../config/city';
 import { CUSTOMER_MODELS } from '../config/characters';
 import { DOOR_X } from '../config/constants';
+import { activeQuality } from '../config/quality';
 import { PEDESTRIANS } from '../config/traffic';
 import { HAIRS, PANTS, SHIRTS, SKINS, type HumanBody } from '../entities/Human';
 import { createHuman } from '../entities/RiggedHuman';
@@ -111,7 +112,7 @@ export class Pedestrians {
 
   update(dt: number, player: { x: number; z: number }, camera: THREE.Vector3): void {
     this.clock += dt;
-    const out = Math.floor(PEDESTRIANS.count * (1 - 0.65 * this.rain));
+    const out = Math.floor(PEDESTRIANS.count * activeQuality().crowd * (1 - 0.65 * this.rain));
     const vendors = walkingVendorsOut(this.hour, this.rain);
     let near = false;
     for (const [i, w] of this.list.entries()) {

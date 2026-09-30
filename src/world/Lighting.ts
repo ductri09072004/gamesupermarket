@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ENV_INTENSITY, STORE_FRONT_Z } from '../config/constants';
+import { activeQuality } from '../config/quality';
 import { nightAt } from '../systems/LightingSystem';
 
 interface Sky {
@@ -135,8 +136,9 @@ export class Lighting {
     const fog = this.scene.fog as THREE.Fog | null;
     if (fog) {
       fog.color.copy(sky);
-      fog.near = FOG_NEAR * (1 - 0.55 * cloud);
-      fog.far = FOG_FAR * (1 - 0.5 * cloud);
+      const fs = activeQuality().fogScale;
+      fog.near = FOG_NEAR * fs * (1 - 0.55 * cloud);
+      fog.far = FOG_FAR * fs * (1 - 0.5 * cloud);
     }
     this.sun.intensity = s.sun * (1 - 0.6 * cloud) + this.flash * 3;
     this.sun.color.copy(s.sunColor);

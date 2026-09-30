@@ -7,6 +7,7 @@ import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { QUALITY_PROFILES } from '../config/quality';
 import type { Quality } from '../core/GameState';
 import { FEEL } from '../config/feel';
 
@@ -70,10 +71,11 @@ export class Post {
   }
 
   setQuality(q: Quality): void {
-    this.gtao.enabled = q === 'high';
-    this.bloom.enabled = q !== 'low';
-    this.smaa.enabled = q !== 'low';
-    this.fxaa.enabled = q === 'low';
+    const p = QUALITY_PROFILES[q];
+    this.gtao.enabled = p.gtao;
+    this.bloom.enabled = p.bloom;
+    this.smaa.enabled = p.smaa;
+    this.fxaa.enabled = p.fxaa;
   }
 
   setSize(w: number, h: number, pixelRatio: number): void {

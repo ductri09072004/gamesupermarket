@@ -125,7 +125,8 @@ export interface DayStats {
   vendorLost: number;
 }
 
-export type Quality = 'low' | 'medium' | 'high';
+/** lite = siêu nhẹ (máy yếu): không đổ bóng, không hậu kỳ, dựng ở độ phân giải thấp, ít xe / người */
+export type Quality = 'lite' | 'low' | 'medium' | 'high';
 
 export interface Settings {
   muted: boolean;
@@ -242,7 +243,7 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
     debtDays: 0,
     stats: emptyStats(START_REPUTATION),
     settings: {
-      muted: false, music: true, gameOverEnabled: true, cameraFollow: true, quality: 'medium', fov: 70, sensitivity: 1,
+      muted: false, music: true, gameOverEnabled: true, cameraFollow: true, quality: 'lite', fov: 70, sensitivity: 1,
       headbob: true, volMaster: 0.8, volSfx: 1, volMusic: 0.5, volAmbient: 0.6,
     },
     tutorial: {},
