@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PRODUCTS } from '../config/products';
 import { bus } from '../core/EventBus';
-import { ENV_INTENSITY } from '../config/constants';
+import { ENV_INTENSITY, STORE_FRONT_Z } from '../config/constants';
 import { createDevState, createNewState, type SaveData, type Settings } from '../core/GameState';
 import { SaveSystem } from '../core/SaveSystem';
 import { Services, setServices } from '../core/Services';
@@ -188,7 +188,8 @@ export class Game {
     if (this.menu) {
       this.orbit += dt * 0.06;
       const { W, D } = w.store;
-      const c = new THREE.Vector3(W / 2, 1.1, D / 2);
+      // phần cửa hàng đã mở khoá nằm sát mặt tiền cố định (z từ FRONT − D tới FRONT)
+      const c = new THREE.Vector3(W / 2, 1.1, STORE_FRONT_Z - D / 2);
       w.camera.position.set(c.x + Math.cos(this.orbit) * W * 0.32, 2.3, c.z + Math.sin(this.orbit) * D * 0.3);
       w.camera.lookAt(c);
     }

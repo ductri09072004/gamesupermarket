@@ -246,7 +246,8 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
       headbob: true, volMaster: 0.8, volSfx: 1, volMusic: 0.5, volAmbient: 0.6,
     },
     tutorial: {},
-    player: { gx: 8, gy: b + 8, yaw: 0 },
+    // (gx, gy) thực chất là x, z tính bằng mét: trong tiệm, cách cửa kính ~1.7m, nhìn vào trong
+    player: { gx: 3.5, gy: STORE_FRONT_Z - 1.7, yaw: 0 },
     gameOver: false,
     vehicles: [],
     dirt: [],
