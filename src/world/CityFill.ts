@@ -1,5 +1,5 @@
 import { BUILDINGS, BUILDING_TEXTURES, CITY_SEED, INFILL_BUILDINGS, SHOP_BUILDINGS, SHOP_NAMES } from '../config/city';
-import { WALL_THICKNESS, WAREHOUSE } from '../config/constants';
+import { WALL_THICKNESS, WAREHOUSE_LOT } from '../config/constants';
 import { mulberry32, pick, type Rng } from '../core/Random';
 import { footprint, rectsOverlap, type Placement, type Rect } from './CityLayout';
 
@@ -81,12 +81,13 @@ export function oppositeShops(facade: number, from: number, to: number, taken: R
  */
 export function sideShops(D: number, W: number, right: number, taken: Rect[], out: Placement[], addSolid: AddSolid): void {
   const front = D + WALL_THICKNESS;
-  // chỉ né thân cửa hàng + kho (vỉa hè trước mặt tiền đã nằm ngoài vì nhà lùi sau đường mặt tiền)
-  const near: Rect[] = [{ x0: -0.3, x1: W + 0.3, z0: WAREHOUSE.z0 - 4, z1: front }];
+  // chỉ né vỏ nhà: cửa hàng (rộng tối đa W) + kho kế bên (vỉa hè trước mặt tiền đã nằm ngoài vì nhà lùi sau đường mặt tiền)
+  const shellX0 = WAREHOUSE_LOT.x0;
+  const near: Rect[] = [{ x0: shellX0 - 0.3, x1: W + 0.3, z0: -4, z1: front }];
   let n = 0;
   const shopSign = () => SHOP_NAMES[n++ % SHOP_NAMES.length];
   const sides: Array<{ from: number; to: number; seed: number }> = [
-    { from: -14, to: -0.7, seed: 11 },
+    { from: shellX0 - 14, to: shellX0 - 0.7, seed: 11 },
     { from: W + 0.7, to: right, seed: 97 + W },
   ];
   for (const s of sides) {
@@ -97,7 +98,7 @@ export function sideShops(D: number, W: number, right: number, taken: Rect[], ou
     const edge: Edge = { rot: 0, along: 'x', from: s.from, to: s.to, line: front + 0.3, sign: -1 };
     fillEdge(rng, edge, near, out, addSolid, SHOP_BUILDINGS, 0.2, shopSign);
     const back: Edge = { ...edge, line: front - 7.4 };
-    if (back.line - 7 > WAREHOUSE.z0 - 6) fillEdge(rng, back, near, out, addSolid, INFILL_BUILDINGS, 0.3);
+    if (back.line - 7 > -12) fillEdge(rng, back, near, out, addSolid, INFILL_BUILDINGS, 0.3);
   }
   taken.push(...near.slice(1));
 }

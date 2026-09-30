@@ -22,8 +22,8 @@ export function onRoad(roads: Rect[], x: number, z: number): boolean {
   return roads.some((r) => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
 }
 
-/** Làn xe: cách tim đường về bên phải (m) */
-export const LANE_OFFSET = ROAD_WIDTH / 4;
+/** Làn ô tô: cách tim đường về bên phải (m) — hẻm một làn nên đi giữa lòng đường */
+export const LANE_OFFSET = 0;
 
 function finish(pts: Array<{ x: number; z: number }>): Route {
   const cum = [0];

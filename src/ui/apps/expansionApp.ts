@@ -1,4 +1,4 @@
-import { WAREHOUSE_LEVEL, WAREHOUSE_PRICE } from '../../config/constants';
+import { MAX_STORE_H, MAX_STORE_W, WAREHOUSE_LEVEL, WAREHOUSE_PRICE } from '../../config/constants';
 import type { AppContext } from '../computer';
 import { h, money } from '../dom';
 
@@ -31,7 +31,7 @@ export function renderExpansion(body: HTMLElement, ctx: AppContext): void {
   const whLocked = !s.state.levelAtLeast(WAREHOUSE_LEVEL);
   cards.append(h('div', { class: `shop-card ${d.warehouseUnlocked ? 'owned' : whLocked ? 'locked' : ''}` }, [
     h('div', { class: 'shop-icon', text: '🏚️' }),
-    h('b', { text: 'Kho phía sau' }),
+    h('b', { text: 'Kho bên cạnh' }),
     h('div', { class: 'muted small', text: 'Khu 5×5 ô có cửa riêng, đặt Kệ kho để chứa thùng hàng.' }),
     h('button', {
       class: 'btn primary',
@@ -45,5 +45,5 @@ export function renderExpansion(body: HTMLElement, ctx: AppContext): void {
       },
     }),
   ]));
-  body.append(h('p', { class: 'muted', text: `Diện tích hiện tại: ${d.storeW}×${d.storeH} ô (tối đa 24×20). Nội thất được giữ nguyên khi mở rộng.` }), cards);
+  body.append(h('p', { class: 'muted', text: `Diện tích hiện tại: ${d.storeW}×${d.storeH} ô (tối đa ${MAX_STORE_W}×${MAX_STORE_H}). Nội thất được giữ nguyên; vách sau và vách phải lùi ra, phố không dịch chuyển.` }), cards);
 }

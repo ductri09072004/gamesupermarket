@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CEILING_HEIGHT, LAMP_POOL } from '../config/constants';
+import { CEILING_HEIGHT, LAMP_POOL, STORE_FRONT_Z } from '../config/constants';
 import { getFurniture, isCeiling } from '../config/furniture';
 import type { FurnitureData } from '../core/GameState';
 import { setLampsGlow } from '../entities/LampModels';
@@ -31,7 +31,7 @@ export class StoreLighting {
   }
 
   layout(): void {
-    this.lightSwitch.place(this.c.s.data.storeH);
+    this.lightSwitch.place(STORE_FRONT_Z);
   }
 
   /** E ở công tắc. */

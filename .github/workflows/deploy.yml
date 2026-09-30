@@ -1,0 +1,66 @@
+name: Deploy to Vercel
+
+# Mỗi lần push: chạy kiểm tra (tsc + test + build) rồi deploy lên Vercel.
+# - Nhánh mặc định của repo → production; các nhánh khác và PR → bản preview (URL riêng, hiện trong log job).
+# Cần 3 secret trong GitHub → Settings → Secrets and variables → Actions: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    # PR từ fork không có secret → bỏ qua deploy
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm i -g vercel@latest
+      - name: Kiểm tra secret Vercel
+        run: |
+          for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!v}" ]; then echo "::error::Thiếu secret $v (xem README → Deploy)"; exit 1; fi
+          done
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy production (nhánh mặc định)
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+        run: |
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy preview (nhánh khác / PR)
+        if: github.event_name != 'push' || github.ref_name != github.event.repository.default_branch
+        run: |
+          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          vercel build --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

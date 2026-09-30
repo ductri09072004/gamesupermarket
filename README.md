@@ -13,6 +13,19 @@ npm run build    # type-check + build production vào dist/
 npm test         # unit test (vitest)
 ```
 
+## Deploy (Vercel, tự động)
+
+Workflow [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml): mỗi lần push chạy `npm test` + `npm run build`, rồi deploy bằng Vercel CLI — nhánh mặc định của repo lên **production**, các nhánh khác / PR lên **preview** (URL in trong log job).
+
+Thiết lập một lần:
+
+1. Tạo project trên Vercel (Import repo, hoặc chạy `npx vercel link` trong thư mục dự án) → mở `.vercel/project.json` lấy `orgId` và `projectId`.
+2. Tạo token tại Vercel → Account Settings → Tokens.
+3. GitHub repo → Settings → Secrets and variables → Actions, thêm 3 secret: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+4. Trong Vercel → Project → Settings → Git, nên **ngắt kết nối Git** (hoặc tắt auto-deploy) để không deploy hai lần.
+
+Cấu hình build nằm ở [`vercel.json`](./vercel.json).
+
 ## Điều khiển
 
 | Phím | Chức năng |
@@ -25,7 +38,7 @@ npm test         # unit test (vitest)
 | `Tab` | Mở app Pricing chỉnh giá nhanh |
 | `M` | Nhìn vào kệ/nội thất rồi nhấn M để dời nhanh — kệ đang có hàng vẫn dời được, hàng đi theo kệ |
 | `B` | Build mode: camera nhìn từ trên, `R` xoay, click đặt/nhấc, `Delete` bán lại 50% (hàng còn trên kệ tự đóng vào thùng) |
-| `1` `2` `3` | Tốc độ thời gian · `N` kết thúc ngày (sau 22:00) |
+| `T` | Tua nhanh 3× (bật/tắt) · `N` kết thúc ngày (sau 22:00) |
 | Ở quầy | Click món trên băng chuyền (hoặc `Space`) để quét · click khay tiền để thối · bấm phím máy POS hoặc gõ số + `Enter` |
 | `Esc` · `F3` · `F4` | Menu · debug (FPS, draw calls, triangles, đường đi khách) · Product Gallery |
 

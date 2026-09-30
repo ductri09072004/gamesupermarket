@@ -78,7 +78,7 @@ export function canPlace(
   for (const tg of targets) {
     if (!findPath(overlay, start, tg)) return { ok: false, reason: 'Sẽ chặn đường từ cửa tới quầy thu ngân' };
   }
-  if (grid.warehouse && !findPath(overlay, start, { gx: grid.warehouseDoor.gx, gy: 0 })) {
+  if (grid.warehouse && !findPath(overlay, start, grid.warehouseDoor)) {
     return { ok: false, reason: 'Sẽ chặn đường vào kho' };
   }
   return { ok: true };

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { EYE_HEIGHT } from '../config/constants';
+import { EYE_HEIGHT, MAX_STORE_W, STORE_FRONT_Z } from '../config/constants';
 import type { SoundName } from '../core/EventBus';
 import type { Services } from '../core/Services';
 import type { Assets } from '../engine/Assets';
@@ -88,7 +88,6 @@ export class World implements GameCtx {
   mode: Mode = 'play';
   private colliderCache: AABB[] | null = null;
   /** Chiều sâu cửa hàng lúc dựng thành phố gần nhất (WorldExpansion dùng để dịch xe đỗ) */
-  cityDepth: number;
   private offs: Array<() => void> = [];
 
   constructor(readonly s: Services, readonly r: Renderer, readonly input: Input, readonly audio: AudioEngine, assets: Assets | null) {
@@ -99,10 +98,10 @@ export class World implements GameCtx {
     r.registerShadowLight(this.lighting.sun);
     const d = s.data;
     this.store.setSize(d.storeW, d.storeH, d.warehouseUnlocked);
-    this.exterior.build(d.storeW, d.storeH);
+    this.exterior.build(d.storeW);
     this.city.onBuilt = (L) => this.life.reset(L);
-    this.city.build(d.storeH, d.storeW);
-    this.cityDepth = d.storeH;
+    // phố cố định: dựng một lần theo vỏ nhà tối đa, mở rộng không dịch phố
+    this.city.build(STORE_FRONT_Z, MAX_STORE_W);
     this.decor.build(d.storeW, d.storeH);
     this.lighting.fit(d.storeW, d.storeH);
     this.lights = new StoreLighting(this);

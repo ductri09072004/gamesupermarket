@@ -53,8 +53,9 @@ Mỗi file < 300 dòng. Sau mỗi phase: `npm run build` + `npm test` sạch l�
 
 ## 5. Đơn vị & không gian
 - 1 đơn vị = 1 mét. Trục Y hướng lên. Tầm mắt người chơi 1.65m, bán kính capsule 0.3m, tốc độ đi 3.2 m/s, chạy (Shift) 5 m/s.
-- Cửa hàng khởi đầu 12m × 10m, cao trần 3.2m; mở rộng từng nấc 2m theo chiều ngang hoặc sâu, tối đa 24m × 20m.
-- Phía trước: vỉa hè + khu giao hàng. Phía sau (mở khoá sau): kho 6m × 10m.
+- Cửa hàng khởi đầu 8m × 6m (tiệm hẻm: vừa 1 quầy thu ngân + 3 kệ), cao trần 3.2m; mở rộng từng nấc 2m theo chiều ngang hoặc sâu, tối đa 20m × 16m.
+- Phố là hẻm chật: mặt đường 4.6m, một làn một chiều (xe chỉ chạy quanh các khối phố không chung cạnh — `ONE_WAY_BLOCKS`), xe máy lách sát lề.
+- Phía trước: vỉa hè + khu giao hàng. Vỏ nhà cố định 20m × 16m + kho kế bên (bên trái, cùng mặt tiền, mặt bằng chừa mở rộng); phần chưa mở khoá là khối kín, mặt tiền cố định nên phố không dịch chuyển khi mở rộng.
 - Mọi model nạp vào phải được chuẩn hoá: tính bounding box, scale về kích thước thật cấu hình trong furniture.ts,
   đặt gốc ở giữa đáy, xoay để mặt trước hướng -Z. Viết helper normalizeModel() dùng chung.
 

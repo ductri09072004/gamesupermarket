@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { BUILDINGS, ROAD_WIDTH, WALK_WIDTH } from '../src/config/city';
-import { MAX_STORE_H, MAX_STORE_W, WAREHOUSE } from '../src/config/constants';
+import { MAX_STORE_H, MAX_STORE_W, WAREHOUSE_LOT } from '../src/config/constants';
 import { cityLayout, curbZ, footprint, rectsOverlap, type Rect } from '../src/world/CityLayout';
 
 describe('Bố cục thành phố', () => {
   for (const [D, W] of [[10, 12], [MAX_STORE_H, MAX_STORE_W], [14, 18]]) {
     const L = cityLayout(D, W);
-    const store: Rect = { x0: -0.5, x1: W + 0.5, z0: WAREHOUSE.z0 - 0.5, z1: curbZ(D) };
+    // vỏ nhà: cửa hàng + kho kế bên (bên trái)
+    const store: Rect = { x0: WAREHOUSE_LOT.x0 - 0.5, x1: W + 0.5, z0: -0.5, z1: curbZ(D) };
 
     it(`D=${D} W=${W}: có dãy cửa hiệu sát hai bên cửa hàng`, () => {
       const shops = L.placements.filter((p) => p.sign);
@@ -15,6 +16,8 @@ describe('Bố cục thành phố', () => {
       // dãy cạnh siêu thị (quay +Z) thẳng hàng mặt tiền; dãy bên kia đường (quay -Z) sát vỉa hè đối diện
       const near = shops.filter((p) => p.rot === 0);
       const far = shops.filter((p) => p.rot !== 0);
+      // hàng xóm cùng dãy bên trái nằm ngoài vỏ nhà (cửa hàng + kho kế bên)
+      expect(near.filter((p) => p.x < 0).every((p) => p.x < WAREHOUSE_LOT.x0)).toBe(true);
       for (const p of near) expect(Math.abs(p.z + BUILDINGS[p.model][2] / 2 - (D + 0.2))).toBeLessThan(0.01);
       expect(far.length).toBeGreaterThan(5);
       const farFacade = L.hz[1] + ROAD_WIDTH / 2 + WALK_WIDTH;

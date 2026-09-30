@@ -60,16 +60,26 @@ export const FAST_CHECKOUT_S = 20;
 export const SLOW_CHECKOUT_S = 50;
 
 // Cửa hàng (m)
-export const INITIAL_STORE_W = 12; // theo trục X
-export const INITIAL_STORE_H = 10; // độ sâu theo trục Z
-export const MAX_STORE_W = 24;
-export const MAX_STORE_H = 20;
+export const INITIAL_STORE_W = 8; // theo trục X — tiệm hẻm nhỏ: vừa 1 quầy thu ngân + 3 kệ
+export const INITIAL_STORE_H = 6; // độ sâu theo trục Z
+export const MAX_STORE_W = 20;
+export const MAX_STORE_H = 16;
 export const CEILING_HEIGHT = 3.2;
 export const WALL_THICKNESS = 0.2;
 export const DOOR_X = 3; // tâm cửa (m)
 export const DOOR_WIDTH = 2;
 export const SIDEWALK_DEPTH = 3;
-export const WAREHOUSE = { x0: 0, z0: -6, w: 10, d: 6, doorX: 5 };
+/**
+ * Vỏ nhà cố định: toà nhà chiếm trọn mặt bằng tối đa ngay từ đầu, mặt tiền (tường trước) luôn ở z = STORE_FRONT_Z nên phố không dịch chuyển.
+ * Phần đã mở khoá là hình chữ nhật sát mặt tiền / tường trái: cửa hàng [0, W] × [FRONT − H, FRONT]; mở rộng chỉ lùi vách ra sau và sang phải.
+ */
+export const STORE_FRONT_Z = MAX_STORE_H;
+/**
+ * Kho nằm kế bên cửa hàng (bên trái, ngăn bởi tường chung x ∈ [−0.5, 0] có cửa thông ở z = doorZ), cùng mặt tiền.
+ * x0..x0+w × z0..z0+d là phần đã dùng khi mở khoá kho; WAREHOUSE_LOT là mặt bằng chừa sẵn để mở rộng kho sau này.
+ */
+export const WAREHOUSE = { x0: -10.5, z0: STORE_FRONT_Z - 6, w: 10, d: 6, doorZ: 13.5 };
+export const WAREHOUSE_LOT = { x0: -14.5, z0: STORE_FRONT_Z - 12, w: 14, d: 12 };
 export const WAREHOUSE_PRICE = 800;
 export const WAREHOUSE_LEVEL = 3;
 export const EXPANSION_STEP = 2;
@@ -141,7 +151,7 @@ export const MAX_PRODUCT_INSTANCES = 5000;
 
 // Lưu game
 export const SAVE_KEY = 'minimart-tycoon-3d-save';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 // Thu ngân
 export const DENOMINATIONS = [50, 20, 10, 5, 1, 0.25, 0.1, 0.05, 0.01];

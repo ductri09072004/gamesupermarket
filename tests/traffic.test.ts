@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ROAD_WIDTH } from '../src/config/city';
 import { BUS, MOTO_TRAFFIC, RUSH_HOURS, TRAFFIC } from '../src/config/traffic';
 import { mulberry32 } from '../src/core/Random';
 import { Traffic } from '../src/game/Traffic';
@@ -74,7 +75,7 @@ describe('trạm xe buýt trong bố cục', () => {
       if (c.tag === 'busstop') continue;
       expect(rectsOverlap({ x0: c.minX, x1: c.maxX, z0: c.minZ, z1: c.maxZ }, s), `va chạm với ${c.tag}`).toBe(false);
     }
-    expect(L.busStop.bay.z).toBeCloseTo(road.z0 + LANE_OFFSET, 6);
+    expect(L.busStop.bay.z).toBeCloseTo(road.z0 + ROAD_WIDTH / 2 - LANE_OFFSET, 6);
   });
 
   it('xe buýt đỗ đúng làn ô tô của khối phố cạnh cửa hàng', () => {
@@ -122,9 +123,11 @@ describe('dòng xe máy & xe buýt chạy trên phố', () => {
     tr.update(0.05, far, []);
     tr.hour = 6.6; // vượt chuyến 6:30
     let arrived = -1;
+    let seen = false;
     for (let i = 0; i < 4000 && !pax; i++) {
       tr.update(0.05, far, []);
-      if (tr.count('bus') === 0 && i > 10) break;
+      seen ||= tr.count('bus') > 0;
+      if (seen && tr.count('bus') === 0) break;
     }
     expect(pax).not.toBeNull();
     arrived = tr.count('bus');

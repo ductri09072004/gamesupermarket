@@ -117,10 +117,10 @@ export class ShopSystem {
     const d = this.state.data;
     if (d.warehouseUnlocked) return { ok: false, reason: 'Đã có kho' };
     if (!this.state.levelAtLeast(WAREHOUSE_LEVEL)) return { ok: false, reason: `Cần cấp ${WAREHOUSE_LEVEL}` };
-    if (!this.economy.spend(WAREHOUSE_PRICE, 'Mở kho phía sau')) return { ok: false, reason: 'Không đủ tiền' };
+    if (!this.economy.spend(WAREHOUSE_PRICE, 'Mở kho bên cạnh')) return { ok: false, reason: 'Không đủ tiền' };
     d.warehouseUnlocked = true;
     this.bus.emit('grid:changed', { reason: 'expansion' });
-    this.bus.emit('toast', { message: '🏚️ Kho phía sau đã mở! Mua Kệ kho để chứa thùng.', kind: 'success' });
+    this.bus.emit('toast', { message: '🏚️ Kho bên cạnh đã mở! Đi qua cửa ở tường trái. Mua Kệ kho để chứa thùng.', kind: 'success' });
     return { ok: true };
   }
 }

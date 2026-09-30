@@ -19,6 +19,12 @@ export const TRAFFIC = {
   stopDist: 5,
 };
 
+/**
+ * Đường một làn, một chiều: chỉ cho xe chạy quanh các khối phố không chung cạnh nhau (quân cờ ô vuông), để mỗi đoạn đường
+ * chỉ có một chiều xe. Chỉ số khối = i * 2 + j (i: cột theo V_ROADS, j: hàng theo đường ngang) — (1,0) là khối có cửa hàng.
+ */
+export const ONE_WAY_BLOCKS = [2, 1, 5] as const;
+
 export const PEDESTRIANS = {
   count: 18,
   speed: 1.25,
@@ -41,9 +47,9 @@ export const MOTO_TRAFFIC = {
   spawnEvery: 1.6,
   speed: 8.5,
   cornerSpeed: 5,
-  /** Cách tim đường (m) — sát lề hơn làn ô tô (2m) */
-  lane: 3.5,
-  cornerR: 4,
+  /** Cách tim đường (m) về phía lề — ô tô đi giữa lòng hẻm, xe máy lách sát lề */
+  lane: 1.5,
+  cornerR: 3,
   /** Nửa bề ngang / nửa chiều dài thân va chạm */
   hw: 0.4,
   hl: 0.95,

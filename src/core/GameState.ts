@@ -1,6 +1,9 @@
 import {
-  DEV_MONEY, INITIAL_STORE_H, INITIAL_STORE_W, OPEN_MINUTE, SAVE_VERSION, START_MONEY, START_REPUTATION,
+  CELL, DEV_MONEY, INITIAL_STORE_H, INITIAL_STORE_W, OPEN_MINUTE, SAVE_VERSION, START_MONEY, START_REPUTATION, STORE_FRONT_Z,
 } from '../config/constants';
+
+/** Hàng ô sau cùng (gy nhỏ nhất) của tiệm lúc mới chơi: tiệm nằm sát mặt tiền nên toạ độ nội thất tính từ hàng này */
+const STARTER_BACK_ROW = Math.round((STORE_FRONT_Z - INITIAL_STORE_H) / CELL);
 import { getFurniture } from '../config/furniture';
 import { LICENSES } from '../config/licenses';
 import { PRODUCTS } from '../config/products';
@@ -200,14 +203,16 @@ export function makeFurniture(uid: string, type: string, gx: number, gy: number,
 export function createNewState(seed = Date.now() % 1_000_000): SaveData {
   const prices: Record<string, number> = {};
   for (const p of PRODUCTS) prices[p.id] = p.marketPrice;
-  // Toạ độ theo ô NavGrid 0.5m. Cửa hàng 12m × 10m = 24 × 20 ô, cửa ở x = 4..7, z = 20.
+  // Toạ độ tuyệt đối theo ô NavGrid 0.5m. Tiệm hẻm 8m × 6m nằm sát mặt tiền: x = 0..15, z = b..b+11 (b = hàng ô sau cùng của tiệm).
+  // Cửa ở x = 4..7 trên hàng ô ngay sau tiệm; 3 kệ sát tường sau / phải, quầy thu ngân gần cửa.
+  const b = STARTER_BACK_ROW;
   const layout: Array<[string, number, number, number]> = [
-    ['shelf_hutch', 3, 1, 0],
-    ['shelf_ladder', 10, 1, 0],
-    ['fridge_coke', 22, 5, 3],
-    ['checkout', 9, 13, 0],
-    ['computer', 0, 5, 1],
-    ['trash', 1, 17, 0],
+    ['shelf_hutch', 1, b + 1, 0],
+    ['shelf_ladder', 6, b + 1, 0],
+    ['fridge_coke', 14, b + 3, 3],
+    ['checkout', 10, b + 6, 0],
+    ['computer', 0, b + 3, 1],
+    ['trash', 0, b + 10, 0],
   ];
   const furniture = [...layout.map(([type, gx, gy, rot], i) => makeFurniture(`f${i + 1}`, type, gx, gy, rot)), ...starterLamps()];
   return {
@@ -241,7 +246,7 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
       headbob: true, volMaster: 0.8, volSfx: 1, volMusic: 0.5, volAmbient: 0.6,
     },
     tutorial: {},
-    player: { gx: 3, gy: 8, yaw: 0 },
+    player: { gx: 8, gy: b + 8, yaw: 0 },
     gameOver: false,
     vehicles: [],
     dirt: [],
@@ -254,8 +259,9 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
 
 /** 4 đèn tuýp cơ bản cho cửa hàng mới — muốn sáng hơn thì mua thêm. */
 export function starterLamps(prefix = 'L'): FurnitureData[] {
-  const at: Array<[number, number]> = [[4, 6], [16, 6], [4, 13], [16, 13]];
-  return at.map(([gx, gy], i) => makeFurniture(`${prefix}${i + 1}`, 'lamp_tube', gx, gy, 0));
+  const b = STARTER_BACK_ROW;
+  const at: Array<[number, number]> = [[3, 3], [12, 3], [3, 8], [12, 8]];
+  return at.map(([gx, gy], i) => makeFurniture(`${prefix}${i + 1}`, 'lamp_tube', gx, b + gy, 0));
 }
 
 /** Ván developer: rất nhiều tiền, mọi giấy phép, không giới hạn cấp độ, không phá sản. */

@@ -1,7 +1,7 @@
 import {
   BUSHES, CITY_SEED, LAMP_SPACING, PARKED_CARS, ROAD_WIDTH, STREET_BUILDINGS, TREES, TREE_SPACING, WALK_WIDTH,
 } from '../config/city';
-import { SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
+import { SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE_LOT } from '../config/constants';
 import { mulberry32, pick } from '../core/Random';
 import type { AABB } from './Colliders';
 import { fillEdge, infillBlocks, oppositeShops, ringEdges, sideShops } from './CityFill';
@@ -127,11 +127,11 @@ export function cityLayout(D: number, W = 12): CityLayout {
   const depot = { shed, pad, kiosk: { x: 96.5, z: pad.z0 + 3, yaw: 0 } };
   // trạm xe buýt: bên phải mặt tiền cửa hàng, sát lề; xe đỗ trên làn ngoài cùng (đầu xe hướng -X) — cửa trước xe nằm ngoài mái che, hành khách xuống rồi đi về phía cửa hàng
   const stopX = 32.6;
-  const busStop: BusStop = { shelter: { x0: stopX - 1.6, x1: stopX + 1.6, z0: F - 1.4, z1: F - 0.3 }, bay: { x: stopX, z: F + LANE_OFFSET } };
+  const busStop: BusStop = { shelter: { x0: stopX - 1.6, x1: stopX + 1.6, z0: F - 1.4, z1: F - 0.3 }, bay: { x: stopX, z: F + HALF - LANE_OFFSET } };
   const busClear: Rect = { x0: busStop.shelter.x0 - 1.2, x1: busStop.shelter.x1 + 1.2, z0: F - walk, z1: F };
   const reserved: Rect[] = [
-    // cửa hàng + kho phía sau (chừa lối sau 3m) và vỉa hè trước mặt tiền
-    { x0: -0.6, x1: W + 0.6, z0: WAREHOUSE.z0 - 4, z1: F }, { x0: -14.5, x1: 35, z0: D + WALL_THICKNESS, z1: F },
+    // vỏ nhà: cửa hàng + kho kế bên (chừa lối sau 3m) và vỉa hè trước mặt tiền
+    { x0: WAREHOUSE_LOT.x0 - 0.6, x1: W + 0.6, z0: -4, z1: F }, { x0: WAREHOUSE_LOT.x0 - 0.6, x1: 35, z0: D + WALL_THICKNESS, z1: F },
     lot, { ...shed, z1: F }, { x0: shed.x0 - 2, x1: shed.x1 + 2, z0: shed.z0, z1: F },
   ];
   const placements: Placement[] = [];

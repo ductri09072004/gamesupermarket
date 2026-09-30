@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DOOR_WIDTH, DOOR_X, MINUTES_PER_SECOND, WALL_THICKNESS } from '../config/constants';
+import { DOOR_WIDTH, DOOR_X, MINUTES_PER_SECOND, STORE_FRONT_Z, WALL_THICKNESS } from '../config/constants';
 import type { DirtData, DirtKind, LooseItem } from '../core/GameState';
 import { dirtMesh, looseMesh } from '../entities/MessModels';
 import { productMesh } from '../products/PackagingFactory';
@@ -38,7 +38,8 @@ export class MessManager {
   private spot = (kind: DirtKind): { x: number; z: number } | null => {
     const rng = this.c.s.rng;
     const W = this.d.storeW;
-    const D = this.d.storeH;
+    const H = this.d.storeH;
+    const D = STORE_FRONT_Z;
     if (kind === 'smudge') {
       const left = DOOR_X - DOOR_WIDTH / 2 - 0.3;
       const right = W - 0.3 - (DOOR_X + DOOR_WIDTH / 2 + 0.3);
@@ -48,7 +49,7 @@ export class MessManager {
     }
     const inside = this.people().filter((p) => this.floorOk(p.x, p.z));
     for (let i = 0; i < 8; i++) {
-      const base = inside.length && rng() < 0.8 ? inside[Math.floor(rng() * inside.length)] : { x: 0.5 + rng() * (W - 1), z: 0.5 + rng() * (D - 1) };
+      const base = inside.length && rng() < 0.8 ? inside[Math.floor(rng() * inside.length)] : { x: 0.5 + rng() * (W - 1), z: D - H + 0.5 + rng() * (H - 1) };
       const x = base.x + (rng() - 0.5) * 1.2;
       const z = base.z + (rng() - 0.5) * 1.2;
       if (this.floorOk(x, z)) return { x, z };
@@ -114,7 +115,7 @@ export class MessManager {
   /** Ô đứng để dọn: ngay chỗ bẩn hoặc kề bên; vết kính: ô trong cửa hàng sát kính, không được thì ô vỉa hè ngoài kính. */
   workSpots(x: number, z: number, glass: boolean): GridPoint[] {
     const g = this.c.s.grid;
-    const cell = worldToCell(x, g.storeH - 0.25);
+    const cell = worldToCell(x, STORE_FRONT_Z - 0.25);
     const cand = glass
       ? [cell, { gx: cell.gx - 1, gy: cell.gy }, { gx: cell.gx + 1, gy: cell.gy }, { gx: cell.gx, gy: g.sd + 1 }]
       : [worldToCell(x, z), ...adjacentTiles([worldToCell(x, z)])];

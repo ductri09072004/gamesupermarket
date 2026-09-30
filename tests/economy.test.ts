@@ -68,7 +68,7 @@ describe('Cuối ngày', () => {
   it('chi phí theo diện tích, tủ lạnh và lương', () => {
     const d = createNewState(1);
     const base = computeExpenses(d);
-    expect(base.rent).toBeCloseTo(12 * 10 * 0.4);
+    expect(base.rent).toBeCloseTo(8 * 6 * 0.4);
     d.furniture.push({ uid: 'x', type: 'fridge', gx: 0, gy: 0, rot: 0, slots: [], boxes: [] });
     d.staff.push({ uid: 's', name: 'A', role: 'cashier', wage: 60, speed: 1, shirt: 0 });
     const e = computeExpenses(d);

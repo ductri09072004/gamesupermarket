@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  CUSTOMER_SPEED, PICK_TIME_S, QUEUE_PATIENCE_S, REP_OUT_OF_STOCK, REP_TOO_EXPENSIVE, REP_WALKOUT,
+  CUSTOMER_SPEED, PICK_TIME_S, QUEUE_PATIENCE_S, REP_OUT_OF_STOCK, REP_TOO_EXPENSIVE, REP_WALKOUT, STORE_FRONT_Z,
 } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import { getProduct } from '../config/products';
@@ -77,7 +77,7 @@ export class Customer extends Walker {
   tick(sim: number, dt: number): void {
     const run = this.state === 'flee' ? (this.alarmed ? SECURITY.thiefRun : 1.15) : 1;
     const moving = this.step(CUSTOMER_SPEED * run * sim, sim > 0 ? dt : 0);
-    if (!this.enteredDoor && this.z < this.s.grid.storeH - 0.2 && this.state === 'enter') {
+    if (!this.enteredDoor && this.z < STORE_FRONT_Z - 0.2 && this.state === 'enter') {
       this.enteredDoor = true;
       this.world.doorBell();
     }

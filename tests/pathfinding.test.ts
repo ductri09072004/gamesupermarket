@@ -46,18 +46,18 @@ describe('Pathfinding', () => {
   it('cache trả kết quả giống và bị xoá khi version đổi', () => {
     const grid = new NavGrid(12, 10, false);
     const cache = new PathCache(grid);
-    const a = cache.find(grid.doorOutside, { gx: 10, gy: 10 });
-    const b = cache.find(grid.doorOutside, { gx: 10, gy: 10 });
+    const a = cache.find(grid.doorOutside, { gx: 10, gy: 26 });
+    const b = cache.find(grid.doorOutside, { gx: 10, gy: 26 });
     expect(a).toEqual(b);
     expect(cache.hits).toBe(1);
-    grid.occupy([{ gx: 8, gy: 10 }], 'x');
-    cache.find(grid.doorOutside, { gx: 10, gy: 10 });
+    grid.occupy([{ gx: 8, gy: 26 }], 'x');
+    cache.find(grid.doorOutside, { gx: 10, gy: 26 });
     expect(cache.hits).toBe(1);
   });
 
   it('khách đi từ vỉa hè vào cửa tới ô trong cửa hàng', () => {
     const grid = new NavGrid(12, 10, false);
-    const p = findPath(grid, grid.spawnPoints()[0], { gx: 16, gy: 6 })!;
+    const p = findPath(grid, grid.spawnPoints()[0], { gx: 16, gy: 26 })!;
     expect(p).not.toBeNull();
     expect(p.some((q) => q.gy === grid.sd)).toBe(true);
   });

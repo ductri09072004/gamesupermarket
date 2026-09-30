@@ -1,4 +1,4 @@
-import { CELL, DOOR_WIDTH, DOOR_X, MAX_STORE_H, MAX_STORE_W, SIDEWALK_DEPTH, WAREHOUSE } from '../config/constants';
+import { CELL, DOOR_WIDTH, DOOR_X, MAX_STORE_H, MAX_STORE_W, SIDEWALK_DEPTH, STORE_FRONT_Z, WAREHOUSE } from '../config/constants';
 import type { GridPoint } from './Footprint';
 
 export type TileType = 'grass' | 'road' | 'sidewalk' | 'floor' | 'warehouse' | 'wall' | 'door';
@@ -31,19 +31,26 @@ export function worldToCell(x: number, z: number): GridPoint {
 }
 
 /**
- * Lưới đi lại 0.5m cho A*. Cửa hàng chiếm các ô [0, sw) × [0, sd); phía trước (+Z) là vỉa hè,
- * phía sau (-Z) là kho (mở khoá sau).
+ * Lưới đi lại 0.5m cho A*, toạ độ tuyệt đối. Mặt tiền cố định ở hàng ô sd (= STORE_FRONT_Z); cửa hàng đã mở khoá chiếm các ô
+ * [0, sw) × [back, sd) sát mặt tiền, phía trước (+Z) là vỉa hè; kho kế bên (trái) qua tường chung. Phần còn lại của vỏ nhà
+ * (chừa cho mở rộng) không đi được.
  */
 export class NavGrid implements WalkGrid {
-  static readonly MIN_X = -16;
-  static readonly MIN_Y = m2c(WAREHOUSE.z0) - 2;
+  /** Biên trái lưới: đủ cho kho (mặt bằng chừa mở rộng tới x = −14.5m) */
+  static readonly MIN_X = -30;
+  /** Vỉa hè / đường đi được từ ô này trở sang phải (bên trái là hàng rong, xe đỗ — ngoài lưới khách) */
+  static readonly WALK_MIN_X = -16;
+  static readonly MIN_Y = -4;
   static readonly MAX_X = m2c(MAX_STORE_W) + 16;
   static readonly MAX_Y = m2c(MAX_STORE_H + SIDEWALK_DEPTH) + 12;
   readonly width = NavGrid.MAX_X - NavGrid.MIN_X + 1;
   readonly height = NavGrid.MAX_Y - NavGrid.MIN_Y + 1;
   version = 0;
   sw = 0;
-  sd = 0;
+  /** Hàng ô mặt tiền (tường trước, có cửa) — cố định */
+  sd = m2c(STORE_FRONT_Z);
+  /** Hàng ô đầu tiên (sau cùng) của phần cửa hàng đã mở khoá */
+  back = 0;
   private tiles: Tile[] = [];
 
   constructor(public storeW: number, public storeH: number, public warehouse: boolean) {
@@ -78,8 +85,8 @@ export class NavGrid implements WalkGrid {
   }
 
   get warehouseDoorCells(): GridPoint[] {
-    const x = m2c(WAREHOUSE.x0 + WAREHOUSE.doorX);
-    return [{ gx: x - 1, gy: -1 }, { gx: x, gy: -1 }];
+    const y = m2c(WAREHOUSE.doorZ - 0.5);
+    return [{ gx: -1, gy: y }, { gx: -1, gy: y + 1 }];
   }
 
   rebuild(storeW: number, storeH: number, warehouse: boolean): void {
@@ -87,22 +94,24 @@ export class NavGrid implements WalkGrid {
     this.storeH = storeH;
     this.warehouse = warehouse;
     const sw = m2c(storeW);
-    const sd = m2c(storeH);
+    const sd = m2c(STORE_FRONT_Z);
+    const back = sd - m2c(storeH);
     this.sw = sw;
     this.sd = sd;
+    this.back = back;
     const old = this.tiles;
     this.tiles = Array.from({ length: this.width * this.height }, () => ({ type: 'grass' as TileType, zone: 'outside' as Zone, occupiedBy: null }));
     const walkDepth = m2c(SIDEWALK_DEPTH);
-    for (let gx = NavGrid.MIN_X; gx <= NavGrid.MAX_X; gx++) {
+    for (let gx = NavGrid.WALK_MIN_X; gx <= NavGrid.MAX_X; gx++) {
       for (let gy = sd + 1; gy <= sd + walkDepth; gy++) this.set(gx, gy, 'sidewalk', 'outside');
       for (let gy = sd + walkDepth + 1; gy <= Math.min(sd + walkDepth + 12, NavGrid.MAX_Y); gy++) this.set(gx, gy, 'road', 'outside');
     }
-    for (let gx = 0; gx < sw; gx++) for (let gy = 0; gy < sd; gy++) this.set(gx, gy, 'floor', 'store');
+    for (let gx = 0; gx < sw; gx++) for (let gy = back; gy < sd; gy++) this.set(gx, gy, 'floor', 'store');
     for (let gx = -1; gx <= sw; gx++) {
-      this.set(gx, -1, 'wall', 'store');
+      this.set(gx, back - 1, 'wall', 'store');
       this.set(gx, sd, 'wall', 'store');
     }
-    for (let gy = -1; gy <= sd; gy++) {
+    for (let gy = back - 1; gy <= sd; gy++) {
       this.set(-1, gy, 'wall', 'store');
       this.set(sw, gy, 'wall', 'store');
     }
@@ -111,12 +120,13 @@ export class NavGrid implements WalkGrid {
       const x0 = m2c(WAREHOUSE.x0);
       const x1 = m2c(WAREHOUSE.x0 + WAREHOUSE.w);
       const y0 = m2c(WAREHOUSE.z0);
-      for (let gx = x0; gx < x1; gx++) for (let gy = y0; gy < -1; gy++) this.set(gx, gy, 'warehouse', 'warehouse');
-      for (let gx = x0 - 1; gx <= x1; gx++) this.set(gx, y0 - 1, 'wall', 'warehouse');
-      for (let gy = y0 - 1; gy < -1; gy++) {
-        this.set(x0 - 1, gy, 'wall', 'warehouse');
-        this.set(x1, gy, 'wall', 'warehouse');
+      // sàn kho x ∈ [x0, x1) — cột x1 = -1 là tường chung với cửa hàng; tường trước (hàng sd) là mặt tiền kho
+      for (let gx = x0; gx < x1; gx++) for (let gy = y0; gy < sd; gy++) this.set(gx, gy, 'warehouse', 'warehouse');
+      for (let gx = x0 - 1; gx < x1; gx++) {
+        this.set(gx, y0 - 1, 'wall', 'warehouse');
+        this.set(gx, sd, 'wall', 'warehouse');
       }
+      for (let gy = y0 - 1; gy <= sd; gy++) this.set(x0 - 1, gy, 'wall', 'warehouse');
       for (const d of this.warehouseDoorCells) this.set(d.gx, d.gy, 'door', 'warehouse');
     }
     if (old.length === this.tiles.length) {
@@ -138,7 +148,7 @@ export class NavGrid implements WalkGrid {
   }
 
   isStoreInterior(gx: number, gy: number): boolean {
-    return gx >= 0 && gy >= 0 && gx < this.sw && gy < this.sd;
+    return gx >= 0 && gy >= this.back && gx < this.sw && gy < this.sd;
   }
 
   isWarehouseInterior(gx: number, gy: number): boolean {
@@ -183,24 +193,24 @@ export class NavGrid implements WalkGrid {
 
   /** Vị trí biển Mở/Đóng cửa (m). */
   get signPosition(): { x: number; z: number } {
-    return { x: DOOR_X + DOOR_WIDTH / 2 + 0.55, z: this.storeH };
+    return { x: DOOR_X + DOOR_WIDTH / 2 + 0.55, z: STORE_FRONT_Z };
   }
 
   spawnPoints(): GridPoint[] {
     const y = this.sd + 3;
-    return [{ gx: NavGrid.MIN_X + 1, gy: y }, { gx: Math.min(this.sw + 14, NavGrid.MAX_X - 1), gy: y }];
+    return [{ gx: NavGrid.WALK_MIN_X + 1, gy: y }, { gx: Math.min(this.sw + 14, NavGrid.MAX_X - 1), gy: y }];
   }
 
   /** Chỗ đặt thùng nội thất trên vỉa hè (m): sau ô giao thùng hàng, cách mặt tiền ~1.45m. */
   crateSpots(): Array<{ gx: number; gy: number }> {
     const out: Array<{ gx: number; gy: number }> = [];
-    for (let i = 0; i < 10; i++) out.push({ gx: DOOR_X + DOOR_WIDTH / 2 + 3.6 + i * 1.6, gy: this.storeH + 1.45 });
+    for (let i = 0; i < 10; i++) out.push({ gx: DOOR_X + DOOR_WIDTH / 2 + 3.6 + i * 1.6, gy: STORE_FRONT_Z + 1.45 });
     return out;
   }
 
   /** Điểm giao hàng trên vỉa hè (m). */
   deliverySpots(): Array<{ gx: number; gy: number }> {
-    const z = this.storeH + 0.9;
+    const z = STORE_FRONT_Z + 0.9;
     return [0, 1, 2, 3, 4, 5].map((i) => ({ gx: DOOR_X + DOOR_WIDTH / 2 + 0.8 + (i % 3) * 0.75, gy: z + Math.floor(i / 3) * 0.75 }));
   }
 

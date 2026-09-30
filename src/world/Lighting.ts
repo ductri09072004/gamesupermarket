@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ENV_INTENSITY } from '../config/constants';
+import { ENV_INTENSITY, STORE_FRONT_Z } from '../config/constants';
 import { nightAt } from '../systems/LightingSystem';
 
 interface Sky {
@@ -97,8 +97,9 @@ export class Lighting {
   /** Cập nhật vùng bóng đổ theo kích thước cửa hàng. */
   fit(W: number, D: number): void {
     const cx = W / 2;
-    const cz = D / 2;
-    // nón sáng vừa phủ cửa hàng (+ kho phía sau) từ trên cao, mép mềm — ngoài phố không bị rọi
+    // phần cửa hàng đã mở khoá sát mặt tiền cố định: từ z = FRONT − D tới FRONT
+    const cz = STORE_FRONT_Z - D / 2;
+    // nón sáng vừa phủ cửa hàng từ trên cao, mép mềm — ngoài phố không bị rọi
     const h = 16;
     this.ceiling.position.set(cx, h, cz - 1);
     this.ceiling.target.position.set(cx, 0, cz - 1);
@@ -109,7 +110,7 @@ export class Lighting {
     cam.near = h - 5;
     cam.far = h + 2;
     cam.updateProjectionMatrix();
-    this.sun.target.position.set(cx, 0, D + 4);
+    this.sun.target.position.set(cx, 0, STORE_FRONT_Z + 4);
     const sr = Math.hypot(W / 2, D / 2 + 4) + 5;
     const sc = this.sun.shadow.camera;
     sc.left = sc.bottom = -sr;

@@ -119,7 +119,8 @@ export const BUSHES = ['Bush_1', 'Bush_2'];
 export const PARKED_CARS = NPC_CAR_MODELS.map((v) => v.model);
 export const PROPS = ['Streetlight_Single', 'Streetlight_Double', 'TrafficLight', 'TrafficCone', 'Sign_Stop', 'Sign_NoParking'];
 
-export const ROAD_WIDTH = 8;
+/** Hẻm chật: mặt đường chỉ vừa 1 làn ô tô (~1.9m) + xe máy lách sát lề */
+export const ROAD_WIDTH = 4.6;
 export const WALK_WIDTH = 3;
 /** Khoảng cách đèn đường / cây dọc vỉa hè (m) */
 export const LAMP_SPACING = 26;

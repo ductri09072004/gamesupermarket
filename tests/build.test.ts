@@ -26,16 +26,18 @@ describe('BuildSystem', () => {
 
   it('đặt được ở ô trống', () => {
     const { d, grid } = setup();
-    expect(canPlace(grid, getFurniture('shelf_small'), 14, 8, 0, d.furniture).ok).toBe(true);
+    expect(canPlace(grid, getFurniture('shelf_small'), 8, 23, 0, d.furniture).ok).toBe(true);
   });
 
   it('không đặt ngoài cửa hàng / chồng lên đồ / chặn cửa', () => {
     const { d, grid } = setup();
     const small = getFurniture('shelf_small');
-    expect(canPlace(grid, small, -4, 4, 0, d.furniture).ok).toBe(false);
-    expect(canPlace(grid, small, 4, 1, 0, d.furniture).ok).toBe(false);
+    expect(canPlace(grid, small, -4, 24, 0, d.furniture).ok).toBe(false);
+    expect(canPlace(grid, small, 4, 21, 0, d.furniture).ok).toBe(false);
+    // vỏ nhà chưa mở khoá phía sau tiệm
+    expect(canPlace(grid, small, 8, 10, 0, d.furniture).ok).toBe(false);
     expect(canPlace(grid, small, grid.doorInside.gx, grid.doorInside.gy - 1, 0, d.furniture).ok).toBe(false);
-    expect(canPlace(grid, getFurniture('shelf_large'), 22, 12, 0, d.furniture).ok).toBe(false);
+    expect(canPlace(grid, getFurniture('shelf_large'), 22, 30, 0, d.furniture).ok).toBe(false);
   });
 
   it('không được chặn đường tới quầy thu ngân', () => {
@@ -56,14 +58,15 @@ describe('BuildSystem', () => {
   it('kệ kho chỉ đặt trong kho', () => {
     const { d, grid } = setup();
     const rack = getFurniture('rack');
-    expect(canPlace(grid, rack, 14, 8, 0, d.furniture).ok).toBe(false);
-    grid.rebuild(12, 10, true);
-    expect(canPlace(grid, rack, 2, -10, 0, d.furniture).ok).toBe(true);
+    expect(canPlace(grid, rack, 14, 26, 0, d.furniture).ok).toBe(false);
+    grid.rebuild(8, 6, true);
+    expect(canPlace(grid, rack, -16, 22, 0, d.furniture).ok).toBe(true);
   });
 
-  it('các gói mở rộng đạt tối đa 24x20m', () => {
+  it('các gói mở rộng đạt tối đa 20x16m từ tiệm 8x6m', () => {
     const packs = expansionPacks();
-    expect(packs[packs.length - 1].sizeAfter).toEqual({ w: 24, h: 20 });
+    expect(packs[0].sizeAfter.w * packs[0].sizeAfter.h).toBeGreaterThan(8 * 6);
+    expect(packs[packs.length - 1].sizeAfter).toEqual({ w: 20, h: 16 });
     expect(makeFurniture('x', 'fridge', 0, 0).slots).toHaveLength(8);
   });
 });

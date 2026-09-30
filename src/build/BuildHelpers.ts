@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CELL, WAREHOUSE } from '../config/constants';
+import { CELL, STORE_FRONT_Z, WAREHOUSE } from '../config/constants';
 import { getFurniture } from '../config/furniture';
 import type { FurnitureData } from '../core/GameState';
 import type { Services } from '../core/Services';
@@ -18,8 +18,8 @@ export function buildGrid(g: NavGrid): THREE.LineSegments {
     for (let x = x0; x <= x1 + 1e-6; x += CELL) pts.push(x, 0.01, z0, x, 0.01, z1);
     for (let z = z0; z <= z1 + 1e-6; z += CELL) pts.push(x0, 0.01, z, x1, 0.01, z);
   };
-  add(0, 0, g.storeW, g.storeH);
-  if (g.warehouse) add(WAREHOUSE.x0, WAREHOUSE.z0, WAREHOUSE.x0 + WAREHOUSE.w, 0);
+  add(0, STORE_FRONT_Z - g.storeH, g.storeW, STORE_FRONT_Z);
+  if (g.warehouse) add(WAREHOUSE.x0, WAREHOUSE.z0, WAREHOUSE.x0 + WAREHOUSE.w, STORE_FRONT_Z);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
   return new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0x3a86ff, transparent: true, opacity: 0.35 }));

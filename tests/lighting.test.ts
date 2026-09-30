@@ -31,26 +31,23 @@ describe('ngày đêm & đèn', () => {
   it('đèn gắn trần: không chiếm ô sàn, không chặn đường, chỉ không chồng lên đèn khác', () => {
     const s = new Services(createNewState(1));
     const lamp = getFurniture('lamp_tube');
-    // ngay trên quầy thu ngân (gx 9..12, gy 13..14) vẫn gắn được
-    expect(canPlace(s.grid, lamp, 9, 14, 0, s.data.furniture).ok).toBe(true);
-    expect(s.grid.occupant(4, 6)).toBeNull();
-    // trùng đèn cơ bản L1 (gx 4..6, gy 6)
-    expect(canPlace(s.grid, lamp, 5, 6, 0, s.data.furniture).ok).toBe(false);
-    expect(canPlace(s.grid, lamp, 5, 6, 0, s.data.furniture, 'L1').ok).toBe(true);
+    // ngay trên quầy thu ngân (gx 10..13, gy 26..27) vẫn gắn được
+    expect(canPlace(s.grid, lamp, 10, 27, 0, s.data.furniture).ok).toBe(true);
+    expect(s.grid.occupant(3, 23)).toBeNull();
+    // trùng đèn cơ bản L1 (gx 3..5, gy 23)
+    expect(canPlace(s.grid, lamp, 4, 23, 0, s.data.furniture).ok).toBe(false);
+    expect(canPlace(s.grid, lamp, 4, 23, 0, s.data.furniture, 'L1').ok).toBe(true);
     // ngoài cửa hàng thì không
-    expect(canPlace(s.grid, lamp, 4, 30, 0, s.data.furniture).ok).toBe(false);
+    expect(canPlace(s.grid, lamp, 4, 60, 0, s.data.furniture).ok).toBe(false);
   });
 
-  it('bản lưu v3 được tặng 4 đèn cơ bản và bật đèn', () => {
-    const old = createNewState(1) as unknown as Record<string, unknown>;
-    old.version = 3;
-    old.furniture = (old.furniture as Array<{ type: string }>).filter((f) => !f.type.startsWith('lamp_'));
-    delete old.lightsOn;
-    const m = migrate(old);
-    expect(m.version).toBe(SAVE_VERSION);
-    expect(m.lightsOn).toBe(true);
-    expect(m.furniture.filter((f) => f.type === 'lamp_tube')).toHaveLength(4);
-    expect(m.devMode).toBe(false);
+  it('ván mới có 4 đèn cơ bản và bật đèn; bản lưu cũ (tiệm 12×10) không tương thích', () => {
+    const fresh = createNewState(1);
+    expect(fresh.lightsOn).toBe(true);
+    expect(fresh.furniture.filter((f) => f.type === 'lamp_tube')).toHaveLength(4);
+    expect(migrate(JSON.parse(JSON.stringify(fresh))).version).toBe(SAVE_VERSION);
+    const old = { ...fresh, version: 4 } as unknown as Record<string, unknown>;
+    expect(() => migrate(old)).toThrow();
   });
 });
 

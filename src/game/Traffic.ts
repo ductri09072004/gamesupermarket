@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUS, MOTO_TRAFFIC, TRAFFIC } from '../config/traffic';
+import { BUS, MOTO_TRAFFIC, ONE_WAY_BLOCKS, TRAFFIC } from '../config/traffic';
 import { CAR_IMPACT } from '../config/physics';
 import type { SoundName } from '../core/EventBus';
 import type { CarBody } from '../systems/CarImpact';
@@ -73,8 +73,9 @@ export class Traffic {
   reset(L: CityLayout): void {
     for (const c of this.cars) c.obj.removeFromParent();
     this.cars = [];
-    this.routes = carLoops(L.blocks);
-    this.motoRoutes = carLoops(L.blocks, MOTO_TRAFFIC.lane, MOTO_TRAFFIC.cornerR);
+    const blocks = ONE_WAY_BLOCKS.map((i) => L.blocks[i]).filter(Boolean);
+    this.routes = carLoops(blocks);
+    this.motoRoutes = carLoops(blocks, MOTO_TRAFFIC.lane, MOTO_TRAFFIC.cornerR);
     this.service.reset(this.routes, L.busStop.bay);
     // vào game đã có sẵn một nửa số xe cho phố khỏi vắng
     for (let i = 0; i < TRAFFIC.maxCars / 2; i++) this.spawn('car', null);

@@ -6,7 +6,7 @@ import { buildCityInstances, type Scheduled } from './CityInstances';
 import { buildWires } from './CityWires';
 import { buildTanks, houseDetails } from './HouseDetails';
 import { buildRoadDamage } from './RoadDamage';
-import { cityLayout, V_ROADS, type CityLayout, type Rect } from './CityLayout';
+import { cityLayout, type CityLayout, type Rect } from './CityLayout';
 import { buildDepot } from './Depot';
 import { CityWater } from './CityWater';
 import { buildBusStop } from './BusStop';
@@ -104,25 +104,14 @@ export class City {
   }
 
   private addMarkings(L: CityLayout): void {
-    const dash = new THREE.MeshStandardMaterial({ color: 0xf1e3a0, roughness: 0.6 });
-    const pts: Array<[number, number, boolean]> = [];
-    for (const c of L.centerLines) {
-      for (let t = c.from + 1.5; t < c.to - 1.5; t += 3.2) {
-        const [x, z] = c.axis === 'x' ? [t, c.c] : [c.c, t];
-        if (c.axis === 'x' && V_ROADS.some((v) => Math.abs(x - v) < ROAD_WIDTH / 2 + 1)) continue;
-        pts.push([x, z, c.axis === 'x']);
-      }
-    }
-    const inst = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.6, 0.14).rotateX(-Math.PI / 2), dash, pts.length);
-    const m = new THREE.Matrix4();
-    pts.forEach(([x, z, alongX], i) => inst.setMatrixAt(i, m.makeRotationY(alongX ? 0 : Math.PI / 2).setPosition(x, -0.02, z)));
-    this.group.add(inst);
+    // hẻm một làn: không kẻ vạch giữa đường
     // vạch đỗ xe trong bãi + vạch qua đường trước cửa hàng
     const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.7 });
     const lines: THREE.Matrix4[] = [];
     for (let i = 0; i <= 6; i++) lines.push(new THREE.Matrix4().makeScale(0.12, 1, 5.4).setPosition(L.lot.x0 + 0.3 + i * 3.4, -0.02, L.lot.z0 + 7));
     const road = L.roads[1];
-    for (let i = 0; i < 9; i++) lines.push(new THREE.Matrix4().makeScale(3.4, 1, 0.45).setPosition(-5, -0.02, road.z0 + 0.6 + i * 0.85));
+    const stripes = Math.floor((ROAD_WIDTH - 0.6) / 0.85) + 1;
+    for (let i = 0; i < stripes; i++) lines.push(new THREE.Matrix4().makeScale(3.4, 1, 0.45).setPosition(-5, -0.02, road.z0 + (ROAD_WIDTH - (stripes - 1) * 0.85) / 2 + i * 0.85));
     const li = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), white, lines.length);
     lines.forEach((mm, i) => li.setMatrixAt(i, mm));
     this.group.add(li);

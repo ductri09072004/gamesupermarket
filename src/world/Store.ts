@@ -1,16 +1,20 @@
 import * as THREE from 'three';
-import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, PBR_TILE_M, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
+import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, PBR_TILE_M, STORE_FRONT_Z, WALL_THICKNESS, WAREHOUSE } from '../config/constants';
 import type { AABB } from './Colliders';
 import { applyPbr, pbrSet, setRepeat } from './Materials';
 import { ceilingTexture, concreteTexture, floorTexture } from './Textures';
+import { Shell } from './Shell';
 import { StoreWalls } from './StoreWalls';
 import { warehouseProps } from './InteriorDecor';
 
 const H = CEILING_HEIGHT;
 const T = WALL_THICKNESS;
+/** Bề dày tường chung cửa hàng – kho (m) */
+const PARTY = 0.5;
 const GLASS_H = 2.45;
 const DOOR_H = 2.3;
-const WH_GAP = { x0: WAREHOUSE.x0 + WAREHOUSE.doorX - 0.5, x1: WAREHOUSE.x0 + WAREHOUSE.doorX + 0.5, h: 2.2 };
+/** Cửa thông giữa cửa hàng và kho trên tường chung (z tuyệt đối) */
+const WH_GAP = { z0: WAREHOUSE.doorZ - 0.5, z1: WAREHOUSE.doorZ + 0.5, h: 2.2 };
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
 const unitPlane = new THREE.PlaneGeometry(1, 1);
@@ -21,11 +25,19 @@ function place(m: THREE.Object3D, x0: number, x1: number, y0: number, y1: number
   m.scale.set(Math.max(1e-3, x1 - x0), Math.max(1e-3, y1 - y0), Math.max(1e-3, z1 - z0));
 }
 
-/** Vỏ cửa hàng: sàn bóng, tường, trần, dải đèn, mặt kính trước, cửa trượt, kho phía sau. */
+/**
+ * Cửa hàng: sàn bóng, tường, trần, dải đèn, mặt kính trước, cửa trượt; kho kế bên; vỏ nhà cố định chứa phần chưa mở khoá.
+ * Phần cửa hàng dựng theo toạ độ cục bộ (tường sau z = 0, mặt tiền z = D) trong nhóm `active`, dịch theo z = STORE_FRONT_Z − D
+ * để mặt tiền luôn nằm đúng chỗ khi mở rộng (vách sau lùi ra, phố đứng yên).
+ */
 export class Store {
   readonly group = new THREE.Group();
-  W = 12;
-  D = 10;
+  /** Phần cửa hàng đã mở khoá (toạ độ cục bộ, gốc z ở tường sau) */
+  private active = new THREE.Group();
+  private shell = new Shell();
+  private shellKey = '';
+  W = 8;
+  D = 6;
   warehouse = false;
   private floor: THREE.Mesh;
   private ceiling: THREE.Mesh;
@@ -68,25 +80,25 @@ export class Store {
     this.ceiling = new THREE.Mesh(unitPlane, ceilMat);
     this.ceiling.rotation.x = Math.PI / 2;
     this.ceiling.castShadow = true;
-    this.group.add(this.floor, this.ceiling);
-    for (const name of ['backL', 'backR', 'backFill', 'backLintel', 'left', 'right']) this.wallSet.add(name);
+    this.active.add(this.floor, this.ceiling);
+    for (const name of ['back', 'leftA', 'leftB', 'leftLintel', 'leftFill', 'right']) this.wallSet.add(name);
     this.wallSet.add('header', 'shutter');
-    this.group.add(this.wallSet.group);
+    this.active.add(this.wallSet.group);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0xaeb4bb, metalness: 0.75, roughness: 0.35 });
     const glassMat = new THREE.MeshStandardMaterial({ color: 0xcfe8f5, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0.2, depthWrite: false });
     for (const name of ['glassL', 'glassR']) {
       const m = new THREE.Mesh(unitBox, glassMat);
       this.walls[name] = m;
-      this.group.add(m);
+      this.active.add(m);
     }
     for (const name of ['kickL', 'kickR', 'railL', 'railR']) {
       const m = new THREE.Mesh(unitBox, frameMat);
       m.castShadow = true;
       this.walls[name] = m;
-      this.group.add(m);
+      this.active.add(m);
     }
     this.mullions = new THREE.InstancedMesh(unitBox, frameMat, 64);
-    this.group.add(this.mullions);
+    this.active.add(this.mullions);
     const makeDoor = () => {
       const g = new THREE.Group();
       const inner = new THREE.Mesh(new THREE.BoxGeometry(0.92, DOOR_H - 0.1, 0.06), glassMat);
@@ -107,9 +119,9 @@ export class Store {
     this.doorL = makeDoor();
     this.doorR = makeDoor();
     this.doorR.scale.x = -1;
-    this.group.add(this.doorL, this.doorR);
+    this.active.add(this.doorL, this.doorR);
     this.buildWarehouse();
-    this.group.add(this.whGroup);
+    this.group.add(this.active, this.whGroup, this.shell.group);
   }
 
   private buildWarehouse(): void {
@@ -131,19 +143,14 @@ export class Store {
     ceil.rotation.x = Math.PI / 2;
     ceil.scale.set(w, d, 1);
     ceil.position.set(x0 + w / 2, H, z0 + d / 2);
-    const wm = new THREE.MeshStandardMaterial({ map: concreteTexture('#d6d3cc'), roughness: 0.9 });
-    const add = (a: number, b: number, c: number, e: number) => {
-      const m = new THREE.Mesh(unitBox, wm);
-      place(m, a, b, 0, H, c, e);
-      m.receiveShadow = true;
-      this.whGroup.add(m);
-    };
-    add(x0 - T, x0, z0 - T, 0);
-    add(x0 + w, x0 + w + T, z0 - T, 0);
-    add(x0 - T, x0 + w + T, z0 - T, z0);
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.18), this.lightStripMat);
     lamp.position.set(x0 + w / 2, H - 0.03, z0 + d / 2);
-    this.whGroup.add(floor, ceil, lamp, warehouseProps());
+    // ngưỡng cửa thông trên tường chung (x ∈ [−0.5, 0])
+    const sill = new THREE.Mesh(unitPlane, floorMat);
+    sill.rotation.x = -Math.PI / 2;
+    sill.scale.set(PARTY, WH_GAP.z1 - WH_GAP.z0, 1);
+    sill.position.set(-PARTY / 2, 0.001, (WH_GAP.z0 + WH_GAP.z1) / 2);
+    this.whGroup.add(floor, ceil, lamp, sill, warehouseProps());
   }
 
   /** Đèn cố định của kho theo công tắc (đèn cửa hàng là nội thất mua/dời được). */
@@ -152,7 +159,7 @@ export class Store {
   }
 
   get doorCenter(): THREE.Vector3 {
-    return new THREE.Vector3(DOOR_X, 0, this.D);
+    return new THREE.Vector3(DOOR_X, 0, STORE_FRONT_Z);
   }
 
   /** Dựng lại kích thước (gọi mỗi frame khi đang có animation mở rộng). */
@@ -183,6 +190,8 @@ export class Store {
     this.W = W;
     this.D = D;
     this.warehouse = warehouse;
+    // hình chữ nhật đã mở khoá luôn sát mặt tiền cố định; khi đang nới ra (D lẻ) vách sau lùi dần
+    this.active.position.z = STORE_FRONT_Z - D;
     this.floor.scale.set(W, D, 1);
     this.floor.position.set(W / 2, 0, D / 2);
     setRepeat(this.floorMaps, W / this.floorTile, D / this.floorTile);
@@ -191,12 +200,16 @@ export class Store {
     setRepeat(this.ceilMaps, W / PBR_TILE_M.ceiling, D / PBR_TILE_M.ceiling);
     const w = this.walls;
     const wall = (name: string, x0: number, x1: number, y0: number, y1: number, z0: number, z1: number) => this.wallSet.set(name, x0, x1, y0, y1, z0, z1);
-    wall('backL', -T, WH_GAP.x0, 0, H, -T, 0);
-    wall('backR', WH_GAP.x1, W + T, 0, H, -T, 0);
-    wall('backLintel', WH_GAP.x0, WH_GAP.x1, WH_GAP.h, H, -T, 0);
-    wall('backFill', WH_GAP.x0, WH_GAP.x1, 0, WH_GAP.h, -T, 0);
-    this.wallSet.setVisible('backFill', !warehouse);
-    wall('left', -T, 0, 0, H, 0, D + T);
+    // tường chung với kho (x ∈ [−0.5, 0]) có cửa thông ở z = WH_GAP (toạ độ cục bộ = tuyệt đối − (FRONT − D))
+    const g0 = Math.max(0, WH_GAP.z0 - (STORE_FRONT_Z - D));
+    const g1 = WH_GAP.z1 - (STORE_FRONT_Z - D);
+    wall('back', -PARTY, W + T, 0, H, -T, 0);
+    wall('leftA', -PARTY, 0, 0, H, 0, warehouse ? g0 : D + T);
+    wall('leftB', -PARTY, 0, 0, H, warehouse ? g1 : D + T, D + T);
+    wall('leftLintel', -PARTY, 0, WH_GAP.h, H, g0, g1);
+    wall('leftFill', -PARTY, 0, 0, WH_GAP.h, g0, g1);
+    this.wallSet.setVisible('leftLintel', warehouse);
+    this.wallSet.setVisible('leftFill', false);
     wall('right', W, W + T, 0, H, 0, D + T);
     wall('header', -T, W + T, GLASS_H, H, D, D + T);
     const dl = DOOR_X - DOOR_WIDTH / 2;
@@ -220,6 +233,12 @@ export class Store {
     this.mullions.count = n;
     this.mullions.instanceMatrix.needsUpdate = true;
     this.whGroup.visible = warehouse;
+    // vỏ nhà (khối chưa mở khoá) chỉ dựng lại khi kích thước chốt, không dựng mỗi khung hình lúc đang nới
+    const key = `${W}x${D}x${warehouse}`;
+    if (Number.isInteger(W) && Number.isInteger(D) && key !== this.shellKey) {
+      this.shellKey = key;
+      this.shell.update(W, D, warehouse);
+    }
     this.layoutDoors();
   }
 
@@ -231,7 +250,7 @@ export class Store {
 
   /** Cửa trượt tự mở khi có người tới gần. */
   update(dt: number, people: Array<{ x: number; z: number }>): void {
-    const c = { x: DOOR_X, z: this.D + T / 2 };
+    const c = { x: DOOR_X, z: STORE_FRONT_Z + T / 2 };
     const near = people.some((p) => Math.abs(p.x - c.x) < 1.6 && Math.abs(p.z - c.z) < 1.8);
     const target = near ? 1 : 0;
     const was = this.doorOpen;
@@ -240,25 +259,23 @@ export class Store {
     if (was !== this.doorOpen) this.layoutDoors();
   }
 
-  /** Hộp va chạm của tường & ranh giới khu vực chơi. */
+  /** Hộp va chạm của tường & ranh giới khu vực chơi (toạ độ tuyệt đối). */
   colliders(): AABB[] {
     const { W, D } = this;
+    const B = STORE_FRONT_Z - D;
     const out: AABB[] = [];
     const box = (x0: number, x1: number, z0: number, z1: number, tag: string) =>
       out.push({ minX: x0, maxX: x1, minZ: z0, maxZ: z1, tag });
-    box(-T, WH_GAP.x0, -T, 0, 'wall');
-    box(WH_GAP.x1, W + T, -T, 0, 'wall');
-    if (!this.warehouse) box(WH_GAP.x0, WH_GAP.x1, -T, 0, 'wall');
-    box(-T, 0, 0, D + T, 'wall');
-    box(W, W + T, 0, D + T, 'wall');
-    box(-T, DOOR_X - DOOR_WIDTH / 2, D, D + T, 'glass');
-    box(DOOR_X + DOOR_WIDTH / 2, W + T, D, D + T, 'glass');
+    box(-PARTY, W + T, B - T, B, 'wall');
+    box(W, W + T, B, STORE_FRONT_Z + T, 'wall');
+    // tường chung với kho: có cửa thông khi kho đã mở khoá
     if (this.warehouse) {
-      const { x0, z0, w } = WAREHOUSE;
-      box(x0 - T, x0, z0 - T, 0, 'wall');
-      box(x0 + w, x0 + w + T, z0 - T, 0, 'wall');
-      box(x0 - T, x0 + w + T, z0 - T, z0, 'wall');
-    }
+      box(-PARTY, 0, B, WH_GAP.z0, 'wall');
+      box(-PARTY, 0, WH_GAP.z1, STORE_FRONT_Z + T, 'wall');
+    } else box(-PARTY, 0, B, STORE_FRONT_Z + T, 'wall');
+    box(-T, DOOR_X - DOOR_WIDTH / 2, STORE_FRONT_Z, STORE_FRONT_Z + T, 'glass');
+    box(DOOR_X + DOOR_WIDTH / 2, W + T, STORE_FRONT_Z, STORE_FRONT_Z + T, 'glass');
+    out.push(...this.shell.colliders());
     return out;
   }
 }

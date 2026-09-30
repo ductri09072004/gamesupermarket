@@ -27,10 +27,10 @@ export function roadDamage(roads: Rect[], hotspots: Rect[] = [], avoid: Rect[] =
     const mid = (h.z0 + h.z1) / 2;
     for (let i = 0; i < Math.round(len / 4); i++) {
       const x = h.x0 + rng() * len;
-      const off = (rng() < 0.5 ? -1 : 1) * (1 + rng() * 1.8);
+      const off = (rng() < 0.5 ? -1 : 1) * (0.4 + rng() * (ROAD_WIDTH / 2 - 0.9));
       out.push({ kind: 'pothole', x, z: mid + off, r: 0.25 + rng() * 0.4, rot: rng() * 6.28, aspect: 0.7 + rng() * 0.5 });
       if (rng() < 0.6) out.push({ kind: 'pothole', x: x + (rng() - 0.5) * 1.2, z: mid + off + (rng() - 0.5) * 0.8, r: 0.15 + rng() * 0.2, rot: rng() * 6.28, aspect: 1 });
-      if (rng() < 0.5) out.push({ kind: 'patch', x: x + 2, z: mid + (rng() - 0.5) * 3, r: 0.5 + rng() * 0.7, rot: (rng() - 0.5) * 0.3, aspect: 0.5 + rng() * 0.4 });
+      if (rng() < 0.5) out.push({ kind: 'patch', x: x + 2, z: mid + (rng() - 0.5) * (ROAD_WIDTH - 2), r: 0.4 + rng() * 0.5, rot: (rng() - 0.5) * 0.3, aspect: 0.5 + rng() * 0.4 });
     }
   }
   for (const r of roads) {
@@ -47,10 +47,10 @@ export function roadDamage(roads: Rect[], hotspots: Rect[] = [], avoid: Rect[] =
         out.push({ kind: m.kind, x, z, r: m.r, rot: m.rot, aspect: m.aspect });
       }
     };
-    // vệt bánh xe: cách tim đường 1–2.6m mỗi bên
-    const track = (g: Rng) => (g() < 0.5 ? -1 : 1) * (1 + g() * 1.6);
+    // vệt bánh xe: cách tim đường 0.4m tới sát lề (chừa 0.5m), mỗi bên
+    const track = (g: Rng) => (g() < 0.5 ? -1 : 1) * (0.4 + g() * (ROAD_WIDTH / 2 - 0.9));
     scatter(ROAD_DAMAGE.potholesPer100m, (g) => ({ kind: 'pothole', r: 0.22 + g() * 0.38, rot: g() * 6.28, aspect: 0.7 + g() * 0.5, off: track(g) }));
-    scatter(ROAD_DAMAGE.patchesPer100m, (g) => ({ kind: 'patch', r: 0.5 + g() * 0.8, rot: (alongX ? 0 : Math.PI / 2) + (g() - 0.5) * 0.3, aspect: 0.35 + g() * 0.4, off: (g() - 0.5) * (ROAD_WIDTH - 2) }));
+    scatter(ROAD_DAMAGE.patchesPer100m, (g) => ({ kind: 'patch', r: 0.4 + g() * 0.55, rot: (alongX ? 0 : Math.PI / 2) + (g() - 0.5) * 0.3, aspect: 0.35 + g() * 0.4, off: (g() - 0.5) * (ROAD_WIDTH - 2) }));
     scatter(ROAD_DAMAGE.manholesPer100m, (g) => ({ kind: 'manhole', r: 0.36, rot: g() * 6.28, aspect: 1, off: (g() - 0.5) * 1.6 }));
   }
   // né vạch qua đường (mark nằm lọt vùng avoid thì bỏ)

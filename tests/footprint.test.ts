@@ -49,29 +49,42 @@ describe('Footprint (ô 0.5m)', () => {
 });
 
 describe('NavGrid', () => {
-  it('cửa hàng 12×10m = 24×20 ô, tường bao quanh, cửa phía trước', () => {
-    const g = new NavGrid(12, 10, false);
-    expect(g.sw).toBe(24);
-    expect(g.sd).toBe(20);
-    expect(g.isWalkable(-1, 5)).toBe(false);
-    expect(g.isWalkable(24, 5)).toBe(false);
-    expect(g.isWalkable(10, -1)).toBe(false);
-    expect(g.isWalkable(10, 20)).toBe(false);
+  it('tiệm 8×6m sát mặt tiền cố định (hàng ô 32), tường bao quanh, phần chưa mở khoá không đi được', () => {
+    const g = new NavGrid(8, 6, false);
+    expect(g.sw).toBe(16);
+    expect(g.sd).toBe(32);
+    expect(g.back).toBe(20);
+    expect(g.isWalkable(-1, 25)).toBe(false);
+    expect(g.isWalkable(16, 25)).toBe(false);
+    expect(g.isWalkable(10, 19)).toBe(false);
+    expect(g.isWalkable(10, 32)).toBe(false);
+    expect(g.isWalkable(10, 20)).toBe(true);
+    // vỏ nhà phía sau và bên phải tiệm chưa mở khoá
+    expect(g.isWalkable(10, 10)).toBe(false);
+    expect(g.isWalkable(24, 28)).toBe(false);
     for (const d of g.doorCells) expect(g.isWalkable(d.gx, d.gy)).toBe(true);
-    expect(g.isWalkable(10, 21)).toBe(true);
-    expect(g.isWalkable(5, -5)).toBe(false);
-    g.rebuild(12, 10, true);
-    expect(g.isWalkable(5, -5)).toBe(true);
+    expect(g.isWalkable(10, 33)).toBe(true);
+    // kho kế bên trái, chưa mở khoá → không đi được; mở khoá → đi được, cửa thông ở tường chung
+    expect(g.isWalkable(-6, 26)).toBe(false);
+    g.rebuild(8, 6, true);
+    expect(g.isWalkable(-6, 26)).toBe(true);
+    expect(g.warehouseDoor.gx).toBe(-1);
     expect(g.isWalkable(g.warehouseDoor.gx, g.warehouseDoor.gy)).toBe(true);
+    // mở rộng: vách lùi ra sau và sang phải, mặt tiền không đổi
+    g.rebuild(12, 10, true);
+    expect(g.sd).toBe(32);
+    expect(g.back).toBe(12);
+    expect(g.isWalkable(10, 13)).toBe(true);
+    expect(g.isWalkable(22, 28)).toBe(true);
   });
 
   it('chiếm ô & giải phóng', () => {
     const g = new NavGrid(12, 10, false);
-    g.occupy(footprintCells(getFurniture('shelf_large'), 2, 2, 0), 'f1');
-    expect(g.isWalkable(3, 2)).toBe(false);
-    expect(g.occupant(5, 2)).toBe('f1');
+    g.occupy(footprintCells(getFurniture('shelf_large'), 2, 22, 0), 'f1');
+    expect(g.isWalkable(3, 22)).toBe(false);
+    expect(g.occupant(5, 22)).toBe('f1');
     g.free('f1');
-    expect(g.isWalkable(3, 2)).toBe(true);
+    expect(g.isWalkable(3, 22)).toBe(true);
   });
 
   it('chuyển đổi ô ↔ mét', () => {

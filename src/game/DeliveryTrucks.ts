@@ -27,6 +27,8 @@ const BRAKE = 4;
 const REAR_STOP_X = 8.2;
 const DOOR_S = 0.7;
 const UNLOAD_S = 3.4;
+/** Xe tải đỗ lệch về phía vỉa hè (m) để chừa chỗ cho xe máy lách qua */
+const TRUCK_CURB_SHIFT = 0.7;
 
 /**
  * Xe tải giao hàng: chạy trên làn sát cửa hàng của đường chính (hướng -X), đỗ trước ô giao hàng,
@@ -39,7 +41,7 @@ export class DeliveryTrucks {
   constructor(private c: GameCtx, private layout: () => CityLayout) {}
 
   private get laneZ(): number {
-    return this.layout().roads[1].z0 + ROAD_WIDTH / 2 - LANE_OFFSET;
+    return this.layout().roads[1].z0 + ROAD_WIDTH / 2 - LANE_OFFSET - TRUCK_CURB_SHIFT;
   }
 
   dispatch(order: OrderData): void {

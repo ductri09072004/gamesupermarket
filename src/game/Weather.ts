@@ -1,5 +1,8 @@
 import * as THREE from 'three';
-import { WAREHOUSE, WALL_THICKNESS } from '../config/constants';
+import { MAX_STORE_W, STORE_FRONT_Z, WALL_THICKNESS, WAREHOUSE_LOT } from '../config/constants';
+
+/** Mái vỏ nhà (cửa hàng + kho kế bên) — mưa không rơi vào trong */
+const SHELL = { x0: WAREHOUSE_LOT.x0 - 0.3, x1: MAX_STORE_W + 0.3, z0: -0.3 };
 import { WEATHER } from '../config/weather';
 import { dayWeather, weatherIcon, weatherNow } from '../systems/WeatherSystem';
 import { RainFx } from '../world/RainFx';
@@ -29,8 +32,7 @@ export class Weather {
   }
 
   private insideStore(x: number, z: number): boolean {
-    const d = this.w.s.data;
-    return x > -0.1 && x < d.storeW + 0.1 && z > WAREHOUSE.z0 - 0.3 && z < d.storeH + WALL_THICKNESS;
+    return x > SHELL.x0 && x < SHELL.x1 && z > SHELL.z0 && z < STORE_FRONT_Z + WALL_THICKNESS;
   }
 
   update(dt: number): void {
@@ -43,7 +45,7 @@ export class Weather {
     this.t += dt;
     this.announce(hour);
     const cam = w.camera.position;
-    this.fx.roof = { x0: -0.1, x1: d.storeW + 0.1, z0: WAREHOUSE.z0 - 0.3, z1: d.storeH + WALL_THICKNESS };
+    this.fx.roof = { x0: SHELL.x0, x1: SHELL.x1, z0: SHELL.z0, z1: STORE_FRONT_Z + WALL_THICKNESS };
     this.fx.update(dt, cam, n.rain);
     w.city.setWet(n.wet, n.flood, this.t);
     this.hear(n.rain, this.insideStore(cam.x, cam.z));

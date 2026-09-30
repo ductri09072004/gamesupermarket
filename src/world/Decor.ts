@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { prop } from '../engine/Props';
-import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X } from '../config/constants';
+import { CEILING_HEIGHT, DOOR_WIDTH, DOOR_X, STORE_FRONT_Z } from '../config/constants';
 import { textCanvas } from '../products/LabelTexture';
 import { buildInterior, type InteriorParts } from './InteriorDecor';
 import { signMaterial, type SignSpec } from './SignFactory';
@@ -94,9 +94,11 @@ export class Decor {
     this.interior?.update(dt);
   }
 
+  /** W × D = phần cửa hàng đã mở khoá; dựng theo toạ độ cục bộ (tường sau z = 0) rồi dịch nhóm về sát mặt tiền cố định. */
   build(W: number, D: number): void {
     const tetOn = this.interior?.tet.visible ?? false;
     this.group.clear();
+    this.group.position.z = STORE_FRONT_Z - D;
     const zones: Array<[string, string, number, number]> = [
       ['Thực phẩm', '#e76f51', W * 0.3, 1.2],
       ['Đồ uống', '#2a9d8f', W * 0.7, 1.2],

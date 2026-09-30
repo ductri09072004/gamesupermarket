@@ -37,8 +37,9 @@ export class LightSwitch {
   }
 
   /** Đặt trên tường trái (x = 0), gần cửa ra vào. */
-  place(storeH: number): void {
-    this.group.position.set(0.012, 1.3, storeH - 2.2);
+  /** frontZ: z tuyệt đối của mặt tiền */
+  place(frontZ: number): void {
+    this.group.position.set(0.012, 1.3, frontZ - 2.2);
   }
 
   set(on: boolean): void {

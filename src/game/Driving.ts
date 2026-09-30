@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DOOR_WIDTH, DOOR_X, EYE_HEIGHT, PLAYER_RADIUS, WALL_THICKNESS } from '../config/constants';
+import { DOOR_WIDTH, DOOR_X, EYE_HEIGHT, PLAYER_RADIUS, STORE_FRONT_Z, WALL_THICKNESS } from '../config/constants';
 import { vehicleDef } from '../config/vehicles';
 import { cargoUsed } from '../systems/VehicleSystem';
 import { forward, stepDrive, type DriveState } from '../systems/VehicleDrive';
@@ -120,7 +120,7 @@ export class Driving {
   /** Vật cản cho xe: tường, nhà, cây, xe khác + chắn cửa kính cửa hàng. */
   private obstacles(): AABB[] {
     const w = this.w;
-    const D = w.s.data.storeH;
+    const D = STORE_FRONT_Z;
     const door: AABB = { minX: DOOR_X - DOOR_WIDTH / 2 - 0.2, maxX: DOOR_X + DOOR_WIDTH / 2 + 0.2, minZ: D - 0.2, maxZ: D + WALL_THICKNESS + 0.4, tag: 'door' };
     // xe NPC xử lý riêng bằng va chạm vật rắn (DriveImpact.hitTraffic)
     return [...w.colliders(), ...w.vehicles.colliders(this.uid ?? undefined), ...w.trucks.colliders(), door];

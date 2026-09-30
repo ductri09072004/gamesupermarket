@@ -93,7 +93,7 @@ export function counterProps(w: number, d: number, h: number): THREE.Group {
   return g;
 }
 
-/** Kho sau: két bia nhựa xếp chồng, thùng gỗ, thùng xốp, chậu, xô, cuộn dây điện; góc nghỉ có phích + ấm + nồi cơm. */
+/** Kho: két bia nhựa xếp chồng, thùng gỗ, thùng xốp, chậu, xô, cuộn dây điện; góc nghỉ có phích + ấm + nồi cơm. */
 export function warehouseProps(): THREE.Group {
   const g = new THREE.Group();
   const { x0, z0, w, d } = WAREHOUSE;

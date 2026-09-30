@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { ROAD_WIDTH } from '../src/config/city';
+import { ONE_WAY_BLOCKS } from '../src/config/traffic';
 import { cityLayout, rectsOverlap } from '../src/world/CityLayout';
 import { carLoops, LANE_OFFSET, poseAt, roundedLoop, walkLoops } from '../src/world/CityRoutes';
 
@@ -14,31 +16,34 @@ describe('tuyến xe & người đi bộ', () => {
     for (let d = 0; d < r.total; d += 1.7) expect(Math.hypot(poseAt(r, d).dx, poseAt(r, d).dz)).toBeCloseTo(1);
   });
 
-  it('xe chạy làn bên phải: 2 khối cạnh nhau đi ngược chiều trên đường chung, cách nhau 2 làn', () => {
+  it('hẻm một làn: các khối cho xe chạy không chung cạnh nào → mỗi đoạn đường chỉ một chiều, xe đi giữa lòng hẻm', () => {
     const L = cityLayout(10);
-    const loops = carLoops(L.blocks);
-    // điểm giữa cạnh phải của khối 0 và cạnh trái của khối kề phải
-    const a = L.blocks.findIndex((b) => b.x0 < 0 && b.x1 > 0);
-    const right = L.blocks.findIndex((b) => Math.abs(b.x0 - L.blocks[a].x1 - 8) < 0.01 && b.z0 === L.blocks[a].z0);
-    expect(right).toBeGreaterThanOrEqual(0);
-    const midZ = (L.blocks[a].z0 + L.blocks[a].z1) / 2;
-    const near = (r: (typeof loops)[number]) => {
-      let best = { x: 0, z: 0, dx: 0, dz: 0 };
-      let bd = Infinity;
-      for (let d = 0; d < r.total; d += 0.5) {
-        const p = poseAt(r, d);
-        const dd = Math.abs(p.z - midZ) + (Math.abs(p.x - (L.blocks[a].x1 + 4)) < 5 ? 0 : 1e3);
-        if (dd < bd) { bd = dd; best = p; }
+    const blocks = ONE_WAY_BLOCKS.map((i) => L.blocks[i]);
+    expect(blocks.every(Boolean)).toBe(true);
+    // khối có cửa hàng (chứa x = 0, phía trên đường chính) nằm trong số đó
+    expect(blocks.some((b) => b.x0 < 0 && b.x1 > 0 && b.z1 < L.roads[1].z1)).toBe(true);
+    const loops = carLoops(blocks);
+    expect(LANE_OFFSET).toBe(0);
+    // không có hai xe chạy ngược chiều nhau ở cùng một chỗ trên đường
+    for (let i = 0; i < loops.length; i++) {
+      for (let j = i + 1; j < loops.length; j++) {
+        for (let d = 0; d < loops[i].total; d += 2) {
+          const a = poseAt(loops[i], d);
+          for (let e = 0; e < loops[j].total; e += 2) {
+            const b = poseAt(loops[j], e);
+            if (Math.hypot(a.x - b.x, a.z - b.z) < 1.2) expect(a.dx * b.dx + a.dz * b.dz).toBeGreaterThan(-0.5);
+          }
+        }
       }
-      return best;
-    };
-    const pa = near(loops[a]);
-    const pb = near(loops[right]);
-    expect(Math.sign(pa.dz)).toBe(-Math.sign(pb.dz));
-    expect(Math.abs(pa.x - pb.x)).toBeCloseTo(2 * LANE_OFFSET);
-    // bên phải hướng đi (-dz, dx) chỉ ra tim đường → đi làn phải
-    const road = L.blocks[a].x1 + 4;
-    expect(Math.sign(road - pa.x)).toBe(-Math.sign(-pa.dz));
+    }
+    // xe đi ngay giữa lòng đường: tim đường cách mép khối ROAD_WIDTH / 2
+    const b = blocks[0];
+    let best = Infinity;
+    for (let d = 0; d < loops[0].total; d += 1) {
+      const p = poseAt(loops[0], d);
+      if (Math.abs(p.dz) < 0.01 && p.z < (b.z0 + b.z1) / 2) best = Math.min(best, Math.abs(p.z - (b.z0 - ROAD_WIDTH / 2)));
+    }
+    expect(best).toBeLessThan(0.05);
   });
 
   it('người đi bộ đi trên vỉa hè, không xuyên nhà', () => {

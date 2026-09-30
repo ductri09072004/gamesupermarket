@@ -1,5 +1,6 @@
 import * as CANNON from 'cannon-es';
 import * as THREE from 'three';
+import { STORE_FRONT_Z } from '../config/constants';
 import { BOX_PHYSICS } from '../config/physics';
 import type { BoxData } from '../core/GameState';
 import type { Services } from '../core/Services';
@@ -56,7 +57,7 @@ export class BoxPhysics {
     for (const b of this.statics) this.world.removeBody(b);
     this.statics = [];
     const cx = this.s.data.storeW / 2;
-    const cz = this.s.data.storeH / 2;
+    const cz = STORE_FRONT_Z - this.s.data.storeH / 2;
     for (const a of src) {
       if (a.tag === 'bound') continue;
       const x = (a.minX + a.maxX) / 2;
