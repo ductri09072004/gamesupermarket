@@ -108,6 +108,7 @@ export class RiggedHuman implements HumanBody {
       if (a) this.oneShots.set(k, a);
     }
     this.idle.time = Math.random() * this.idle.getClip().duration;
+    this.idle.setEffectiveWeight(1); // khung xương Mixamo bind ở dáng chữ T → khung hình đầu phải là Idle
     this.mixer.update(0);
   }
 

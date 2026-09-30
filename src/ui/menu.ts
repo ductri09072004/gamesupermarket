@@ -1,5 +1,6 @@
 import type { Settings } from '../core/GameState';
 import { h, modal, uiRoot } from './dom';
+import { icon } from './icons';
 import { showSettings } from './settings';
 
 export { showSettings };
@@ -31,17 +32,15 @@ export function showMainMenu(handlers: MenuHandlers, settings: Settings, onSetti
       h('button', { class: 'btn danger block big', text: 'Xoá bản lưu & chơi mới', onClick: () => { m.close(); start(); } }),
       h('button', { class: 'btn block big', text: 'Huỷ', onClick: () => m.close() }),
     ]);
-    const m = modal(dev ? '🛠️ Chế độ developer' : '✨ Game mới', body);
+    const m = modal(dev ? 'Chế độ developer' : 'Game mới', body);
   };
   root.append(h('div', { class: 'menu-card' }, [
-    h('div', { class: 'logo', text: '🏪' }),
-    h('h1', { text: 'Mini Mart Tycoon 3D' }),
-    h('p', { class: 'muted', text: 'Giả lập siêu thị góc nhìn thứ nhất' }),
-    h('button', { class: 'btn primary block big', text: '▶ Tiếp tục', disabled: !handlers.hasSave, onClick: () => { close(); handlers.onContinue(); } }),
-    h('button', { class: 'btn block big', text: '✨ Game mới', onClick: confirmNew(false) }),
-    h('button', { class: 'btn block big', text: '🛠️ Chế độ developer', onClick: confirmNew(true) }),
-    h('button', { class: 'btn block big', text: '⚙️ Cài đặt', onClick: () => showSettings(settings, onSettings) }),
-    h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>M</kbd> dời kệ · <kbd>B</kbd> xây dựng · <kbd>1-3</kbd> tốc độ · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
+    h('div', { class: 'brand' }, [h('span', { class: 'brand-mark', html: icon('play', 22) }), h('div', {}, [h('h1', { text: 'Mini Mart Tycoon' }), h('p', { class: 'muted', text: 'Giả lập siêu thị góc nhìn thứ nhất' })])]),
+    h('button', { class: 'btn primary block big', text: 'Tiếp tục', disabled: !handlers.hasSave, onClick: () => { close(); handlers.onContinue(); } }),
+    h('button', { class: 'btn block big', text: 'Game mới', onClick: confirmNew(false) }),
+    h('button', { class: 'btn block big', text: 'Cài đặt', onClick: () => showSettings(settings, onSettings) }),
+    h('button', { class: 'btn ghost block', text: 'Chế độ developer', onClick: confirmNew(true) }),
+    h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>M</kbd> dời kệ · <kbd>B</kbd> xây dựng · <kbd>T</kbd> tua nhanh 3× · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
   ]));
   uiRoot().append(root);
   return close;
@@ -52,6 +51,7 @@ export interface PauseHandlers {
   onEndDay?(): void;
   onResume(): void;
   onSave(): void;
+  onBuild(): void;
   onSettings(): void;
   onQuit(): void;
 }
@@ -64,18 +64,18 @@ export function showPauseMenu(h2: PauseHandlers): void {
     fn();
   };
   const body = h('div', { class: 'pause-menu' }, [
-    h('button', { class: 'btn primary block big', text: '▶ Tiếp tục chơi', onClick: act(() => {}) }),
-    h2.canEndDay ? h('button', { class: 'btn block big', text: '🌙 Kết thúc ngày', onClick: act(() => h2.onEndDay?.(), false) }) : null,
-    h('button', { class: 'btn block big', text: '💾 Lưu game', onClick: act(h2.onSave) }),
-    h('button', { class: 'btn block big', text: '⚙️ Cài đặt', onClick: act(h2.onSettings, false) }),
-    h('button', { class: 'btn block big danger', text: '🚪 Về menu chính', onClick: act(h2.onQuit, false) }),
+    h('button', { class: 'btn primary block big', text: 'Tiếp tục chơi', onClick: act(() => {}) }),
+    h2.canEndDay ? h('button', { class: 'btn block big', text: 'Kết thúc ngày', onClick: act(() => h2.onEndDay?.(), false) }) : null,
+    h('button', { class: 'btn block big', html: `${icon('hammer', 16)}<span>Xây dựng</span><kbd>B</kbd>`, onClick: act(h2.onBuild, false) }),
+    h('button', { class: 'btn block big', html: `${icon('save', 16)}<span>Lưu game</span>`, onClick: act(h2.onSave) }),
+    h('button', { class: 'btn block big', html: `${icon('gear', 16)}<span>Cài đặt</span>`, onClick: act(h2.onSettings, false) }),
+    h('button', { class: 'btn block big danger', html: `${icon('exit', 16)}<span>Về menu chính</span>`, onClick: act(h2.onQuit, false) }),
   ]);
-  const m = modal('☰ Tạm dừng', body, { onClose: () => { if (resumeOnClose) h2.onResume(); } });
+  const m = modal('Tạm dừng', body, { onClose: () => { if (resumeOnClose) h2.onResume(); } });
 }
 
 export function showGameOver(day: number, onMenu: () => void): void {
   const body = h('div', { class: 'game-over' }, [
-    h('div', { class: 'logo', text: '💸' }),
     h('p', { text: `Cửa hàng đã phá sản sau ${day} ngày vì nợ quá 3 ngày liên tiếp.` }),
     h('button', { class: 'btn primary block big', text: 'Về menu chính', onClick: () => { m.close(); } }),
   ]);

@@ -44,11 +44,11 @@ export class Tutorial {
     const next = STEPS.find(([k]) => !t[k]);
     const el = h('div', { class: 'tutorial' }, [
       h('div', { class: 'tut-head' }, [
-        h('b', { text: '📋 Hướng dẫn ngày 1' }),
+        h('b', { text: 'Hướng dẫn ngày 1' }),
         h('button', { class: 'win-close', text: '✕', title: 'Ẩn hướng dẫn', onClick: () => { t.dismissed = true; this.remove(); } }),
       ]),
       list,
-      next ? h('div', { class: 'tut-next', text: `👉 ${next[1]}` }) : null,
+      next ? h('div', { class: 'tut-next', text: `Tiếp theo: ${next[1]}` }) : null,
     ]);
     if (this.root) this.root.replaceWith(el);
     else uiRoot().append(el);

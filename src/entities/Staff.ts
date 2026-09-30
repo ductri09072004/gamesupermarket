@@ -9,7 +9,7 @@ import { adjacentTiles, counterTiles, type GridPoint } from '../world/Footprint'
 import { cellCenter } from '../world/NavGrid';
 import { furnitureCenter } from '../world/Placement';
 import type { Customer } from './Customer';
-import { STAFF_MODELS } from '../config/characters';
+import { FEMALE_MODELS, STAFF_MODELS } from '../config/characters';
 import { HAIRS, SKINS } from './Human';
 import { Walker } from './Walker';
 import { HelperBrain, type KioskHelpApi } from './StaffHelper';
@@ -70,7 +70,7 @@ export class StaffNpc extends Walker implements StaffBody {
   private brain: StaffBrain | null = null;
 
   constructor(readonly world: StaffWorld, public data: StaffData, start: GridPoint) {
-    super(world.s, { ...UNIFORM, skin: SKINS[data.shirt % SKINS.length], hair: HAIRS[data.shirt % HAIRS.length], female: data.shirt % 2 === 0, model: STAFF_MODELS[data.shirt % 2 === 0 ? 1 : 0] },
+    super(world.s, { ...UNIFORM, skin: SKINS[data.shirt % SKINS.length], hair: HAIRS[data.shirt % HAIRS.length], female: FEMALE_MODELS.has(STAFF_MODELS[data.role]), model: STAFF_MODELS[data.role] },
       cellCenter(start.gx, start.gy).x, cellCenter(start.gx, start.gy).z);
     if (data.role === 'helper') this.brain = new HelperBrain(this, world.kiosks);
     else if (data.role === 'stocker') this.brain = new StockerBrain(this);

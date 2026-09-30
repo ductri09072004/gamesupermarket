@@ -1,35 +1,36 @@
-import { MAX_REPUTATION } from '../config/constants';
+import { CLOSE_MINUTE, DEV_MONEY_BONUS, FAST_SPEED, MAX_REPUTATION, OPEN_MINUTE } from '../config/constants';
 import type { Services } from '../core/Services';
 import { xpNeeded } from '../systems/ProgressionSystem';
 import { formatClock } from '../systems/TimeSystem';
 import { h, money, uiRoot } from './dom';
-import { DEV_MONEY_BONUS } from '../config/constants';
+import { icon } from './icons';
 
 export interface HudActions {
-  onSave(): void;
   onMenu(): void;
   onEndDay(): void;
-  onToggleMute(): void;
-  onToggleMusic(): void;
-  onBuild(): void;
 }
 
-/** HUD góc trên: tiền, ngày, giờ, XP/level, danh tiếng, tốc độ, âm thanh. */
+/**
+ * HUD: một bảng trạng thái bên trái (tiền, ngày + giờ + trạng thái cửa hàng, cấp + danh tiếng) và hai nút bên phải
+ * (tua nhanh 3×, menu). Âm thanh, lưu, xây dựng nằm trong menu để màn hình không bị rối.
+ */
 export class Hud {
   private root: HTMLElement;
+  private intEl = h('span', { class: 'mn-int' });
+  private decEl = h('span', { class: 'mn-dec' });
   private moneyEl: HTMLElement;
-  private dayEl: HTMLElement;
-  private clockEl: HTMLElement;
-  private weatherEl: HTMLElement;
-  private lvlEl: HTMLElement;
-  private xpBar: HTMLElement;
-  private stars: HTMLElement;
-  private speedBtns: HTMLButtonElement[] = [];
-  private muteBtn: HTMLButtonElement;
-  private musicBtn: HTMLButtonElement;
+  private dayEl = h('span', { class: 'hud-day' });
+  private clockEl = h('span', { class: 'hud-clock' });
+  private weatherEl = h('span', { class: 'hud-weather', text: '', title: 'Thời tiết' });
+  private statusEl = h('span', { class: 'hud-status' });
+  private dayFill = h('i');
+  private lvlEl = h('span', { class: 'lvl-num' });
+  private xpFill = h('i');
+  private xpWrap: HTMLElement;
+  private stars = h('span', { class: 'hud-stars' });
+  private custEl = h('span', { class: 'hud-cust-n', text: '0' });
+  private fastBtn: HTMLButtonElement;
   private endBtn: HTMLButtonElement;
-  private storeEl: HTMLElement;
-  private custEl: HTMLElement;
   private shownMoney: number;
   private raf = 0;
   private offs: Array<() => void> = [];
@@ -37,41 +38,28 @@ export class Hud {
   constructor(private s: Services, actions: HudActions) {
     const d = s.data;
     this.shownMoney = d.money;
-    this.moneyEl = h('div', { class: 'hud-money', text: money(d.money) });
-    this.dayEl = h('span', { class: 'hud-day' });
-    this.clockEl = h('span', { class: 'hud-clock' });
-    this.weatherEl = h('span', { class: 'hud-weather', text: '☀️', title: 'Thời tiết' });
-    this.lvlEl = h('span', { class: 'hud-level' });
-    this.xpBar = h('div', { class: 'xp-fill' });
-    this.stars = h('div', { class: 'hud-stars' });
-    this.storeEl = h('span', { class: 'hud-store' });
-    this.custEl = h('span', { class: 'hud-cust', text: '👥 0' });
-    this.speedBtns = [1, 2, 3].map((n) => h('button', {
-      class: 'speed-btn', text: `${n}x`, title: `Tốc độ ${n}x (phím ${n})`, onClick: () => s.time.setSpeed(n),
-    }));
-    this.muteBtn = h('button', { class: 'icon-btn', title: 'Tắt/bật âm thanh', onClick: actions.onToggleMute });
-    this.musicBtn = h('button', { class: 'icon-btn', title: 'Nhạc nền', onClick: actions.onToggleMusic });
-    this.endBtn = h('button', { class: 'btn end-day', text: '🌙 Kết thúc ngày (N)', onClick: actions.onEndDay });
+    this.moneyEl = h('div', { class: 'hud-money' }, [h('span', { class: 'mn-cur', text: '$' }), this.intEl, this.decEl]);
+    this.setMoney(d.money);
+    this.xpWrap = h('div', { class: 'hud-xp' }, [this.xpFill]);
+    this.fastBtn = h('button', { class: 'hud-btn hud-fast', html: `${icon('fast', 13)}<b>${FAST_SPEED}×</b>`, title: `Tua nhanh ${FAST_SPEED}× (T)`, onClick: () => s.time.toggleFast() });
+    const menuBtn = h('button', { class: 'hud-btn hud-menu', html: icon('menu', 16), title: 'Menu (Esc)', onClick: actions.onMenu });
+    this.endBtn = h('button', { class: 'hud-endday', html: `${icon('moon', 15)}<span>Kết thúc ngày</span><kbd>N</kbd>`, onClick: actions.onEndDay });
     this.endBtn.style.display = 'none';
+    const cust = h('span', { class: 'hud-chip', title: 'Khách trong cửa hàng', html: icon('user', 12) }, [this.custEl]);
     this.root = h('div', { class: 'hud' }, [
-      h('div', { class: 'hud-card' }, [this.moneyEl, h('div', { class: 'hud-sub' }, [this.custEl, this.storeEl])]),
-      h('div', { class: 'hud-card' }, [
-        h('div', { class: 'hud-row' }, [this.dayEl, this.clockEl, this.weatherEl]),
-        h('div', { class: 'hud-row' }, this.speedBtns),
+      h('section', { class: 'hud-panel hud-main' }, [
+        this.moneyEl,
+        h('div', { class: 'hud-meta' }, [this.dayEl, this.clockEl, this.weatherEl, this.statusEl]),
+        h('div', { class: 'hud-daybar', title: 'Tiến độ trong ngày' }, [this.dayFill]),
+        h('div', { class: 'hud-level' }, [
+          h('span', { class: 'lvl-badge', html: 'Cấp ' }, [this.lvlEl]),
+          this.xpWrap,
+          this.stars,
+        ]),
       ]),
-      h('div', { class: 'hud-card' }, [
-        h('div', { class: 'hud-row' }, [this.lvlEl, this.stars]),
-        h('div', { class: 'xp-bar' }, [this.xpBar]),
-      ]),
-      h('div', { class: 'hud-card hud-tools' }, [
-        this.muteBtn, this.musicBtn,
-        h('button', { class: 'icon-btn', text: '🔨', title: 'Xây dựng (B)', onClick: actions.onBuild }),
-        h('button', { class: 'icon-btn', text: '💾', title: 'Lưu game', onClick: actions.onSave }),
-        h('button', { class: 'icon-btn', text: '☰', title: 'Menu', onClick: actions.onMenu }),
-        d.devMode ? h('button', {
-          class: 'btn small dev-badge', text: '🛠️ DEV · +$100k',
-          onClick: () => s.economy.addMoney(DEV_MONEY_BONUS, 'Developer'),
-        }) : null,
+      h('div', { class: 'hud-side' }, [
+        h('div', { class: 'hud-actions' }, [cust, this.fastBtn, menuBtn]),
+        d.devMode ? h('button', { class: 'hud-dev', text: 'DEV  +$100k', onClick: () => s.economy.addMoney(DEV_MONEY_BONUS, 'Developer') }) : null,
       ]),
       this.endBtn,
     ]);
@@ -84,12 +72,11 @@ export class Hud {
       bus.on('time:paused', () => this.renderSpeed()),
       bus.on('xp:changed', () => this.renderLevel()),
       bus.on('reputation:changed', () => this.renderStars()),
-      bus.on('store:toggled', () => this.renderStore()),
-      bus.on('day:canEnd', ({ canEnd }) => { this.endBtn.style.display = canEnd ? 'block' : 'none'; }),
-      bus.on('customer:count', ({ count }) => { this.custEl.textContent = `👥 ${count}`; }),
-      bus.on('settings:changed', () => this.renderAudio()),
-      bus.on('weather:changed', ({ icon, rain, flood }) => {
-        this.weatherEl.textContent = icon;
+      bus.on('store:toggled', () => this.renderTime()),
+      bus.on('day:canEnd', ({ canEnd }) => { this.endBtn.style.display = canEnd ? 'flex' : 'none'; }),
+      bus.on('customer:count', ({ count }) => { this.custEl.textContent = String(count); }),
+      bus.on('weather:changed', ({ icon: ic, rain, flood }) => {
+        this.weatherEl.textContent = ic;
         this.weatherEl.title = flood > 0.03 ? 'Đường ngập' : rain > 0.05 ? 'Trời mưa' : 'Thời tiết';
       }),
       bus.on('day:started', () => { this.renderTime(); this.endBtn.style.display = 'none'; }),
@@ -98,8 +85,12 @@ export class Hud {
     this.renderSpeed();
     this.renderLevel();
     this.renderStars();
-    this.renderStore();
-    this.renderAudio();
+  }
+
+  private setMoney(v: number): void {
+    const [i, dec] = money(Math.abs(v)).slice(1).split('.');
+    this.intEl.textContent = (v < 0 ? '-' : '') + i;
+    this.decEl.textContent = `.${dec}`;
   }
 
   private animateMoney(target: number, delta: number): void {
@@ -109,7 +100,7 @@ export class Hud {
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / 500);
       this.shownMoney = from + (target - from) * (1 - Math.pow(1 - t, 3));
-      this.moneyEl.textContent = money(this.shownMoney);
+      this.setMoney(this.shownMoney);
       if (t < 1) this.raf = requestAnimationFrame(step);
     };
     this.raf = requestAnimationFrame(step);
@@ -120,46 +111,42 @@ export class Hud {
   }
 
   private renderTime(): void {
-    this.dayEl.textContent = `📅 Ngày ${this.s.data.day}`;
-    this.clockEl.textContent = `🕒 ${formatClock(this.s.data.minutes)}`;
-    this.clockEl.classList.toggle('late', this.s.time.isAfterClose());
+    const d = this.s.data;
+    const late = this.s.time.isAfterClose();
+    this.dayEl.textContent = `Ngày ${d.day}`;
+    this.clockEl.textContent = formatClock(d.minutes);
+    this.clockEl.classList.toggle('late', late);
+    this.clockEl.classList.toggle('idle', !d.storeOpen);
+    const state = !d.storeOpen ? 'closed' : late ? 'late' : 'open';
+    this.statusEl.className = `hud-status ${state}`;
+    this.statusEl.textContent = { closed: 'Đóng cửa', late: 'Hết giờ', open: 'Mở cửa' }[state];
+    this.statusEl.title = d.storeOpen ? '' : 'Đồng hồ chỉ chạy khi cửa hàng mở cửa';
+    const frac = (d.minutes - OPEN_MINUTE) / (CLOSE_MINUTE - OPEN_MINUTE);
+    this.dayFill.style.width = `${Math.max(0, Math.min(1, frac)) * 100}%`;
   }
 
   private renderSpeed(): void {
-    const sp = this.s.time.speed;
-    this.speedBtns.forEach((b, i) => {
-      b.classList.toggle('active', sp === i + 1);
-      b.disabled = this.s.time.isSpeedLocked;
-    });
-    this.clockEl.classList.toggle('paused', this.s.time.paused);
+    const t = this.s.time;
+    this.fastBtn.classList.toggle('active', t.isFast);
+    this.fastBtn.disabled = t.isSpeedLocked;
+    this.fastBtn.title = t.isSpeedLocked ? 'Đang thu ngân — tốc độ thường' : `Tua nhanh ${FAST_SPEED}× (T)`;
+    this.clockEl.classList.toggle('paused', t.paused);
   }
 
   private renderLevel(): void {
     const d = this.s.data;
-    this.lvlEl.textContent = `⭐ Cấp ${d.level}`;
-    this.xpBar.style.width = `${Math.min(100, (d.xp / xpNeeded(d.level)) * 100)}%`;
-    this.xpBar.parentElement!.title = `XP ${Math.floor(d.xp)} / ${xpNeeded(d.level)}`;
+    this.lvlEl.textContent = String(d.level);
+    this.xpFill.style.width = `${Math.min(100, (d.xp / xpNeeded(d.level)) * 100)}%`;
+    this.xpWrap.title = `Kinh nghiệm ${Math.floor(d.xp)} / ${xpNeeded(d.level)}`;
   }
 
   private renderStars(): void {
     const r = this.s.data.reputation;
     const full = Math.round(r * 2) / 2;
     let html = '';
-    for (let i = 1; i <= MAX_REPUTATION; i++) html += `<span class="${full >= i ? 'on' : full >= i - 0.5 ? 'half' : ''}">★</span>`;
+    for (let i = 1; i <= MAX_REPUTATION; i++) html += `<span class="${full >= i ? 'on' : full >= i - 0.5 ? 'half' : ''}">${icon('star', 10)}</span>`;
     this.stars.innerHTML = html;
     this.stars.title = `Danh tiếng ${r.toFixed(2)} / 5`;
-  }
-
-  private renderStore(): void {
-    const open = this.s.data.storeOpen;
-    this.storeEl.textContent = open ? '🟢 Mở cửa' : '🔴 Đóng cửa';
-  }
-
-  private renderAudio(): void {
-    const st = this.s.data.settings;
-    this.muteBtn.textContent = st.muted ? '🔇' : '🔊';
-    this.musicBtn.textContent = '🎵';
-    this.musicBtn.classList.toggle('off', !st.music);
   }
 
   destroy(): void {

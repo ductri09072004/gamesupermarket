@@ -35,7 +35,7 @@ export class PlayInput {
       // đang bê nội thất: chỉ xoay / huỷ / đổi tốc độ
       if (e.code === 'KeyR') w.fp.rotate(1);
       else if (e.code === 'KeyQ') w.fp.cancel();
-      else if (e.code.startsWith('Digit')) w.s.time.setSpeed(Number(e.code.slice(-1)));
+      else if (e.code === 'KeyT') w.s.time.toggleFast();
       return;
     }
     switch (e.code) {
@@ -51,7 +51,7 @@ export class PlayInput {
       case 'KeyB': w.build.toggle(); break;
       case 'KeyM': this.moveTarget(); break;
       case 'KeyG': this.unloadVehicle(); break;
-      case 'Digit1': case 'Digit2': case 'Digit3': w.s.time.setSpeed(Number(e.code.slice(-1))); break;
+      case 'KeyT': w.s.time.toggleFast(); break;
     }
   }
 

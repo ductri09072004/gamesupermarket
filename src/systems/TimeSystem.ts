@@ -1,4 +1,4 @@
-import { CLOSE_MINUTE, HARD_STOP_MINUTE, MINUTES_PER_SECOND, OPEN_MINUTE, TIME_SPEEDS } from '../config/constants';
+import { CLOSE_MINUTE, FAST_SPEED, HARD_STOP_MINUTE, MINUTES_PER_SECOND, NORMAL_SPEED, OPEN_MINUTE } from '../config/constants';
 import type { EventBus, GameEvents } from '../core/EventBus';
 import type { GameState } from '../core/GameState';
 
@@ -19,7 +19,10 @@ export class TimeSystem {
   get day(): number { return this.state.data.day; }
   get hour(): number { return this.state.data.minutes / 60; }
   get paused(): boolean { return this.pauseReasons.size > 0; }
-  get speed(): number { return this.speedLocked ? 1 : this.state.data.speed; }
+  get speed(): number { return this.speedLocked || this.state.data.speed !== FAST_SPEED ? NORMAL_SPEED : FAST_SPEED; }
+  get isFast(): boolean { return this.speed === FAST_SPEED; }
+  /** Đồng hồ chỉ chạy khi cửa hàng đang mở cửa (và không bị tạm dừng) */
+  get clockRunning(): boolean { return this.state.data.storeOpen && !this.paused; }
 
   isOpenHours(): boolean {
     return this.minutes >= OPEN_MINUTE && this.minutes < CLOSE_MINUTE;
@@ -46,9 +49,14 @@ export class TimeSystem {
   }
 
   setSpeed(speed: number): void {
-    if (!(TIME_SPEEDS as readonly number[]).includes(speed)) return;
+    if (speed !== NORMAL_SPEED && speed !== FAST_SPEED) return;
     this.state.data.speed = speed;
     this.bus.emit('time:speed', { speed: this.speed });
+  }
+
+  /** Bật / tắt tua nhanh 3× */
+  toggleFast(): void {
+    this.setSpeed(this.state.data.speed === FAST_SPEED ? NORMAL_SPEED : FAST_SPEED);
   }
 
   lockSpeed(locked: boolean): void {
@@ -60,11 +68,15 @@ export class TimeSystem {
     return this.speedLocked;
   }
 
-  /** Tiến thời gian; trả về số giây mô phỏng (đã nhân tốc độ), 0 nếu đang pause. */
+  /**
+   * Tiến thời gian; trả về số giây mô phỏng (đã nhân tốc độ), 0 nếu đang pause.
+   * Đồng hồ trong game (giờ / ngày) chỉ chạy khi cửa hàng mở cửa; lúc đóng cửa mô phỏng (nhân viên, giao hàng…) vẫn chạy.
+   */
   update(dtMs: number): number {
     if (this.paused) return 0;
     const simSeconds = (dtMs / 1000) * this.speed;
     const d = this.state.data;
+    if (!d.storeOpen) return simSeconds;
     const before = d.minutes;
     d.minutes = Math.min(HARD_STOP_MINUTE, d.minutes + simSeconds * MINUTES_PER_SECOND);
     if (Math.floor(before) !== Math.floor(d.minutes)) {

@@ -81,7 +81,7 @@ export class Pedestrians {
     const near = routes.filter(passes);
     for (let i = 0; i < WALKING_VENDOR.count; i++) {
       const route = near[i] ?? pick(routes);
-      const look = { shirt: 0x8a6d46, pants: 0x2b2d42, skin: pick(SKINS), hair: 0x1a1a1a, female: true, model: 'Woman_Casual' };
+      const look = { shirt: 0x8a6d46, pants: 0x2b2d42, skin: pick(SKINS), hair: 0x1a1a1a, female: true, model: 'mx_Martha' };
       const human = createHuman(look);
       const gear = buildVendorGear(i);
       human.root.add(gear.group);

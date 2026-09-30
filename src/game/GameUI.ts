@@ -41,12 +41,8 @@ export class GameUI {
       isUiOpen: () => this.isUiOpen(),
     });
     this.hud = new Hud(s, {
-      onSave: () => this.save(),
       onMenu: () => this.openPause(),
       onEndDay: () => this.endDay(),
-      onToggleMute: () => this.updateSettings(() => { s.data.settings.muted = !s.data.settings.muted; }),
-      onToggleMusic: () => this.updateSettings(() => { s.data.settings.music = !s.data.settings.music; }),
-      onBuild: () => w.build.toggle(),
     });
     this.pc = new Computer(s, () => {
       this.setModal('pc', false);
@@ -57,7 +53,7 @@ export class GameUI {
     this.cleanups.push(
       mountToasts(s.bus),
       s.bus.on('ui:openPc', ({ app }) => this.openPc(app as AppId | undefined)),
-      s.bus.on('day:closing', () => s.bus.emit('toast', { message: '🌙 22:00 — hết giờ bán. Tiễn khách cuối rồi nhấn N để kết thúc ngày.', kind: 'info' })),
+      s.bus.on('day:closing', () => s.bus.emit('toast', { message: '22:00 — hết giờ bán. Tiễn khách cuối rồi nhấn N để kết thúc ngày.', kind: 'info' })),
       s.bus.on('game:over', () => showGameOver(s.data.day, () => host.quitToMenu())),
       s.bus.on('build:mode', ({ active }) => {
         uiRoot().classList.toggle('mode-focus', active);
@@ -155,6 +151,7 @@ export class GameUI {
       onEndDay: () => { this.setModal('pause', false); this.endDay(); },
       onResume: () => { this.setModal('pause', false); this.relock(); },
       onSave: () => this.save(),
+      onBuild: () => { this.setModal('pause', false); this.w.build.toggle(); },
       onSettings: () => showSettings(this.s.data.settings, () => this.updateSettings(() => {}), () => { this.setModal('pause', false); this.relock(); }),
       onQuit: () => { this.setModal('pause', false); this.save(); this.host.quitToMenu(); },
     });
@@ -175,7 +172,7 @@ export class GameUI {
       if (report.gameOver) return;
       s.day.startNextDay();
       w.customers.clear();
-      s.bus.emit('toast', { message: `☀️ Ngày ${s.data.day} bắt đầu! Nhớ mở cửa hàng.`, kind: 'info' });
+      s.bus.emit('toast', { message: `Ngày ${s.data.day} bắt đầu. Mở cửa hàng để đồng hồ bắt đầu chạy.`, kind: 'info' });
       this.relock();
     });
   }

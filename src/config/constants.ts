@@ -8,7 +8,9 @@ export const MINUTES_PER_SECOND = 1; // 1 giây thực = 1 phút game
 export const OPEN_MINUTE = 8 * 60;
 export const CLOSE_MINUTE = 22 * 60;
 export const HARD_STOP_MINUTE = 23 * 60 + 59;
-export const TIME_SPEEDS = [1, 2, 3] as const;
+/** Chỉ có 2 nhịp: bình thường và tua nhanh (bật/tắt bằng một nút hoặc phím T) */
+export const NORMAL_SPEED = 1;
+export const FAST_SPEED = 3;
 export const LOGIC_HZ = 60;
 
 // Người chơi

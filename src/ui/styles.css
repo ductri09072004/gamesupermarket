@@ -49,38 +49,8 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 .btn.glow { animation: glow 1s infinite alternate; }
 @keyframes glow { from { box-shadow: 0 3px 0 var(--ink), 0 0 0 0 rgba(42,157,143,.5); } to { box-shadow: 0 3px 0 var(--ink), 0 0 0 8px rgba(42,157,143,0); } }
 
-/* ---------- HUD ---------- */
-.hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; pointer-events: none; }
-.hud > * { pointer-events: auto; }
-.hud-card { background: var(--card); border: 2px solid var(--ink); border-radius: 14px; padding: 6px 12px; box-shadow: var(--shadow); min-height: 52px; }
-.hud-money { font-size: 24px; font-weight: 900; color: var(--teal); }
-.hud-money.negative { color: var(--red); }
-.hud-money.up { animation: bumpUp 0.4s; }
-.hud-money.down { animation: bumpDown 0.4s; }
-@keyframes bumpUp { 40% { transform: scale(1.15); color: #06d6a0; } }
-@keyframes bumpDown { 40% { transform: scale(0.92); color: var(--red); } }
-.hud-sub { display: flex; gap: 10px; font-size: 12px; font-weight: 700; color: var(--muted); }
-.hud-row { display: flex; gap: 8px; align-items: center; font-weight: 800; }
-.hud-clock.late { color: var(--red); }
-.hud-clock.paused::after { content: ' ⏸'; }
-.speed-btn { font-family: inherit; font-weight: 800; font-size: 12px; border: 2px solid var(--ink); background: #fff; border-radius: 8px; padding: 1px 8px; cursor: pointer; }
-.speed-btn.active { background: var(--yellow); }
-.speed-btn:disabled { opacity: 0.4; }
-.hud-stars span { color: #ddd3c4; font-size: 16px; }
-.hud-stars span.on { color: #ffb703; }
-.hud-stars span.half { background: linear-gradient(90deg, #ffb703 50%, #ddd3c4 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.xp-bar { margin-top: 4px; width: 150px; height: 10px; border-radius: 6px; background: #efe6f7; border: 2px solid var(--ink); overflow: hidden; }
-.xp-fill { height: 100%; background: linear-gradient(90deg, #cdb4db, #9b5de5); transition: width 0.4s; }
-.hud-tools { display: flex; gap: 4px; align-items: center; }
-.icon-btn { font-size: 18px; border: 2px solid var(--ink); background: #fff; border-radius: 10px; width: 36px; height: 36px; cursor: pointer; }
-.icon-btn:hover { background: #fff4e0; }
-.icon-btn.off { opacity: 0.45; }
-.dev-badge { background: #ffd166; white-space: nowrap; }
-.end-day { margin-left: auto; background: #cdb4db; font-size: 16px; animation: pulse 1.2s infinite; }
-@keyframes pulse { 50% { transform: scale(1.05); } }
-
 /* ---------- Toasts / tooltip ---------- */
-.toasts { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.toasts { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .toast { background: #fff; border: 2px solid var(--ink); border-radius: 12px; padding: 7px 14px; font-weight: 800; box-shadow: var(--shadow); animation: toastIn 0.25s ease-out; transition: opacity 0.3s, transform 0.3s; }
 .toast.success { background: #d8f3dc; }
 .toast.error { background: #ffe0e3; }
@@ -237,9 +207,6 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 .logo { font-size: 64px; animation: bob 2s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(-8px) rotate(-4deg); } }
 .menu-help { margin-top: 12px; font-size: 12px; color: var(--muted); line-height: 1.9; }
-.settings { display: grid; gap: 10px; }
-.setting { display: flex; gap: 10px; align-items: center; font-weight: 800; cursor: pointer; }
-.setting input { width: 20px; height: 20px; accent-color: var(--teal); }
 .game-over { text-align: center; }
 
 /* ---------- Day report ---------- */
@@ -307,12 +274,6 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 .gal-info { min-width: min(360px, 60vw); text-align: center; }
 .gal-close { position: absolute; top: -40px; right: 0; }
 
-/* ---------- Cài đặt ---------- */
-.setting.range { display: grid; grid-template-columns: 170px 1fr 60px; gap: 10px; }
-.setting.range input { width: 100%; accent-color: var(--teal); }
-.set-val { font-variant-numeric: tabular-nums; text-align: right; }
-.seg { display: flex; gap: 6px; margin-left: auto; }
-@media (max-width: 500px) { .setting.range { grid-template-columns: 1fr; } }
 #ui-root.gallery-open > :not(.gallery-ui):not(.toasts) { display: none !important; }
 #ui-root.mode-focus > .tutorial { display: none; }
 

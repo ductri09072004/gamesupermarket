@@ -214,3 +214,4 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `models/city/sign_iron.glb` | Simple Store Sign | Blender3D | https://sketchfab.com/3d-models/9809daf35d80441f91e134496936d162 | CC BY 4.0 |
 | `textures/signs/wear_a.png`, `wear_b.png`, `streak.png` | ambientCG — PaintedMetal006 / PaintedMetal013 / Rust009 (tách kênh alpha, làm vết tróc sơn & vệt nước) | CC0 |
 | `fonts/*.woff2` | Google Fonts — Baloo 2, Alfa Slab One, Lobster, Be Vietnam Pro, Bungee, Patrick Hand (có bộ ký tự tiếng Việt) | SIL OFL 1.1 |
+| `models/characters/mx_*.glb`, `models/characters/mx_clips.glb` | Adobe Mixamo — nhân vật Bryce, Brian, Josh, Leonard, Lewis, Louise, Megan, Sophie, Elizabeth, Martha, Jody, Suzie, Pete, Joe, Chad, Alex và các hoạt ảnh (Standard Walk/Run, Breathing Idle, Picking Up, Jab Cross…) — https://www.mixamo.com — dùng miễn phí kể cả thương mại, không bắt buộc ghi nguồn; đã giảm còn ~6k tam giác, nén texture | Mixamo (Adobe) |

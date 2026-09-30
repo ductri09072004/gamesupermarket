@@ -3,9 +3,10 @@ import { EventBus, type GameEvents } from '../src/core/EventBus';
 import { createNewState, GameState } from '../src/core/GameState';
 import { formatClock, TimeSystem } from '../src/systems/TimeSystem';
 
-function setup() {
+function setup(open = true) {
   const bus = new EventBus<GameEvents>();
   const state = new GameState(createNewState(1));
+  state.data.storeOpen = open;
   return { bus, state, time: new TimeSystem(state, bus) };
 }
 
@@ -16,13 +17,36 @@ describe('TimeSystem', () => {
     expect(formatClock(time.minutes)).toBe('09:00');
   });
 
-  it('tốc độ 1x/2x/3x', () => {
-    const { time } = setup();
+  it('chỉ có 1x và tua nhanh 3x', () => {
+    const { time, state } = setup();
     time.setSpeed(3);
     expect(time.update(1000)).toBe(3);
     expect(time.minutes).toBe(8 * 60 + 3);
-    time.setSpeed(5);
+    time.setSpeed(2);
     expect(time.speed).toBe(3);
+    time.toggleFast();
+    expect(time.speed).toBe(1);
+    time.toggleFast();
+    expect(time.isFast).toBe(true);
+    state.data.speed = 2; // save cũ có tốc độ 2x
+    expect(time.speed).toBe(1);
+  });
+
+  it('đồng hồ chỉ chạy khi cửa hàng mở cửa, mô phỏng vẫn chạy', () => {
+    const { time, state } = setup(false);
+    expect(time.clockRunning).toBe(false);
+    expect(time.update(60_000)).toBe(60);
+    expect(formatClock(time.minutes)).toBe('08:00');
+    state.data.storeOpen = true;
+    expect(time.clockRunning).toBe(true);
+    time.update(60_000);
+    expect(formatClock(time.minutes)).toBe('09:00');
+    state.data.storeOpen = false;
+    time.update(60_000);
+    expect(formatClock(time.minutes)).toBe('09:00');
+    time.pause('pc');
+    state.data.storeOpen = true;
+    expect(time.clockRunning).toBe(false);
   });
 
   it('pause khi mở menu', () => {
