@@ -6,6 +6,7 @@ import { textCanvas } from '../products/LabelTexture';
 import { block, mat } from './FurnitureModels';
 import { plastic, powder, rblock, steel, wood } from './DisplayMaterials';
 import { mergedModel } from './MergeStatic';
+import { coinStack, moneyStack } from './MoneyModels';
 import { counterProps } from '../world/InteriorDecor';
 
 export interface CounterParts {
@@ -146,22 +147,37 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   DENOMINATIONS.forEach((den, i) => {
     const bill = den >= 1;
     const col = bill ? i : i - 5;
+    // nhãn mệnh giá ở mép gần người thu ngân (+Z); phần còn lại của khay là xấp tiền / cột xu
     const tex = textCanvas(128, 64, (c) => {
-      c.fillStyle = bill ? '#b7e4c7' : '#ffe8a3';
+      c.fillStyle = '#2b2d42';
       c.fillRect(0, 0, 128, 64);
+      c.fillStyle = bill ? '#b7e4c7' : '#ffe8a3';
+      c.fillRect(0, bill ? 46 : 40, 128, 24);
       c.fillStyle = '#1b4332';
-      c.font = '900 34px "Nunito", Arial';
+      c.font = '900 22px "Nunito", Arial';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(denomLabel(den), 64, 34);
+      c.fillText(denomLabel(den), 64, bill ? 57 : 52);
     });
-    const t = new THREE.Mesh(new THREE.BoxGeometry(bill ? 0.1 : 0.12, 0.012, bill ? 0.16 : 0.1), [
+    const t = new THREE.Mesh(new THREE.BoxGeometry(bill ? 0.1 : 0.12, 0.012, bill ? 0.2 : 0.1), [
       trayMat, trayMat, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }), trayMat, trayMat, trayMat,
     ]);
     const x = bill ? -0.24 + col * 0.12 : -0.21 + col * 0.14;
     t.position.set(x, 0.105, bill ? 0.08 : -0.11);
     t.userData = { kind: 'tray', denom: den };
     drawer.add(t);
+    // tiền trong khay: xấp tiền có băng giấy / các cột xu (không bắt chuột — chỉ khay bắt)
+    if (bill) {
+      const stack = moneyStack(den);
+      stack.position.set(x, 0.111, 0.058);
+      drawer.add(stack);
+    } else {
+      [[-0.028, -0.03, 6], [0.028, -0.03, 4], [-0.028, 0.025, 3], [0.028, 0.025, 5]].forEach(([dx, dz, n]) => {
+        const cs = coinStack(den, n);
+        cs.position.set(x + dx, 0.111, -0.11 + dz);
+        drawer.add(cs);
+      });
+    }
     trays.push(t);
   });
   drawer.position.set(0.1, h - 0.16, d / 2 - 0.2);
@@ -202,7 +218,8 @@ export function buildCounter(def: FurnitureDef): CounterParts {
     paidPoint: new THREE.Vector3(0.45, h + 0.005, -d / 2 + 0.1),
     changePoint: new THREE.Vector3(0.45, h + 0.005, d / 2 - 0.35),
     cardPoint: new THREE.Vector3(0.6, h + 0.005, d / 2 - 0.3),
-    cashierView: new THREE.Vector3(0.1, h + 0.8, d / 2 + 0.6),
-    cashierLook: new THREE.Vector3(0.1, h - 0.1, -d / 2 + 0.05),
+    // góc nhìn từ trên cao, lùi ra sau: thấy cả băng chuyền, màn hình, máy POS lẫn ngăn kéo tiền ở nửa dưới màn hình
+    cashierView: new THREE.Vector3(0.2, h + 1.05, d / 2 + 0.75),
+    cashierLook: new THREE.Vector3(0.2, h - 0.1, -d / 2 + 0.4),
   };
 }

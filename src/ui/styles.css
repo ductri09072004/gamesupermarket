@@ -260,14 +260,7 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 @media (max-width: 700px) { .float-panel { left: 50%; transform: translate(-50%, -50%); } }
 
 /* ---------- 3D: thanh thu ngân ---------- */
-.checkout-strip { position: absolute; left: 50%; bottom: 14px; transform: translate(-50%, 140%); width: min(900px, 96vw); background: rgba(255, 250, 242, 0.96); border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow); padding: 10px 14px; display: flex; gap: 12px; align-items: center; justify-content: space-between; transition: transform 0.25s cubic-bezier(.2,1.2,.5,1); flex-wrap: wrap; }
-.checkout-strip.show { transform: translate(-50%, 0); }
-.cs-left { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
-.cs-left b { font-size: 16px; }
-.cs-info .ok { color: var(--teal); }
-.cs-info .over { color: var(--red); }
-.cs-info .short { color: #b5651d; }
-.cs-actions { display: flex; gap: 8px; align-items: center; }
+.checkout-strip { position: absolute; display: flex; align-items: center; justify-content: space-between; transition: transform 0.25s cubic-bezier(.2,1.2,.5,1); }
 
 /* ---------- 3D: gallery ---------- */
 .gallery-ui { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.94); border: 3px solid var(--ink); border-radius: 16px; padding: 10px 14px; box-shadow: var(--shadow); max-width: 96vw; }

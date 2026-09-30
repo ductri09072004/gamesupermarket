@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUS, MOTO_TRAFFIC, ONE_WAY_BLOCKS, TRAFFIC } from '../config/traffic';
+import { BUS, MOTO_TRAFFIC, ONE_WAY_BLOCKS, TRAFFIC, YIELD } from '../config/traffic';
 import { CAR_IMPACT } from '../config/physics';
 import { activeQuality } from '../config/quality';
 import type { SoundName } from '../core/EventBus';
@@ -9,6 +9,7 @@ import type { AABB } from '../world/Colliders';
 import { carLoops, poseAt, type Route } from '../world/CityRoutes';
 import type { CityLayout } from '../world/CityLayout';
 import { BusService } from './TrafficBus';
+import { yieldStep } from './TrafficYield';
 import { carModel, busModel, motoModel, type VehicleKind } from './TrafficModels';
 import { carBody, stepKnock, type Knock } from './TrafficKnock';
 
@@ -41,6 +42,14 @@ interface Car {
   wob: { f: number; ph: number } | null;
   /** Xe buýt: dừng ở trạm */
   stop: Stop | null;
+  /** Giây liên tiếp bị vật cản chặn (xe khác / người / xe tải đang dỡ hàng) đứng im */
+  blockedT: number;
+  /** Lệch ngang về phía lề phải (m): xe tự leo lề nhường đường / vượt xe chết máy để gỡ kẹt */
+  off: number;
+  /** Quãng đường còn phải chạy lệch lề trước khi nhập lại làn (m) */
+  yieldLeft: number;
+  /** Bị vật cản chặn ở khung này */
+  blockedNow: boolean;
 }
 
 const MASS: Record<VehicleKind, number> = { car: CAR_IMPACT.mass.traffic, moto: CAR_IMPACT.mass.moto, bus: CAR_IMPACT.mass.bus };
@@ -87,7 +96,7 @@ export class Traffic {
   private add(kind: VehicleKind, route: Route, d: number, obj: THREE.Object3D, max: number, life: number, dims?: { hw: number; hl: number }): Car {
     const wob = kind === 'moto' ? { f: (Math.PI * 2) / (MOTO_TRAFFIC.wobbleS[0] + this.rng() * (MOTO_TRAFFIC.wobbleS[1] - MOTO_TRAFFIC.wobbleS[0])), ph: this.rng() * 6.28 } : null;
     const [hw, hl] = dims ? [dims.hw, dims.hl] : kind === 'moto' ? [MOTO_TRAFFIC.hw, MOTO_TRAFFIC.hl] : kind === 'bus' ? [BUS.hw, BUS.hl] : [0.92, 2.05];
-    const car: Car = { kind, obj, route, d, speed: max, max, life, hw, hl, knock: null, wob, stop: null, ...poseAt(route, d) };
+    const car: Car = { kind, obj, route, d, speed: max, max, life, hw, hl, knock: null, wob, stop: null, blockedT: 0, off: 0, yieldLeft: 0, blockedNow: false, ...poseAt(route, d) };
     this.pose(car);
     this.group.add(obj);
     this.cars.push(car);
@@ -156,7 +165,11 @@ export class Traffic {
         body,
         commit: () => {
           if (c.knock) return;
-          if (Math.hypot(body.vx - v0.vx, body.vz - v0.vz) + Math.abs(body.w - v0.w) > 0.3) c.knock = { body, still: 0, back: null };
+          if (Math.hypot(body.vx - v0.vx, body.vz - v0.vz) + Math.abs(body.w - v0.w) > 0.3) {
+            c.knock = { body, still: 0, back: null };
+            c.off = 0;
+            c.yieldLeft = 0;
+          }
         },
       };
     });
@@ -182,6 +195,7 @@ export class Traffic {
       else if (o.dx * c.dx + o.dz * c.dz > 0.3) check(o.x, o.z, (c.hw + o.hw) * 0.85);
     }
     for (const o of obstacles) check(o.x, o.z, o.lat);
+    c.blockedNow = v < 0.4 && c.speed < 0.6 && !(c.stop && c.stop.state !== 'approach');
     const s = c.stop;
     if (s && s.state !== 'done') {
       const total = c.route.total;
@@ -238,11 +252,17 @@ export class Traffic {
       const step = Math.max(0, c.speed) * dt;
       c.d += step;
       c.life -= step;
+      yieldStep(c, dt, step);
       Object.assign(c, poseAt(c.route, c.d));
+      // vị trí thật = tim làn + lệch về phía lề (bên phải hướng đi)
+      c.x += -c.dz * c.off;
+      c.z += c.dx * c.off;
       this.stepStop(c, dt);
       this.pose(c);
       // hết lượt → rời phố khi đã khuất xa người chơi
-      if (c.life <= 0 && Math.hypot(c.x - player.x, c.z - player.z) > TRAFFIC.spawnHideDist) {
+      // kẹt quá lâu ngoài tầm mắt → cho biến mất, khỏi làm nghẽn đường mãi
+      const stuck = c.blockedT > YIELD.giveUpS && Math.hypot(c.x - player.x, c.z - player.z) > TRAFFIC.spawnHideDist * 0.6;
+      if ((c.life <= 0 || stuck) && Math.hypot(c.x - player.x, c.z - player.z) > TRAFFIC.spawnHideDist * (stuck ? 0.6 : 1)) {
         c.obj.removeFromParent();
         this.cars.splice(i, 1);
       }

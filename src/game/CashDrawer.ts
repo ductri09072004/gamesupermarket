@@ -39,6 +39,7 @@ export class CashDrawer {
     optimalChange(toCents(amount)).forEach((d, i) => {
       const m = moneyMesh(d);
       m.quaternion.setFromRotationMatrix(this.root.matrix);
+      m.rotateY((Math.random() - 0.5) * 0.5); // tiền khách đưa xoè nhẹ, không thẳng hàng
       const to = this.world(this.parts.paidPoint.clone().add(new THREE.Vector3((i % 4) * 0.02, i * 0.003, Math.floor(i / 4) * 0.03)));
       this.effects.fly(m, fromWorld, to, { dur: 0.4 + i * 0.05, arc: 0.1, keep: true });
       this.paidMeshes.push(m);
@@ -50,6 +51,7 @@ export class CashDrawer {
     const m = moneyMesh(denom);
     m.userData = { kind: 'change', index: this.given.length };
     m.quaternion.setFromRotationMatrix(this.root.matrix);
+    m.rotateY((Math.random() - 0.5) * 0.25);
     const n = this.given.length;
     const off = new THREE.Vector3(-0.12 + (n % 6) * 0.05, 0.004 + Math.floor(n / 6) * 0.004, (Math.floor(n / 6) % 2) * 0.04);
     const to = this.world(this.parts.changePoint.clone().add(off));

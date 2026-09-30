@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ROAD_WIDTH } from '../src/config/city';
-import { BUS, MOTO_TRAFFIC, RUSH_HOURS, TRAFFIC } from '../src/config/traffic';
+import { BUS, MOTO_TRAFFIC, RUSH_HOURS, TRAFFIC, YIELD } from '../src/config/traffic';
 import { mulberry32 } from '../src/core/Random';
 import { Traffic } from '../src/game/Traffic';
 import { busDue, busPassengers, busTimes, trafficDensity, wearsRaincoat } from '../src/systems/TrafficSystem';
@@ -159,5 +159,39 @@ describe('dòng xe máy & xe buýt chạy trên phố', () => {
     for (let i = 0; i < 20; i++) tr.update(0.05, { x: start.x, z: start.z }, []);
     expect(tr.count('bus')).toBe(0);
     expect(L.busStop).toBeDefined();
+  });
+});
+
+describe('gỡ kẹt', () => {
+  it('xe bị vật cản đứng chắn giữa hẻm thì tự leo lề, lách qua rồi nhập lại làn', () => {
+    const { tr } = makeTraffic();
+    const inner = tr as unknown as { cars: Array<{ kind: string; route: Parameters<typeof poseAt>[0]; d: number; x: number; z: number; off: number; speed: number; blockedT: number }> };
+    const car = inner.cars.find((c) => c.kind === 'car')!;
+    inner.cars = [car];
+    // vật cản (xe chết máy) đứng giữa làn, 20m phía trước xe
+    const at = poseAt(car.route, car.d + 20);
+    const block = [{ x: at.x, z: at.z, lat: 1.4 }];
+    let maxOff = 0;
+    let stopped = false;
+    let travelled = 0;
+    for (let i = 0; i < 1000; i++) {
+      tr.update(0.05, far, block);
+      if (!inner.cars.includes(car)) break;
+      maxOff = Math.max(maxOff, car.off);
+      if (car.speed < 0.2) stopped = true;
+      travelled += car.speed * 0.05;
+    }
+    expect(stopped).toBe(true); // ban đầu phải dừng sau vật cản
+    expect(maxOff).toBeGreaterThan(YIELD.offset.car - 0.2); // rồi leo lề
+    // nếu không lách qua thì chỉ đi được ~15m tới sát vật cản; lách được thì vượt xa
+    expect(travelled).toBeGreaterThan(45);
+    expect(car.off).toBeLessThan(YIELD.offset.car + 1e-6);
+  });
+
+  it('xe không bị chặn thì không lệch lề', () => {
+    const { tr } = makeTraffic();
+    for (let i = 0; i < 200; i++) tr.update(0.05, far, []);
+    const cars = (tr as unknown as { cars: Array<{ off: number; kind: string }> }).cars;
+    expect(cars.filter((c) => c.kind === 'car').every((c) => c.off === 0)).toBe(true);
   });
 });

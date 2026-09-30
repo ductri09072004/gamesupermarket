@@ -18,6 +18,14 @@ interface Truck {
   t: number;
   delivered: boolean;
   dist: number;
+  /** Giây liên tiếp bị chặn đứng (không tính lúc đang dỡ hàng / đã tới điểm đỗ) */
+  blockedT: number;
+  /** Lệch về phía vỉa hè (m) — leo lề nhường / lách qua xe đứng chắn */
+  off: number;
+  /** Quãng còn phải lùi (m); 0 = không lùi */
+  reverse: number;
+  /** Quãng đường còn giữ lệch lề sau khi đã lách */
+  yieldLeft: number;
 }
 
 const MAX_SPEED = 9;
@@ -29,6 +37,8 @@ const DOOR_S = 0.7;
 const UNLOAD_S = 3.4;
 /** Xe tải đỗ lệch về phía vỉa hè (m) để chừa chỗ cho xe máy lách qua */
 const TRUCK_CURB_SHIFT = 0.7;
+/** Gỡ kẹt: bị chặn quá STUCK.curbS giây → leo lề; quá STUCK.reverseS và phía sau trống → lùi; quá STUCK.warpS → tới thẳng điểm đỗ */
+const STUCK = { curbS: 3.5, reverseS: 9, warpS: 26, curbMax: 1.7, curbSpeed: 1.2, holdM: 14, reverseM: 6, reverseSpeed: 2.2 };
 
 /**
  * Xe tải giao hàng: chạy trên làn sát cửa hàng của đường chính (hướng -X), đỗ trước ô giao hàng,
@@ -49,7 +59,7 @@ export class DeliveryTrucks {
     m.group.rotation.y = Math.PI / 2; // đầu xe (-Z cục bộ) hướng -X
     this.group.add(m.group);
     const x = this.layout().bounds.x1 - 6;
-    this.trucks.push({ m, order, x, speed: MAX_SPEED, phase: 'arrive', t: 0, delivered: false, dist: 0 });
+    this.trucks.push({ m, order, x, speed: MAX_SPEED, phase: 'arrive', t: 0, delivered: false, dist: 0, blockedT: 0, off: 0, reverse: 0, yieldLeft: 0 });
     this.c.toast('🚚 Xe tải đang chở hàng tới cửa hàng...', 'info');
   }
 
@@ -68,30 +78,69 @@ export class DeliveryTrucks {
     const queue = this.trucks.filter((t) => t.phase !== 'leave');
     for (let i = this.trucks.length - 1; i >= 0; i--) {
       const tr = this.trucks[i];
+      const zt = z - tr.off;
       let target = MAX_SPEED;
+      const stopAt = this.stopX(queue, queue.indexOf(tr));
       if (tr.phase === 'arrive') {
-        const gap = tr.x - this.stopX(queue, queue.indexOf(tr));
+        const gap = tr.x - stopAt;
         target = Math.min(MAX_SPEED, Math.sqrt(Math.max(0, 2 * BRAKE * 0.8 * gap)));
         if (gap < 0.05 && tr.speed < 0.3 && queue.indexOf(tr) === 0) this.startUnload(tr);
       } else if (tr.phase === 'unload') {
         target = 0;
         this.unload(tr, dt);
       }
+      const free = target;
       // xe NPC / người đứng trước đầu xe (phía -X) cùng làn
       for (const o of others) {
         const ahead = tr.x - tr.m.len / 2 - o.x;
-        if (Math.abs(o.z - z) < 1.8 && ahead > -0.5 && ahead < 10) target = Math.min(target, Math.max(0, (ahead - 2.5) * 1.2));
+        if (Math.abs(o.z - zt) < 1.8 && ahead > -0.5 && ahead < 10) target = Math.min(target, Math.max(0, (ahead - 2.5) * 1.2));
       }
-      const dv = target - tr.speed;
-      tr.speed = Math.max(0, tr.speed + Math.max(-BRAKE * 2 * dt, Math.min(ACCEL * dt, dv)));
+      if (tr.phase !== 'unload') this.untangle(tr, dt, target < 0.3 && free > 1, others, zt, stopAt);
+      const dv = tr.reverse > 0 ? -STUCK.reverseSpeed - tr.speed : target - tr.speed;
+      tr.speed = tr.reverse > 0 ? tr.speed + Math.max(-BRAKE * dt, Math.min(ACCEL * dt, dv)) : Math.max(0, tr.speed + Math.max(-BRAKE * 2 * dt, Math.min(ACCEL * dt, dv)));
       tr.x -= tr.speed * dt;
       tr.dist += tr.speed * dt;
-      tr.m.group.position.set(tr.x, 0, z);
+      if (tr.reverse > 0) {
+        tr.reverse -= -tr.speed * dt;
+        if (tr.reverse <= 0) { tr.reverse = 0; tr.speed = 0; }
+      }
+      tr.m.group.position.set(tr.x, 0, z - tr.off);
       for (const w of tr.m.wheels) w.rotation.x = -tr.dist / tr.m.wheelRadius;
       if (tr.phase === 'leave' && tr.x < this.layout().bounds.x0 + 6) {
         tr.m.group.removeFromParent();
         this.trucks.splice(i, 1);
       }
+    }
+  }
+
+  /**
+   * Gỡ kẹt khi bị chặn đứng: (1) leo lề lách qua vật cản, giữ lệch một đoạn rồi nhập lại làn; (2) vẫn kẹt và phía sau trống thì lùi
+   * vài mét cho xe phía trước có chỗ xoay xở; (3) kẹt quá lâu thì tới thẳng điểm đỗ để đơn hàng không bao giờ bị "mất".
+   */
+  private untangle(tr: Truck, dt: number, blocked: boolean, others: Array<{ x: number; z: number }>, zt: number, stopAt: number): void {
+    tr.blockedT = blocked ? tr.blockedT + dt : Math.max(0, tr.blockedT - dt * 2);
+    if (tr.blockedT > STUCK.curbS && tr.yieldLeft <= 0) tr.yieldLeft = STUCK.holdM;
+    const hold = tr.yieldLeft > 0;
+    if (hold && tr.speed > 0.1) tr.yieldLeft -= tr.speed * dt;
+    const want = hold ? STUCK.curbMax : 0;
+    tr.off += Math.max(-STUCK.curbSpeed * dt, Math.min(STUCK.curbSpeed * dt, want - tr.off));
+    // đã leo lề hết cỡ mà vẫn không qua được → lùi nếu sau đuôi xe trống
+    if (tr.blockedT > STUCK.reverseS && tr.reverse <= 0 && tr.off >= STUCK.curbMax - 0.05) {
+      const rear = tr.x + tr.m.len / 2;
+      const clear = !others.some((o) => Math.abs(o.z - zt) < 2 && o.x > rear - 0.5 && o.x < rear + STUCK.reverseM + 2);
+      if (clear) {
+        tr.reverse = STUCK.reverseM;
+        tr.blockedT = STUCK.curbS;
+      }
+    }
+    if (tr.blockedT > STUCK.warpS && tr.phase === 'arrive') {
+      // tới thẳng điểm đỗ (giống xe chạy tắt qua vật cản) — đơn hàng vẫn được giao
+      tr.x = stopAt;
+      tr.off = 0;
+      tr.blockedT = 0;
+      tr.yieldLeft = 0;
+      tr.reverse = 0;
+      this.startUnload(tr);
     }
   }
 
@@ -123,13 +172,13 @@ export class DeliveryTrucks {
 
   colliders(): AABB[] {
     const z = this.laneZ;
-    return this.trucks.map((t) => ({ minX: t.x - t.m.len / 2, maxX: t.x + t.m.len / 2, minZ: z - 1.2, maxZ: z + 1.2, tag: 'truck' }));
+    return this.trucks.map((t) => ({ minX: t.x - t.m.len / 2, maxX: t.x + t.m.len / 2, minZ: z - t.off - 1.2, maxZ: z - t.off + 1.2, tag: 'truck' }));
   }
 
   /** Vật cản cho xe NPC phía sau (vài điểm dọc thân xe). */
   obstacles(): Array<{ x: number; z: number; lat: number }> {
     const z = this.laneZ;
-    return this.trucks.flatMap((t) => [-1, 0, 1].map((k) => ({ x: t.x + k * (t.m.len / 2 - 0.5), z, lat: 1.8 })));
+    return this.trucks.flatMap((t) => [-1, 0, 1].map((k) => ({ x: t.x + k * (t.m.len / 2 - 0.5), z: z - t.off, lat: 1.8 })));
   }
 
   destroy(): void {

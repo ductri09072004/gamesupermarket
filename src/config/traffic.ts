@@ -25,6 +25,19 @@ export const TRAFFIC = {
  */
 export const ONE_WAY_BLOCKS = [2, 1, 5] as const;
 
+/**
+ * Gỡ kẹt: xe bị chặn đứng quá afterS giây thì lệch lên lề phải (offset: m so với tim làn — đủ để lách qua xe đứng giữa hẻm)
+ * và giữ nguyên độ lệch holdM mét rồi mới nhập lại làn. Xe tải giao hàng dùng thêm lùi xe (xem DeliveryTrucks).
+ */
+export const YIELD = {
+  afterS: 4,
+  holdM: 12,
+  speed: 1.4,
+  offset: { car: 2.3, bus: 3 },
+  /** Kẹt quá lâu (giây) và đang khuất mắt người chơi → xe biến mất */
+  giveUpS: 45,
+};
+
 export const PEDESTRIANS = {
   count: 18,
   speed: 1.25,
