@@ -9,9 +9,9 @@ export class Exterior {
 
   build(W: number): void {
     this.group.clear();
-    // hộp đèn mica lồi khỏi mặt tiền: khung nhôm + mặt biển sáng, chữ MINI MART kèm dòng phụ
+    // hộp đèn mica lồi khỏi mặt tiền: khung nhôm + mặt biển sáng, chữ TẠP HOÁ ĐẦU HẺM kèm dòng phụ
     this.signMat = signMaterial({
-      text: 'MINI MART', sub: 'Hàng Việt chất lượng cao · Mở cửa 8:00 – 22:00', style: 'lightbox',
+      text: 'TẠP HOÁ ĐẦU HẺM', sub: 'Hàng Việt chất lượng cao · Mở cửa 8:00 – 22:00', style: 'lightbox',
       bg: '#1f7a6d', ink: '#1f7a6d', accent: '#e07a1f', w: 1024, h: 176, seed: 42, wear: 0.3,
     });
     const frame = new THREE.MeshStandardMaterial({ color: 0x8b9199, roughness: 0.4, metalness: 0.7 });

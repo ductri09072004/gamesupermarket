@@ -1,0 +1,79 @@
+/* HUD, thông báo, hướng dẫn, thanh thu ngân: bảng tôn xanh viền kem như biển hiệu tiệm tạp hoá. Đồng bộ với menuRetro.css / modalRetro.css. */
+#ui-root {
+  --glass: rgba(29, 74, 63, 0.95); --glass-line: rgba(243, 230, 200, 0.7);
+  --txt: #f3e6c8; --dim: #b9ad8a; --accent: #f6d57a; --ok: #a6dc7e; --bad: #f4a08c; --warn: #f2c14e;
+}
+
+/* tấm bảng chung */
+.hud-panel, .hud-chip, .hud-btn, .toast, .toast.success, .toast.error, .toast.info, .tutorial, .checkout-strip, .hud-dev {
+  backdrop-filter: none; -webkit-backdrop-filter: none; border: 2px solid #12322a; border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0 2px, transparent 2px 5px),
+    #1d4a3f;
+  box-shadow: inset 0 0 0 2px rgba(243, 230, 200, 0.6), 3px 4px 0 rgba(0, 0, 0, 0.4);
+  font-family: "Be Vietnam Pro", "Nunito", sans-serif;
+}
+.hud-chip, .hud-btn { border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(243, 230, 200, 0.55), 2px 3px 0 rgba(0, 0, 0, 0.4); }
+.hud-btn:hover:not(:disabled) { background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0 2px, transparent 2px 5px), #2a5d4f; }
+.hud-btn:active:not(:disabled) { transform: translate(1px, 2px); box-shadow: inset 0 0 0 1px rgba(243, 230, 200, 0.55); }
+.hud-btn.active { background: #f6d57a; color: #3b2616; border-color: #3b2616; }
+
+/* tiền: bảng giá chữ slab */
+.hud-money { font-weight: 400; }
+.mn-cur { color: #f3e6c8; font: 13px "Alfa Slab One", serif; margin-right: 3px; }
+.mn-int { font: 22px "Alfa Slab One", "Be Vietnam Pro", serif; letter-spacing: 0; color: #f6d57a; text-shadow: 1px 2px 0 #12322a; }
+.mn-dec { font: 700 11px "Be Vietnam Pro", sans-serif; }
+.hud-meta { font-weight: 700; }
+.hud-clock, .hud-day { color: #f3e6c8; }
+.hud-status { border-radius: 3px; background: rgba(0, 0, 0, 0.28); font-weight: 800; }
+.hud-status.closed { color: #f4a08c; }
+.hud-daybar { background: rgba(0, 0, 0, 0.35); border-radius: 1px; height: 3px; }
+.hud-daybar i { background: linear-gradient(90deg, #f6d57a, #e58a3a); }
+.lvl-badge { background: #b8402d; color: #f9edd0; border-radius: 2px; font-weight: 800; letter-spacing: 0.04em; }
+.hud-xp { background: rgba(0, 0, 0, 0.35); border-radius: 1px; }
+.hud-xp i { background: #d9a441; }
+.hud-stars { color: rgba(243, 230, 200, 0.25); }
+
+/* nút kết thúc ngày: bảng đỏ sơn */
+.hud-endday { border: 2px solid #4a160d; border-radius: 4px; background: #b8402d; color: #f9edd0; font-family: "Be Vietnam Pro", sans-serif; box-shadow: inset 0 0 0 1px rgba(249, 237, 208, 0.5), 3px 4px 0 rgba(0, 0, 0, 0.45); }
+.hud-endday kbd { background: rgba(0, 0, 0, 0.22); }
+.hud-dev { color: #f2c14e; border-style: dashed; border-color: rgba(242, 193, 78, 0.7); box-shadow: none; border-radius: 3px; }
+.hud-dev:hover { background: #2a5d4f; }
+
+/* thông báo */
+.toast { font-weight: 700; font-size: 13px; padding: 6px 12px; }
+.toast.success { border-left: 5px solid var(--ok); }
+.toast.error { border-left: 5px solid var(--bad); }
+.toast.info { border-left: 5px solid #f6d57a; }
+
+/* hướng dẫn */
+.tut-head { font-family: "Alfa Slab One", "Be Vietnam Pro", serif; font-weight: 400; color: #f6d57a; letter-spacing: 0.01em; font-size: 13px; }
+.tutorial li { font-weight: 600; }
+.tut-next { background: rgba(246, 213, 122, 0.16); border-radius: 3px; border: 1px dashed rgba(246, 213, 122, 0.6); }
+.tutorial .win-close:hover { background: rgba(243, 230, 200, 0.15); }
+
+/* thanh thu ngân */
+.checkout-strip { padding: 6px 8px 6px 12px; }
+.cs-title { font-family: "Alfa Slab One", "Be Vietnam Pro", serif; font-weight: 400; }
+.cs-info b { color: #f9edd0; }
+.cs-btn { font-family: "Be Vietnam Pro", sans-serif; background: rgba(243, 230, 200, 0.12); border: 1px solid rgba(243, 230, 200, 0.6); border-radius: 3px; color: #f3e6c8; }
+.cs-btn:hover { background: rgba(243, 230, 200, 0.22); }
+.cs-btn.primary { background: #f6d57a; color: #3b2616; border-color: #3b2616; }
+
+/* gợi ý dưới tâm ngắm */
+.ch-hint { font-family: "Be Vietnam Pro", "Nunito", sans-serif; font-weight: 700; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.7); }
+.ch-hint kbd { font-family: "Be Vietnam Pro", sans-serif; font-weight: 800; font-size: 12px; background: #f3e6c8; color: #3b2616; border: 1px solid #3b2616; border-radius: 3px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); text-shadow: none; padding: 0 5px; }
+.ch-dot.active { background: #f6d57a; }
+
+/* màn hình nạp: nền nâu ấm, con dấu TH, thanh nạp như vạch sơn trên tôn */
+.loading { background: radial-gradient(circle at 50% 42%, #3a2a1a, #140c05); color: #f3e6c8; }
+.loading::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 26px; background: repeating-linear-gradient(90deg, #b8402d 0 36px, #f3e6c8 36px 72px); box-shadow: 0 4px 0 #12322a, inset 0 -7px 0 rgba(0, 0, 0, 0.18); }
+.load-logo {
+  width: 84px; height: 84px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #b8402d; color: #f9edd0;
+  font: 34px/1 "Alfa Slab One", "Be Vietnam Pro", serif; border: 4px solid #f3e6c8; transform: rotate(-8deg); animation: none;
+  box-shadow: 3px 4px 0 #12322a, inset 0 0 0 3px #b8402d, inset 0 0 0 4px rgba(243, 230, 200, 0.6);
+}
+.load-title { font: 34px/1.1 "Alfa Slab One", "Be Vietnam Pro", serif; font-weight: 400; letter-spacing: 0.01em; color: #f6d57a; text-shadow: 2px 3px 0 #7d2a1d; }
+.load-bar { height: 16px; border-radius: 3px; background: #12322a; border: 3px solid #f3e6c8; box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.45); }
+.load-fill { background: repeating-linear-gradient(135deg, #b8402d 0 12px, #e58a3a 12px 24px); border-radius: 0; }
+.load-label { font: 17px "Patrick Hand", "Nunito", sans-serif; font-weight: 400; color: #cfc3a2; opacity: 1; }

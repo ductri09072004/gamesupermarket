@@ -1,4 +1,4 @@
-# 🏪 Mini Mart Tycoon 3D
+# 🏪 Tạp Hoá Đầu Hẻm
 
 Game giả lập siêu thị **góc nhìn thứ nhất** chạy trên trình duyệt — **Three.js + TypeScript (strict) + Vite**, logic được unit test bằng **Vitest**. Bản 2D isometric (Phaser) nằm ở nhánh `claude/zealous-wozniak-1us62r`.
 

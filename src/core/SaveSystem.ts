@@ -44,7 +44,7 @@ export function deserialize(json: string): SaveData {
   return migrate(raw);
 }
 
-function defaultStorage(): StorageLike | null {
+export function defaultStorage(): StorageLike | null {
   try {
     return typeof localStorage !== 'undefined' ? localStorage : null;
   } catch {

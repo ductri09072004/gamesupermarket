@@ -98,7 +98,7 @@ function drawNote(g: CanvasRenderingContext2D, W: number, H: number, denom: numb
   g.fillText(`$${denom}`, cx, 38);
   g.font = '800 18px "Nunito", Arial';
   g.letterSpacing = '3px';
-  g.fillText('MINI MART BANK · LEGAL TENDER', cx, H - 34);
+  g.fillText('ĐẦU HẺM BANK · LEGAL TENDER', cx, H - 34);
   g.letterSpacing = '0px';
   // số sê-ri đỏ sẫm
   g.fillStyle = '#8f2d2d';

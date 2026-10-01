@@ -43,10 +43,10 @@ function counterSign(): THREE.Material {
       c.fillStyle = '#2a9d8f';
       c.fillRect(0, 118, 512, 10);
       c.fillStyle = '#ffffff';
-      c.font = '900 64px "Nunito", Arial';
+      c.font = '900 54px "Nunito", Arial';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText('MINI MART', 256, 60);
+      c.fillText('TẠP HOÁ ĐẦU HẺM', 256, 60, 488);
     });
     return new THREE.MeshStandardMaterial({ map: t, roughness: 0.35 });
   });

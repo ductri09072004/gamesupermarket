@@ -74,7 +74,7 @@ function poster(title: string, sub: string, bg: string): THREE.Mesh {
     g.font = '800 30px "Nunito", Arial, sans-serif';
     g.fillText(sub, 128, 260);
     g.font = '600 20px "Nunito", Arial, sans-serif';
-    g.fillText('Chỉ có tại Mini Mart', 128, 310);
+    g.fillText('Chỉ có tại Tạp Hoá Đầu Hẻm', 128, 310);
     ageCanvas(g, 256, 360);
   });
   return new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.98), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));

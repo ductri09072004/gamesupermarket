@@ -40,10 +40,15 @@ const APPS: AppDef[] = [
   { id: 'wholesale', name: 'Kho sỉ', icon: '🏭', render: renderWholesale, hidden: true },
 ];
 
-/** Máy tính dạng desktop giả lập. */
+/** Cờ bốn màu trên nút Start (vẽ bằng SVG, không dùng logo thật). */
+const FLAG = '<svg viewBox="0 0 16 16" width="17" height="17" aria-hidden="true"><path d="M1 3.2c2-1 3.6-.3 5.2 0v4.3C4.6 7.2 3 6.5 1 7.5z" fill="#f25022"/><path d="M7 3.5c1.6.4 3.2 1.1 5.2.1v4.2c-2 1-3.6.3-5.2-.1z" fill="#7fba00"/><path d="M1 8.5c2-1 3.6-.3 5.2 0v4.3c-1.6-.3-3.2-1-5.2 0z" fill="#00a4ef"/><path d="M7 8.8c1.6.4 3.2 1.1 5.2.1v4.2c-2 1-3.6.3-5.2-.1z" fill="#ffb900"/></svg>';
+
+/** Máy tính giả lập kiểu Windows XP: desktop, cửa sổ xanh Luna, thanh taskbar + menu Start. */
 export class Computer {
   private root: HTMLElement | null = null;
   private winHost!: HTMLElement;
+  private tasks!: HTMLElement;
+  private startMenu!: HTMLElement;
   private current: AppId | null = null;
   private clock!: HTMLElement;
   private balance!: HTMLElement;
@@ -58,22 +63,25 @@ export class Computer {
   open(app?: AppId): void {
     if (!this.root) {
       this.winHost = h('div', { class: 'pc-windows' });
-      this.clock = h('span');
-      this.balance = h('span');
+      this.tasks = h('div', { class: 'pc-tasks' });
+      this.clock = h('span', { class: 'pc-clock' });
+      this.balance = h('span', { class: 'pc-balance' });
+      this.startMenu = this.buildStartMenu();
       const icons = h('div', { class: 'pc-icons' }, APPS.filter((a) => !a.hidden).map((a) => h('button', {
         class: 'pc-icon', onClick: () => this.openApp(a.id),
-      }, [h('div', { class: 'pc-icon-img', text: a.icon }), h('div', { text: a.name })])));
+      }, [h('div', { class: 'pc-icon-img', text: a.icon }), h('div', { class: 'pc-icon-name', text: a.name })])));
+      const start = h('button', {
+        class: 'pc-start', html: `${FLAG}<span>start</span>`,
+        onClick: (e) => { e.stopPropagation(); this.startMenu.classList.toggle('open'); },
+      });
       this.root = h('div', { class: 'pc-overlay' }, [
         h('div', { class: 'pc-screen' }, [
           h('div', { class: 'pc-desktop' }, [icons, this.winHost]),
-          h('div', { class: 'pc-taskbar' }, [
-            h('button', { class: 'pc-start', text: '🏪 MiniMart OS' }),
-            this.balance,
-            this.clock,
-            h('button', { class: 'btn small danger', text: '⏻ Tắt máy (Esc)', onClick: () => this.close() }),
-          ]),
+          this.startMenu,
+          h('div', { class: 'pc-taskbar' }, [start, this.tasks, h('div', { class: 'pc-tray' }, [this.balance, this.clock])]),
         ]),
       ]);
+      this.root.addEventListener('click', () => this.startMenu.classList.remove('open'));
       uiRoot().append(this.root);
       requestAnimationFrame(() => this.root?.classList.add('show'));
       this.offs.push(this.s.bus.on('money:changed', () => this.renderTaskbar()));
@@ -82,9 +90,29 @@ export class Computer {
     if (app) this.openApp(app);
   }
 
+  private buildStartMenu(): HTMLElement {
+    const items = APPS.filter((a) => !a.hidden).map((a) => h('button', {
+      class: 'sm-item', onClick: () => { this.startMenu.classList.remove('open'); this.openApp(a.id); },
+    }, [h('span', { class: 'sm-ico', text: a.icon }), h('span', { text: a.name })]));
+    return h('div', { class: 'pc-startmenu', onClick: (e) => e.stopPropagation() }, [
+      h('div', { class: 'sm-head' }, [h('span', { class: 'sm-avatar', text: '🏪' }), h('b', { text: 'Chủ tiệm' })]),
+      h('div', { class: 'sm-body' }, [
+        h('div', { class: 'sm-left' }, items),
+        h('div', { class: 'sm-right' }, [h('b', { text: 'Đầu Hẻm OS' }), h('span', { text: 'Phiên bản 1.0' }), h('span', { class: 'sm-hint', text: 'Nhấn Esc để tắt máy' })]),
+      ]),
+      h('div', { class: 'sm-foot' }, [h('button', { class: 'sm-off', html: '<i></i><span>Tắt máy</span>', onClick: () => this.close() })]),
+    ]);
+  }
+
   private renderTaskbar(): void {
     this.clock.textContent = `Ngày ${this.s.data.day} · ${formatClock(this.s.data.minutes)}`;
-    this.balance.textContent = `Số dư: ${money(this.s.data.money)}`;
+    this.balance.textContent = `💰 ${money(this.s.data.money)}`;
+  }
+
+  private closeWindow(): void {
+    clear(this.winHost);
+    clear(this.tasks);
+    this.current = null;
   }
 
   openApp(id: AppId): void {
@@ -93,15 +121,21 @@ export class Computer {
     this.current = id;
     this.s.bus.emit('sound', { name: 'click' });
     clear(this.winHost);
+    clear(this.tasks);
     const body = h('div', { class: 'win-body' });
     const win = h('div', { class: 'window app-window' }, [
       h('div', { class: 'win-title' }, [
-        h('span', { text: `${def.icon} ${def.name}` }),
-        h('button', { class: 'win-close', text: '✕', onClick: () => { clear(this.winHost); this.current = null; } }),
+        h('span', { class: 'xp-title', text: `${def.icon} ${def.name}` }),
+        h('div', { class: 'xp-ctl' }, [
+          h('button', { class: 'xp-btn', title: 'Thu nhỏ', text: '🗕', onClick: () => win.classList.toggle('minimized') }),
+          h('button', { class: 'xp-btn', title: 'Phóng to', text: '🗖', onClick: () => win.classList.toggle('maximized') }),
+          h('button', { class: 'xp-btn xp-close', title: 'Đóng', text: '✕', onClick: () => this.closeWindow() }),
+        ]),
       ]),
       body,
     ]);
     this.winHost.append(win);
+    this.tasks.append(h('button', { class: 'pc-task', text: `${def.icon} ${def.name}`, onClick: () => win.classList.toggle('minimized') }));
     const ctx: AppContext = {
       s: this.s,
       rerender: () => { if (this.current === id) { clear(body); def.render(body, ctx); } },

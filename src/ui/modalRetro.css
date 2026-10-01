@@ -1,0 +1,78 @@
+/* Hộp thoại (tạm dừng, cài đặt, hồ sơ, báo cáo ngày, game over...) — giấy kem viền nâu, thanh tiêu đề như bảng hiệu xanh. Đồng bộ với menuRetro.css. */
+.modal-backdrop { background: rgba(28, 16, 6, 0.62); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+
+.modal, .ctp-card {
+  --paper: #f3e6c8; --paper-line: #d3bf90; --paper-ink: #3b2616; --paper-mute: #7a6446; --brand: #b8402d;
+}
+.modal.window {
+  background: repeating-linear-gradient(0deg, rgba(120, 90, 40, 0.05) 0 2px, transparent 2px 6px), #f3e6c8; color: #3b2616;
+  border: 3px solid #3b2616; border-radius: 6px; box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.4), 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.modal .win-title {
+  background: #1d4a3f; color: #f6d57a; border-bottom: 3px solid #3b2616; padding: 11px 16px;
+  font: 19px/1.2 "Alfa Slab One", "Be Vietnam Pro", serif; letter-spacing: 0.01em; text-shadow: 1px 2px 0 #7d2a1d;
+}
+.modal .win-close { width: 28px; height: 28px; border: 2px solid #3b2616; border-radius: 3px; background: #f3e6c8; color: #3b2616; font-size: 13px; text-shadow: none; }
+.modal .win-close:hover { background: #b8402d; color: #f9edd0; }
+.modal .win-body { padding: 18px 20px 20px; }
+.modal p, .modal .muted { color: #3b2616; }
+.modal .muted { color: #7a6446; }
+
+/* nút: tấm bảng giá giấy kem */
+.modal.window .btn {
+  font-family: "Be Vietnam Pro", "Nunito", sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #3b2616; background: #f9edd0; border: 2px solid #3b2616; border-radius: 4px; box-shadow: 2px 2px 0 rgba(59, 38, 22, 0.55);
+  transition: transform 0.08s, box-shadow 0.08s, background 0.15s;
+}
+.modal.window .btn.block.big { padding: 11px 16px; margin: 9px 0; font-size: 14px; }
+.modal.window .btn:hover:not(:disabled) { background: #fff6dc; border-color: #3b2616; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 rgba(59, 38, 22, 0.55); }
+.modal.window .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.modal.window .btn:disabled { opacity: 0.45; box-shadow: none; cursor: not-allowed; }
+.modal.window .btn.primary { background: #b8402d; border-color: #4a160d; color: #f9edd0; }
+.modal.window .btn.primary:hover:not(:disabled) { background: #c84a35; border-color: #4a160d; }
+.modal.window .btn.danger { background: #f9edd0; color: #a3281a; border-color: #a3281a; }
+.modal.window .btn.danger:hover:not(:disabled) { background: #f2d3c6; border-color: #a3281a; }
+.modal .pause-menu .btn kbd { background: #f3e6c8; border-color: #7a6446; color: #3b2616; }
+.modal kbd { font-family: "Be Vietnam Pro", sans-serif; font-weight: 700; background: #f3e6c8; color: #3b2616; border: 1px solid #3b2616; border-radius: 3px; box-shadow: 0 2px 0 rgba(59, 38, 22, 0.5); }
+
+/* cài đặt */
+.modal .set-section h4 { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; color: #b8402d; }
+.modal .set-row { border-bottom: 1px dashed #c9b383; }
+.modal .set-label span { font-weight: 700; }
+.modal .settings input[type="range"] { background: #cdb98e; height: 5px; }
+.modal .settings input[type="range"]::-webkit-slider-thumb { background: #b8402d; border: 2px solid #f3e6c8; box-shadow: 0 0 0 1px #3b2616; border-radius: 3px; }
+.modal .settings input[type="range"]::-moz-range-thumb { background: #b8402d; border: 2px solid #f3e6c8; box-shadow: 0 0 0 1px #3b2616; border-radius: 3px; }
+.modal .switch-track { background: #b9a678; border: 2px solid #3b2616; border-radius: 4px; }
+.modal .switch-track::after { top: 1px; left: 1px; width: 16px; height: 16px; border-radius: 2px; background: #f9edd0; box-shadow: 0 0 0 1px #3b2616; }
+.modal .switch input:checked + .switch-track { background: #1d4a3f; }
+.modal .switch input:checked + .switch-track::after { transform: translateX(18px); }
+.modal .seg { background: #e2cf9f; border: 2px solid #3b2616; border-radius: 4px; padding: 2px; }
+.modal .seg-btn { border-radius: 2px; color: #5c4630; }
+.modal .seg-btn.on { background: #1d4a3f; color: #f6d57a; box-shadow: none; }
+
+/* báo cáo cuối ngày */
+.modal .stat, .modal .report-table { background: #f9edd0; border: 2px solid #3b2616; border-radius: 4px; box-shadow: 2px 2px 0 rgba(59, 38, 22, 0.35); }
+.modal .report-row { border-bottom: 1px dashed #c9b383; }
+.modal .report-row.neg b { color: #a3281a; }
+.modal .report-row.pos b { color: #1d6a3f; }
+.modal .report-row.strong { background: #ecd9a8; }
+.modal .report-row.total { background: #d4e0bd; }
+.modal .report-row.total.neg { background: #efc5b8; }
+.modal .report-balance.neg b { color: #a3281a; }
+
+/* hồ sơ đã lưu */
+.modal .slot-row { background: #f9edd0; border: 2px solid #3b2616; border-radius: 4px; box-shadow: 2px 2px 0 rgba(59, 38, 22, 0.35); }
+.modal .slot-row.empty { background: transparent; border: 2px dashed #b9a678; box-shadow: none; }
+.modal .slot-info b { font-family: "Be Vietnam Pro", sans-serif; }
+.modal .slot-info .muted { font-family: "Patrick Hand", "Nunito", sans-serif; font-size: 15px; }
+
+/* thẻ "bấm để chơi" */
+.ctp-card { background: #f3e6c8; color: #3b2616; border: 3px solid #3b2616; border-radius: 6px; box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.4), 0 24px 60px rgba(0, 0, 0, 0.5); }
+.ctp-title { font-family: "Alfa Slab One", "Be Vietnam Pro", serif; font-weight: 400; color: #1d4a3f; }
+.ctp-keys { color: #7a6446; }
+.ctp-keys kbd { font-family: "Be Vietnam Pro", sans-serif; font-weight: 700; background: #f9edd0; color: #3b2616; border: 1px solid #3b2616; border-radius: 3px; box-shadow: 0 2px 0 rgba(59, 38, 22, 0.5); }
+.click-to-play { background: rgba(28, 16, 6, 0.5); }
+.modal .stat-n.pos { color: #1d6a3f; }
+.modal .stat-n.neg, .modal .warn { color: #a3281a; }
+.modal .report-row.pos, .modal .report-row.neg { color: #3b2616; }
+.modal .win-body { scrollbar-color: #7a6446 #e2cf9f; }

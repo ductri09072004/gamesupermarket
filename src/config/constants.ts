@@ -151,6 +151,8 @@ export const MAX_PRODUCT_INSTANCES = 5000;
 
 // Lưu game
 export const SAVE_KEY = 'minimart-tycoon-3d-save';
+/** Số hồ sơ tiến trình tối đa (mỗi hồ sơ một khoá localStorage riêng) */
+export const SAVE_SLOTS = 5;
 export const SAVE_VERSION = 5;
 
 // Thu ngân

@@ -1,47 +1,56 @@
 import type { Settings } from '../core/GameState';
+import type { SlotInfo } from '../core/SaveSlots';
 import { h, modal, uiRoot } from './dom';
 import { icon } from './icons';
+import { installButton } from './install';
 import { showSettings } from './settings';
+import { showSlotPicker, type SlotMode } from './slotPicker';
 
 export { showSettings };
 
 export interface MenuHandlers {
-  hasSave: boolean;
+  slots(): SlotInfo[];
+  lastSlot(): number | null;
   onContinue(): void;
-  onNewGame(): void;
-  onDevGame(): void;
+  onLoad(slot: number): void;
+  onDelete(slot: number): void;
+  onNewGame(slot: number): void;
+  onDevGame(slot: number): void;
 }
 
-/** Main menu: Tiếp tục / Game mới / Cài đặt. */
+/** Main menu: Tiếp tục / Hồ sơ đã lưu / Game mới (chọn trong 5 hồ sơ) / Cài đặt. */
 export function showMainMenu(handlers: MenuHandlers, settings: Settings, onSettings: (s: Settings) => void): () => void {
   const root = h('div', { class: 'main-menu' });
   const close = () => root.remove();
-  const confirmNew = (dev: boolean) => () => {
-    const start = () => {
+  const chooseSlot = (mode: SlotMode) => () => showSlotPicker(mode, {
+    slots: handlers.slots,
+    onPick: (slot) => {
       close();
-      if (dev) handlers.onDevGame();
-      else handlers.onNewGame();
-    };
-    if (!handlers.hasSave) {
-      start();
-      return;
-    }
-    const body = h('div', { class: 'pause-menu' }, [
-      h('p', { text: 'Bắt đầu game mới sẽ xoá bản lưu hiện tại.' }),
-      dev ? h('p', { class: 'muted', text: 'Chế độ developer: $1,000,000, mọi giấy phép, không giới hạn cấp độ để mua đồ / mở rộng / thuê nhân viên, không phá sản.' }) : null,
-      h('button', { class: 'btn danger block big', text: 'Xoá bản lưu & chơi mới', onClick: () => { m.close(); start(); } }),
-      h('button', { class: 'btn block big', text: 'Huỷ', onClick: () => m.close() }),
+      if (mode === 'load') handlers.onLoad(slot);
+      else if (mode === 'dev') handlers.onDevGame(slot);
+      else handlers.onNewGame(slot);
+    },
+    onDelete: (slot) => { handlers.onDelete(slot); render(); },
+  });
+  const build = () => {
+    const last = handlers.lastSlot();
+    const info = last === null ? null : handlers.slots().find((s) => s.slot === last);
+    return h('div', { class: 'menu-card' }, [
+      h('div', { class: 'brand' }, [h('span', { class: 'brand-mark', text: 'TH' }), h('div', {}, [h('h1', { text: 'Tạp Hoá Đầu Hẻm' }), h('p', { class: 'muted', text: 'Giả lập tiệm tạp hoá Việt Nam thập niên 90' })])]),
+      h('button', { class: 'btn primary block big', disabled: last === null, onClick: () => { close(); handlers.onContinue(); } }, [
+        h('span', { text: 'Tiếp tục' }),
+        info ? h('small', { class: 'btn-sub', text: `Hồ sơ ${info.slot} · Ngày ${info.day}` }) : null,
+      ]),
+      h('button', { class: 'btn block big', text: 'Hồ sơ đã lưu', disabled: handlers.slots().every((s) => s.empty), onClick: chooseSlot('load') }),
+      h('button', { class: 'btn block big', text: 'Game mới', onClick: chooseSlot('new') }),
+      h('button', { class: 'btn block big', text: 'Cài đặt', onClick: () => showSettings(settings, onSettings) }),
+      installButton(),
+      h('button', { class: 'btn ghost block', text: 'Chế độ developer', onClick: chooseSlot('dev') }),
+      h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>M</kbd> dời kệ · <kbd>B</kbd> xây dựng · <kbd>T</kbd> tua nhanh 3× · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
     ]);
-    const m = modal(dev ? 'Chế độ developer' : 'Game mới', body);
   };
-  root.append(h('div', { class: 'menu-card' }, [
-    h('div', { class: 'brand' }, [h('span', { class: 'brand-mark', html: icon('play', 22) }), h('div', {}, [h('h1', { text: 'Mini Mart Tycoon' }), h('p', { class: 'muted', text: 'Giả lập siêu thị góc nhìn thứ nhất' })])]),
-    h('button', { class: 'btn primary block big', text: 'Tiếp tục', disabled: !handlers.hasSave, onClick: () => { close(); handlers.onContinue(); } }),
-    h('button', { class: 'btn block big', text: 'Game mới', onClick: confirmNew(false) }),
-    h('button', { class: 'btn block big', text: 'Cài đặt', onClick: () => showSettings(settings, onSettings) }),
-    h('button', { class: 'btn ghost block', text: 'Chế độ developer', onClick: confirmNew(true) }),
-    h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>M</kbd> dời kệ · <kbd>B</kbd> xây dựng · <kbd>T</kbd> tua nhanh 3× · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
-  ]));
+  const render = () => root.replaceChildren(build());
+  render();
   uiRoot().append(root);
   return close;
 }

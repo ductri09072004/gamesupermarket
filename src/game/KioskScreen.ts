@@ -22,7 +22,7 @@ export function drawKioskScreen(canvas: HTMLCanvasElement, st: KioskScreenState)
   g.font = `900 28px ${FONT}`;
   g.textBaseline = 'middle';
   g.textAlign = 'left';
-  g.fillText('MINI MART · TỰ THANH TOÁN', 18, 29);
+  g.fillText('ĐẦU HẺM · TỰ THANH TOÁN', 18, 29);
   g.textAlign = 'center';
   g.fillStyle = '#fff';
   switch (st.kind) {

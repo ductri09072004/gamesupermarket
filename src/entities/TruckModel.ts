@@ -33,15 +33,15 @@ function sideArt(): THREE.Texture {
     g.fillStyle = '#ffd166';
     g.fillRect(0, 268, 1024, 14);
     g.fillStyle = '#1f7a6d';
-    g.font = '900 120px "Nunito", Arial';
+    g.font = '900 104px "Nunito", Arial';
     g.textBaseline = 'middle';
-    g.fillText('MINI MART', 60, 130);
+    g.fillText('TẠP HOÁ ĐẦU HẺM', 60, 130, 900);
     g.font = '800 46px "Nunito", Arial';
     g.fillStyle = '#e76f51';
     g.fillText('Giao hàng tận cửa hàng 🚚', 64, 220);
     g.fillStyle = '#fff';
     g.font = '800 40px "Nunito", Arial';
-    g.fillText('☎ 1900 24 24   ·   minimart.vn', 64, 332);
+    g.fillText('☎ 1900 24 24   ·   taphoadauhem.vn', 64, 332);
   });
 }
 

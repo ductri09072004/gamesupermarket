@@ -1,7 +1,7 @@
 import { bus, type EventBus, type GameEvents } from './EventBus';
 import { GameState, type SaveData } from './GameState';
 import { mulberry32, type Rng } from './Random';
-import { SaveSystem } from './SaveSystem';
+import { saveSlots } from './SaveSlots';
 import { NavGrid } from '../world/NavGrid';
 import { PathCache } from '../world/Pathfinding';
 import { footprintCells } from '../world/Footprint';
@@ -38,7 +38,8 @@ export class Services {
   readonly shop: ShopSystem;
   readonly day: DaySystem;
   readonly cleanliness: CleanlinessSystem;
-  readonly saves = new SaveSystem();
+  /** Hồ sơ đang chơi (đặt bằng saveSlots.setActive trước khi dựng Services) */
+  readonly saves = saveSlots.activeSystem();
   /** Số khách hiện có trong cửa hàng (do CustomerManager cập nhật). */
   customerCount = 0;
   /** Thời tiết hiện tại (Weather 3D cập nhật mỗi khung) — hệ thống khác chỉ đọc */
@@ -89,7 +90,10 @@ export class Services {
 
   save(): boolean {
     const ok = this.saves.save(this.snapshot());
-    if (ok) this.bus.emit('game:saved', {});
+    if (ok) {
+      saveSlots.markSaved();
+      this.bus.emit('game:saved', {});
+    }
     return ok;
   }
 

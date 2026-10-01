@@ -15,9 +15,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Mini Mart Tycoon 3D',
-        short_name: 'Mini Mart',
-        description: 'Game vận hành tiệm tạp hoá góc nhìn thứ nhất trong hẻm phố Việt.',
+        name: 'Tạp Hoá Đầu Hẻm',
+        short_name: 'Tạp Hoá Hẻm',
+        description: 'Giả lập tiệm tạp hoá Việt Nam thập niên 90 — góc nhìn thứ nhất, trong con hẻm nhỏ.',
         lang: 'vi',
         start_url: '.',
         scope: '.',

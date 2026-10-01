@@ -50,7 +50,7 @@ export class FurnitureView {
     if (def.kind === 'checkout') {
       this.counter = buildCounter(def);
       this.model = this.counter.group;
-      drawLcd(this.counter.lcd.canvas, ['MINI MART', 'Xin chào quý khách'], 0);
+      drawLcd(this.counter.lcd.canvas, ['TẠP HOÁ ĐẦU HẺM', 'Xin chào quý khách'], 0);
       this.counter.lcd.tex.needsUpdate = true;
     } else if (def.kind === 'selfcheckout') {
       this.kiosk = buildSelfCheckout(def);

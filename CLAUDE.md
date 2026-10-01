@@ -1,4 +1,4 @@
-# Project: "Mini Mart Tycoon 3D" — first-person supermarket simulator (web)
+# Project: "Tạp Hoá Đầu Hẻm" (tên cũ: Mini Mart Tycoon 3D) — first-person supermarket simulator (web)
 
 ## 1. Tầm nhìn
 Game giả lập vận hành siêu thị góc nhìn thứ nhất trên trình duyệt, cảm giác gần với Supermarket Simulator:

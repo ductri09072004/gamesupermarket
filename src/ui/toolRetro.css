@@ -1,0 +1,45 @@
+/* Bảng xây dựng và bảng đặt giá (súng dán giá): tờ phiếu giấy kem + thanh tiêu đề xanh — cùng bộ với modalRetro.css. */
+.build-panel, .float-panel {
+  background: repeating-linear-gradient(0deg, rgba(120, 90, 40, 0.05) 0 2px, transparent 2px 6px), #f3e6c8; color: #3b2616;
+  border: 3px solid #3b2616; border-radius: 6px; box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.4), 0 18px 44px rgba(0, 0, 0, 0.4);
+  font-family: "Be Vietnam Pro", "Nunito", sans-serif; overflow: hidden;
+}
+.build-panel { padding: 0 0 10px; }
+.float-panel { padding: 0 0 10px; }
+.build-panel > :not(.build-head), .float-panel > :not(.fp-head) { margin-left: 14px; margin-right: 14px; }
+
+/* thanh tiêu đề xanh */
+.build-head, .fp-head {
+  background: #1d4a3f; border-bottom: 3px solid #3b2616; padding: 8px 12px; margin: 0 0 10px; gap: 8px;
+}
+.build-head b, .fp-head b { font: 17px/1.2 "Alfa Slab One", "Be Vietnam Pro", serif; font-weight: 400; color: #f6d57a; text-shadow: 1px 2px 0 #7d2a1d; }
+.float-panel .win-close { width: 26px; height: 26px; border: 2px solid #3b2616; border-radius: 3px; background: #f3e6c8; color: #3b2616; font-size: 12px; }
+.float-panel .win-close:hover { background: #b8402d; color: #f9edd0; }
+
+/* nút nhỏ: tem giấy kem */
+.build-panel .btn, .float-panel .btn {
+  font-family: "Be Vietnam Pro", "Nunito", sans-serif; font-weight: 800; color: #3b2616; background: #f9edd0; border: 2px solid #3b2616; border-radius: 3px;
+  box-shadow: 2px 2px 0 rgba(59, 38, 22, 0.55); transition: transform 0.08s, box-shadow 0.08s, background 0.15s;
+}
+.build-panel .btn:hover:not(:disabled), .float-panel .btn:hover:not(:disabled) { background: #fff6dc; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 rgba(59, 38, 22, 0.55); }
+.build-panel .btn:active:not(:disabled), .float-panel .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
+
+.build-help { font: 15px/1.35 "Patrick Hand", "Nunito", sans-serif; color: #5c4630; margin-top: 0; }
+.build-help b { color: #3b2616; }
+.build-panel kbd, .float-panel kbd { font-family: "Be Vietnam Pro", sans-serif; font-weight: 700; font-size: 11px; background: #f9edd0; color: #3b2616; border: 1px solid #3b2616; border-radius: 3px; box-shadow: 0 2px 0 rgba(59, 38, 22, 0.5); padding: 0 5px; }
+.build-panel .muted, .float-panel .muted { color: #7a6446; }
+.build-item { font-family: "Be Vietnam Pro", "Nunito", sans-serif; font-weight: 700; color: #3b2616; background: #f9edd0; border: 2px solid #3b2616; border-radius: 3px; box-shadow: 2px 2px 0 rgba(59, 38, 22, 0.4); }
+.build-item:hover { background: #fff6dc; }
+.build-item b { color: #b8402d; }
+.build-status { font-weight: 800; }
+.build-status.ok { color: #1d6a3f; }
+.build-status.bad { color: #a3281a; }
+
+/* bảng đặt giá (chỉ trong .float-panel; app Giá trên máy tính giữ giao diện hệ điều hành) */
+.float-panel .price-row { background: #f9edd0; border: 2px solid #3b2616; border-radius: 4px; box-shadow: 2px 2px 0 rgba(59, 38, 22, 0.35); }
+.float-panel .price-input { font-family: "Alfa Slab One", "Be Vietnam Pro", serif; font-weight: 400; font-size: 16px; color: #3b2616; background: #fffaf0; border: 2px solid #3b2616; border-radius: 3px; }
+.float-panel .price-input:focus { outline: 2px solid #b8402d; outline-offset: 1px; }
+.float-panel .swatch { border: 2px solid #3b2616; border-radius: 4px; }
+.float-panel .price-info.loss { background: #efc5b8; color: #a3281a; border-radius: 3px; }
+.float-panel .price-info.expensive { color: #9a5a12; }
+.float-panel .warn { color: #a3281a; }

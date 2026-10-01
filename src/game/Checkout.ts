@@ -71,7 +71,7 @@ export class CheckoutController {
     c.input.exitLock();
     c.input.lookEnabled = false;
     this.strip.open({ onConfirm: () => this.confirmCash(), onExit: () => this.exit(), onUndo: () => this.drawer?.remove() });
-    drawLcd(view.counter.lcd.canvas, ['MINI MART', 'Xin chào!'], 0);
+    drawLcd(view.counter.lcd.canvas, ['TẠP HOÁ ĐẦU HẺM', 'Xin chào!'], 0);
     view.counter.lcd.tex.needsUpdate = true;
     c.s.bus.emit('checkout:mode', { active: true, counterUid });
   }
@@ -161,7 +161,7 @@ export class CheckoutController {
     const items = cu.basketItems.map((it) => ({ ...it, scanned: false }));
     this.session = {
       customer: cu, items, meshes: items.map(() => null), placed: 0, placeTimer: 0.3, startedAt: performance.now(),
-      method: null, paid: 0, pos: '', lcd: ['MINI MART'], card: null,
+      method: null, paid: 0, pos: '', lcd: ['TẠP HOÁ ĐẦU HẺM'], card: null,
     };
     this.strip.scanning(0, items.length, 0);
   }

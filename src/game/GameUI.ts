@@ -83,7 +83,7 @@ export class GameUI {
     this.cleanups.push(() => window.removeEventListener('keydown', onKey));
     if (s.data.day === 1 && !s.data.tutorial.welcome) {
       s.data.tutorial.welcome = true;
-      s.bus.emit('toast', { message: '👋 Chào mừng tới Mini Mart! Làm theo hướng dẫn góc phải — mũi tên vàng chỉ chỗ cần tới.', kind: 'info' });
+      s.bus.emit('toast', { message: '👋 Chào mừng tới Tạp Hoá Đầu Hẻm! Làm theo hướng dẫn góc phải — mũi tên vàng chỉ chỗ cần tới.', kind: 'info' });
     }
     this.clickToPlay.show();
   }

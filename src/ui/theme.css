@@ -172,3 +172,14 @@
 .cs-btn.primary kbd { background: rgba(0, 0, 0, 0.15); }
 #ui-root.mode-focus .hud-endday { display: none; }
 @media (max-width: 900px) { .checkout-strip { top: 92px; } .cs-hint { display: none; } }
+.pause-menu ol { margin: 0 0 10px; padding-left: 20px; font-size: 13px; line-height: 1.7; }
+.slot-picker { width: min(440px, 88vw); }
+.slot-list { display: flex; flex-direction: column; gap: 8px; }
+.slot-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--paper-line); border-radius: 12px; background: #fff; }
+.slot-row.empty { background: transparent; border-style: dashed; }
+.slot-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.slot-info b { font-size: 14px; }
+.slot-info .muted { font-size: 12px; }
+.slot-acts { display: flex; gap: 6px; flex: none; }
+.slot-acts .btn { padding: 6px 12px; font-size: 13px; }
+.main-menu .btn-sub { margin-left: auto; font-size: 12px; font-weight: 600; opacity: 0.8; }

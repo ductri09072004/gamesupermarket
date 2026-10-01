@@ -36,8 +36,8 @@ export class Assets {
     this.bar = h('div', { class: 'load-fill' });
     this.label = h('div', { class: 'load-label', text: 'Đang tải... 0%' });
     this.screen = h('div', { class: 'loading' }, [
-      h('div', { class: 'load-logo', text: '🏪' }),
-      h('div', { class: 'load-title', text: 'Mini Mart Tycoon 3D' }),
+      h('div', { class: 'load-logo', text: 'TH' }),
+      h('div', { class: 'load-title', text: 'Tạp Hoá Đầu Hẻm' }),
       h('div', { class: 'load-bar' }, [this.bar]),
       this.label,
     ]);

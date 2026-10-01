@@ -4,7 +4,7 @@ import { bus } from '../core/EventBus';
 import { ENV_INTENSITY, STORE_FRONT_Z } from '../config/constants';
 import { nextLighter } from '../config/quality';
 import { createDevState, createNewState, type SaveData, type Settings } from '../core/GameState';
-import { SaveSystem } from '../core/SaveSystem';
+import { saveSlots } from '../core/SaveSlots';
 import { Services, setServices } from '../core/Services';
 import { Assets } from '../engine/Assets';
 import { AudioEngine } from '../engine/Audio';
@@ -40,7 +40,6 @@ export class Game {
   private slowHinted = false;
   private gallery: Gallery;
   private debug = new DebugPanel();
-  private saves = new SaveSystem();
   private frameDt = 0;
 
   constructor(container: HTMLElement) {
@@ -103,6 +102,7 @@ export class Game {
     this.disposeWorld();
     bus.clear();
     this.audio.attach(bus);
+    saveSlots.setActive(null); // cảnh demo không ghi vào hồ sơ nào
     const demo = createNewState(7);
     demo.licenses = [0, 1];
     demo.storeOpen = true;
@@ -120,34 +120,46 @@ export class Game {
   }
 
   private showMenu(): void {
-    const saved = this.saves.load();
+    const last = saveSlots.lastSlot();
+    const saved = last === null ? null : saveSlots.system(last).load();
     const settings = saved?.settings ?? { ...DEFAULT_SETTINGS };
     this.applySettings(settings);
     showMainMenu(
       {
-        hasSave: !!saved && !saved.gameOver,
-        onContinue: () => this.startSession(this.saves.load() ?? createNewState()),
-        onNewGame: () => this.newGame(createNewState(), settings),
-        onDevGame: () => this.newGame(createDevState(), { ...settings, gameOverEnabled: false }),
+        slots: () => saveSlots.list(),
+        lastSlot: () => saveSlots.lastSlot(),
+        onContinue: () => this.loadSlot(saveSlots.lastSlot()),
+        onLoad: (slot) => this.loadSlot(slot),
+        onDelete: (slot) => saveSlots.clear(slot),
+        onNewGame: (slot) => this.newGame(createNewState(), settings, slot),
+        onDevGame: (slot) => this.newGame(createDevState(), { ...settings, gameOverEnabled: false }, slot),
       },
       settings,
       (st) => {
         this.applySettings(st);
-        if (saved) this.saves.save({ ...saved, settings: st });
+        if (saved && last !== null) saveSlots.system(last).save({ ...saved, settings: st });
       },
     );
   }
 
-  private newGame(fresh: SaveData, settings: Settings): void {
-    this.saves.clear();
-    fresh.settings = { ...settings };
-    this.startSession(fresh);
+  private loadSlot(slot: number | null): void {
+    const data = slot === null ? null : saveSlots.system(slot).load();
+    if (data && slot !== null) this.startSession(data, slot);
   }
 
-  startSession(data: SaveData): void {
+  private newGame(fresh: SaveData, settings: Settings, slot: number): void {
+    saveSlots.clear(slot);
+    fresh.settings = { ...settings };
+    this.startSession(fresh, slot);
+    this.world?.s.save(); // giữ chỗ hồ sơ ngay, không đợi lần lưu đầu
+  }
+
+  /** slot: hồ sơ ghi tiến trình ván này (bỏ trống → hồ sơ gần nhất, hoặc ô trống đầu tiên) */
+  startSession(data: SaveData, slot = saveSlots.lastSlot() ?? saveSlots.firstEmpty() ?? 1): void {
     this.disposeWorld();
     bus.clear();
     this.audio.attach(bus);
+    saveSlots.setActive(slot);
     const s = new Services(data);
     setServices(s);
     this.menu = false;

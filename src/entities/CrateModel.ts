@@ -32,7 +32,7 @@ function label(type: string): THREE.Material {
       g.fillText(def.name, 160, 104, 320);
       g.font = '800 26px "Nunito", Arial';
       g.fillStyle = '#c0392b';
-      g.fillText('▲ HÀNG LẮP ĐẶT · MINI MART', 160, 160, 320);
+      g.fillText('▲ HÀNG LẮP ĐẶT · ĐẦU HẺM', 160, 160, 320);
     });
     m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 });
     labels.set(type, m);
