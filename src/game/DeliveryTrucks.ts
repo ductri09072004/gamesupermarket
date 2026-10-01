@@ -80,7 +80,8 @@ export class DeliveryTrucks {
       const tr = this.trucks[i];
       const zt = z - tr.off;
       let target = MAX_SPEED;
-      const stopAt = this.stopX(queue, queue.indexOf(tr));
+      // điểm đỗ chỉ có nghĩa khi xe còn trong hàng chờ (đã 'leave' thì không còn trong queue)
+      const stopAt = tr.phase === 'leave' ? tr.x : this.stopX(queue, queue.indexOf(tr));
       if (tr.phase === 'arrive') {
         const gap = tr.x - stopAt;
         target = Math.min(MAX_SPEED, Math.sqrt(Math.max(0, 2 * BRAKE * 0.8 * gap)));
