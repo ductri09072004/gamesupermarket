@@ -28,14 +28,14 @@ export class Bubble {
     this.text = text;
     const g = this.canvas.getContext('2d')!;
     g.clearRect(0, 0, 256, 128);
-    g.font = '800 34px "Nunito", "Segoe UI Emoji", Arial';
+    g.font = '400 38px "Patrick Hand", "Nunito", "Segoe UI Emoji", Arial';
     const w = Math.min(244, Math.max(80, g.measureText(text).width + 36));
     const x = 128 - w / 2;
-    g.fillStyle = 'rgba(255,255,255,0.96)';
-    g.strokeStyle = '#3d3551';
+    g.fillStyle = 'rgba(247,238,214,0.97)';
+    g.strokeStyle = '#3b2616';
     g.lineWidth = 4;
     g.beginPath();
-    g.roundRect(x, 8, w, 80, 24);
+    g.roundRect(x, 8, w, 80, 10);
     g.fill();
     g.stroke();
     g.beginPath();
@@ -43,7 +43,7 @@ export class Bubble {
     g.lineTo(128, 108);
     g.lineTo(138, 86);
     g.fill();
-    g.fillStyle = '#3d3551';
+    g.fillStyle = '#3b2616';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.fillText(text, 128, 50, 230);

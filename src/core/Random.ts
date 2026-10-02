@@ -1,3 +1,4 @@
+import { VND_PER_UNIT } from '../config/constants';
 /** Bộ sinh số ngẫu nhiên có seed (mulberry32). */
 export type Rng = () => number;
 
@@ -33,7 +34,12 @@ export function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** Số đồng có dấu chấm ngăn nghìn: 1.234.500 (số nội bộ × VND_PER_UNIT). */
+export function formatVnd(n: number): string {
+  return Math.abs(Math.round(n * VND_PER_UNIT)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
 export function formatMoney(n: number): string {
-  const sign = n < 0 ? '-' : '';
-  return `${sign}$${Math.abs(n).toFixed(2)}`;
+  const sign = Math.round(n * VND_PER_UNIT) < 0 ? '-' : '';
+  return `${sign}${formatVnd(n)}đ`;
 }

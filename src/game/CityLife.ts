@@ -27,6 +27,7 @@ export class CityLife {
     this.group.add(this.traffic.group, this.pedestrians.group);
     this.traffic.onSound = (name, x, z) => this.bus?.emit('sound', { name, pos: { x, y: 1.5, z }, volume: 0.9 });
     this.traffic.onPassengers = (x, z, n) => this.onPassengers(x, z, n);
+    this.traffic.onHitPlayer = (vx, vz, speed) => this.bus?.emit('player:hit', { vx, vz, speed });
     // gánh hàng rong cất tiếng rao (chỉ khi người nghe ở gần)
     this.pedestrians.onCall = (x, z) => {
       if (Math.hypot(x - this.ear.x, z - this.ear.z) > 40) return;
@@ -59,7 +60,7 @@ export class CityLife {
   }
 
   update(dt: number, player: { x: number; z: number }, driving: boolean, camera: THREE.Vector3, extra: Array<{ x: number; z: number; lat: number }> = []): void {
-    this.traffic.update(dt, player, [{ x: player.x, z: player.z, lat: driving ? 2 : 1.4 }, ...extra]);
+    this.traffic.update(dt, player, [{ x: player.x, z: player.z, lat: driving ? 2 : 1.4 }, ...extra], !driving);
     this.ear = camera;
     this.pedestrians.update(dt, player, camera);
     const bus = this.bus;

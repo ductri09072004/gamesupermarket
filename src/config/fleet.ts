@@ -74,5 +74,4 @@ export interface TruckKind {
 export const DELIVERY_TRUCKS: TruckKind[] = [
   { model: 'truck_gaz66', len: 5.9 },
   { model: 'truck_supply', len: 6.3 },
-  { model: 'truck_zil131', len: 7.0 },
 ];

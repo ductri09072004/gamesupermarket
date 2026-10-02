@@ -29,7 +29,7 @@ describe('Tính tiền thối', () => {
   });
 
   it('thối tối ưu bằng mệnh giá', () => {
-    expect(optimalChange(660)).toEqual([5, 1, 0.25, 0.25, 0.1]);
+    expect(optimalChange(660)).toEqual([5, 1, 0.2, 0.2, 0.2]);
     expect(optimalChange(0)).toEqual([]);
     for (let c = 0; c < 10000; c += 37) expect(sumCents(optimalChange(c))).toBe(c);
   });

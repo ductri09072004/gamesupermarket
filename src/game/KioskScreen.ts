@@ -1,3 +1,4 @@
+import { formatMoney } from '../core/Random';
 /** Vẽ màn hình cảm ứng của máy tự tính tiền (canvas 512×360). */
 export type KioskScreenState =
   | { kind: 'idle' }
@@ -6,31 +7,31 @@ export type KioskScreenState =
   | { kind: 'pay'; total: number }
   | { kind: 'done'; total: number };
 
-const FONT = '"Nunito", Arial';
+const FONT = '"Courier New", monospace';
 
 export function drawKioskScreen(canvas: HTMLCanvasElement, st: KioskScreenState): void {
   const g = canvas.getContext('2d')!;
   const W = canvas.width;
   const H = canvas.height;
-  const bg = st.kind === 'help' ? (st.blink ? '#b91c1c' : '#7f1d1d') : '#0f2530';
+  const bg = st.kind === 'help' ? (st.blink ? '#b91c1c' : '#7f1d1d') : '#0b0d08';
   g.fillStyle = bg;
   g.fillRect(0, 0, W, H);
   // thanh tiêu đề
-  g.fillStyle = st.kind === 'help' ? '#fecaca' : '#2a9d8f';
+  g.fillStyle = st.kind === 'help' ? '#fecaca' : '#b8402d';
   g.fillRect(0, 0, W, 54);
-  g.fillStyle = st.kind === 'help' ? '#7f1d1d' : '#fff';
+  g.fillStyle = st.kind === 'help' ? '#7f1d1d' : '#f9edd0';
   g.font = `900 28px ${FONT}`;
   g.textBaseline = 'middle';
   g.textAlign = 'left';
   g.fillText('ĐẦU HẺM · TỰ THANH TOÁN', 18, 29);
   g.textAlign = 'center';
-  g.fillStyle = '#fff';
+  g.fillStyle = '#ffc933';
   switch (st.kind) {
     case 'idle':
       g.font = `900 40px ${FONT}`;
       g.fillText('Chạm để bắt đầu', W / 2, 160);
       g.font = `600 24px ${FONT}`;
-      g.fillStyle = '#9ad1c9';
+      g.fillStyle = '#d8b04a';
       g.fillText('Quét mã vạch từng món trên kính', W / 2, 215);
       g.fillText('💳 Thanh toán bằng thẻ', W / 2, 250);
       break;
@@ -38,15 +39,15 @@ export function drawKioskScreen(canvas: HTMLCanvasElement, st: KioskScreenState)
       g.textAlign = 'left';
       g.font = `600 24px ${FONT}`;
       st.lines.slice(-5).forEach((l, i) => g.fillText(l, 22, 90 + i * 34));
-      g.fillStyle = '#1b3a47';
+      g.fillStyle = '#1a1707';
       g.fillRect(0, H - 76, W, 76);
-      g.fillStyle = '#9ad1c9';
+      g.fillStyle = '#d8b04a';
       g.font = `700 22px ${FONT}`;
       g.fillText(`${st.count}/${st.of} món`, 22, H - 38);
       g.textAlign = 'right';
-      g.fillStyle = '#fff';
+      g.fillStyle = '#ffc933';
       g.font = `900 38px ${FONT}`;
-      g.fillText(`$${st.total.toFixed(2)}`, W - 22, H - 38);
+      g.fillText(formatMoney(st.total), W - 22, H - 38);
       break;
     }
     case 'help':
@@ -60,15 +61,15 @@ export function drawKioskScreen(canvas: HTMLCanvasElement, st: KioskScreenState)
       g.font = `700 28px ${FONT}`;
       g.fillText('💳 Chạm thẻ để thanh toán', W / 2, 140);
       g.font = `900 56px ${FONT}`;
-      g.fillText(`$${st.total.toFixed(2)}`, W / 2, 215);
+      g.fillText(formatMoney(st.total), W / 2, 215);
       break;
     case 'done':
       g.font = `900 44px ${FONT}`;
-      g.fillStyle = '#86efac';
+      g.fillStyle = '#8fe36a';
       g.fillText('✓ CẢM ƠN QUÝ KHÁCH!', W / 2, 160);
       g.font = `700 28px ${FONT}`;
-      g.fillStyle = '#fff';
-      g.fillText(`Đã thanh toán $${st.total.toFixed(2)}`, W / 2, 220);
+      g.fillStyle = '#ffc933';
+      g.fillText(`Đã thanh toán ${formatMoney(st.total)}`, W / 2, 220);
       break;
   }
 }

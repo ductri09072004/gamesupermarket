@@ -1,3 +1,4 @@
+import { formatMoney } from '../core/Random';
 import * as THREE from 'three';
 import { SECURITY } from '../config/hygiene';
 import { getFurniture } from '../config/furniture';
@@ -113,7 +114,7 @@ export class SecurityManager implements SecurityApi {
     this.siren(gate);
     cu.alarm();
     const guard = this.c.s.data.staff.some((x) => x.role === 'guard');
-    this.c.toast(guard ? '🚨 Cổng an ninh báo động! Bảo vệ đang đuổi theo...' : '🚨 Cổng an ninh báo động! Click vào kẻ trộm để tóm lại!', 'error');
+    this.c.toast(guard ? '🚨 Cổng an ninh báo động! Bảo vệ đang đuổi theo...' : '🚨 Cổng an ninh báo động! Bấm vào kẻ trộm để tóm lại!', 'error');
   }
 
   private escaped(cu: Customer, hasGate: boolean): void {
@@ -121,8 +122,8 @@ export class SecurityManager implements SecurityApi {
     this.detected.delete(cu);
     const value = cu.basketItems.reduce((a, i) => a + i.price, 0);
     this.c.toast(hasGate
-      ? `🏃 Kẻ trộm đã chạy thoát với $${value.toFixed(2)} tiền hàng!`
-      : `🕵️ Một khách vừa lén mang $${value.toFixed(2)} hàng ra không trả tiền! (Mua Cổng an ninh để phát hiện)`, 'error');
+      ? `🏃 Kẻ trộm đã chạy thoát với ${formatMoney(value)} tiền hàng!`
+      : `🕵️ Một khách vừa lén mang ${formatMoney(value)} hàng ra không trả tiền! (Mua Cổng an ninh để phát hiện)`, 'error');
   }
 
   /** Tóm được: hàng văng tung toé quanh kẻ trộm. */

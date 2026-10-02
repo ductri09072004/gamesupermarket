@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createNewState, type BoxData } from '../src/core/GameState';
 import type { Services } from '../src/core/Services';
-import { BOX_H } from '../src/entities/Box';
+import { boxDims } from '../src/config/boxes';
 import { BoxPhysics } from '../src/game/BoxPhysics';
 
 function setup(boxes: Array<Partial<BoxData>>) {
@@ -14,6 +14,8 @@ function setup(boxes: Array<Partial<BoxData>>) {
   return { data, ph };
 }
 const run = (ph: BoxPhysics, frames: number, each: () => void = () => {}) => { for (let i = 0; i < frames; i++) { each(); ph.update(1 / 60, null); } };
+
+const BOX_H = boxDims('water').h;
 
 describe('vật lý thùng hàng', () => {
   it('thùng nằm yên (đang ngủ) khi không ai đụng — không trôi, không ghi tư thế', () => {
@@ -33,13 +35,13 @@ describe('vật lý thùng hàng', () => {
     expect(b.pose).toBeDefined();
   });
 
-  it('cung cấp hộp bao + độ cao nóc cho người chơi (1 thùng ≈ 0.3m, chồng 2 ≈ 0.6m)', () => {
+  it('cung cấp hộp bao + độ cao nóc cho người chơi (chồng 2 thùng cao gấp đôi)', () => {
     const { ph } = setup([{}, {}, { gx: 7, gy: 5 }]);
     run(ph, 5);
     const sup = ph.supports({ x: 6, z: 5 });
     const tops = sup.map((s) => s.top).sort();
-    expect(tops[0]).toBeCloseTo(0.3, 1);
-    expect(tops[2]).toBeCloseTo(0.6, 1);
+    expect(tops[0]).toBeCloseTo(BOX_H, 1);
+    expect(tops[2]).toBeCloseTo(BOX_H * 2, 1);
   });
 
   it('chồng 3 thùng: rút thùng dưới cùng thì 2 thùng trên rơi xuống sàn', () => {
@@ -62,5 +64,26 @@ describe('vật lý thùng hàng', () => {
     expect(b.pose!.y).toBeGreaterThan(0.13);
     expect(b.pose!.y).toBeLessThan(0.25);
     expect(b.gy).toBeLessThan(5);
+  });
+});
+
+describe('thùng 3 cỡ theo mặt hàng', () => {
+  it('hàng nhẹ vào thùng nhỏ, hàng cồng kềnh vào thùng lớn; cỡ lớn có thể tích lớn hơn', () => {
+    expect(boxDims('soap').cls).toBe('s');
+    expect(boxDims('water').cls).toBe('m');
+    expect(boxDims('tissue').cls).toBe('l');
+    const vol = (id: string) => { const d = boxDims(id); return d.w * d.h * d.d; };
+    expect(vol('soap')).toBeLessThan(vol('water'));
+    expect(vol('water')).toBeLessThan(vol('tissue'));
+  });
+
+  it('xếp chồng thùng khác cỡ: thùng trên đặt đúng lên nóc thùng dưới', () => {
+    const { data, ph } = setup([{ productId: 'tissue' }, { productId: 'soap' }]);
+    run(ph, 120);
+    const ys = data.boxes.map((b) => b.pose?.y ?? 0);
+    const supports = ph.supports({ x: 5, z: 5 });
+    const top = Math.max(...supports.map((s) => s.top));
+    expect(top).toBeGreaterThan(boxDims('tissue').h + boxDims('soap').h - 0.06);
+    expect(ys.every((y) => y >= 0)).toBe(true);
   });
 });

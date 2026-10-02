@@ -211,7 +211,6 @@
     "city/vn_non_la.glb",
     "city/truck_gaz66.glb",
     "city/truck_supply.glb",
-    "city/truck_zil131.glb",
     "city/jeep_uaz469.glb",
     "city/pickup_peugeot404.glb",
     "city/moto_vespa_red.glb",
@@ -246,6 +245,7 @@
   ],
   "props": [
     "props/cash_register.glb",
+    "props/boxes.glb",
     "props/laptop.glb",
     "props/lamp_tube.glb",
     "props/lamp_pendant.glb",

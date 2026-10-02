@@ -22,6 +22,12 @@ export function prop(name: string): THREE.Group | null {
   return p ? p.clone(true) : null;
 }
 
+/** Bản clone của 1 nút con trong model nhiều phần (vd. boxes.glb gồm box_s / box_xl / box_l). */
+export function propNode(name: string, node: string): THREE.Object3D | null {
+  const n = props.get(name)?.getObjectByName(node);
+  return n ? n.clone(true) : null;
+}
+
 export function hasProp(name: string): boolean {
   return props.has(name);
 }

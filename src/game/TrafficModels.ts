@@ -1,11 +1,9 @@
 import * as THREE from 'three';
 import { SCOOTER_FILTERS } from '../config/city';
 import { BIKE_MODELS, NPC_CAR_MODELS } from '../config/fleet';
-import { MOTO_TRAFFIC } from '../config/traffic';
 import type { Rng } from '../core/Random';
 import { scooterMaterial } from '../world/CityInstances';
 import { cityModel } from '../world/CityModels';
-import { riderGeometry, riderMaterial } from './RiderModel';
 
 export type VehicleKind = 'car' | 'moto' | 'bus';
 
@@ -56,8 +54,8 @@ export function busModel(): THREE.Object3D {
   return g;
 }
 
-/** Xe máy có người lái (thỉnh thoảng chở thêm 1 người); trời mưa thì mặc áo mưa nhiều màu. */
-export function motoModel(rng: Rng, poncho: boolean): { obj: THREE.Object3D; poncho: boolean } {
+/** Xe máy chạy trên phố: chỉ có xe, không có người lái (cho nhẹ và đỡ rối mắt). */
+export function motoModel(rng: Rng): { obj: THREE.Object3D } {
   const g = new THREE.Group();
   const kind = BIKE_MODELS[Math.floor(rng() * BIKE_MODELS.length)];
   const bike = clone(kind.model, false) ?? clone('vn_scooter', false);
@@ -74,10 +72,5 @@ export function motoModel(rng: Rng, poncho: boolean): { obj: THREE.Object3D; pon
     box.position.y = 0.45;
     g.add(box);
   }
-  const rider = new THREE.Mesh(riderGeometry(Math.floor(rng() * 24), rng() < MOTO_TRAFFIC.pillionChance, poncho), riderMaterial);
-  // người lái ngồi theo yên từng kiểu xe (chỉnh so với Vespa chuẩn)
-  rider.position.set(0, kind.seat.dy, kind.seat.dz);
-  rider.scale.setScalar(kind.seat.scale);
-  g.add(rider);
-  return { obj: g, poncho };
+  return { obj: g };
 }

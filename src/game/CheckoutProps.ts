@@ -1,3 +1,4 @@
+import { formatMoney } from '../core/Random';
 import * as THREE from 'three';
 import { textCanvas } from '../products/LabelTexture';
 
@@ -7,8 +8,8 @@ export { moneyMesh } from '../entities/MoneyModels';
 export function cardMesh(): THREE.Mesh {
   const tex = textCanvas(256, 160, (g) => {
     const grad = g.createLinearGradient(0, 0, 256, 160);
-    grad.addColorStop(0, '#3a86ff');
-    grad.addColorStop(1, '#8338ec');
+    grad.addColorStop(0, '#1d4a3f');
+    grad.addColorStop(1, '#0f2f27');
     g.fillStyle = grad;
     g.fillRect(0, 0, 256, 160);
     g.fillStyle = '#ffd166';
@@ -17,10 +18,10 @@ export function cardMesh(): THREE.Mesh {
     g.font = '700 20px monospace';
     g.fillText('4821 •••• •••• 0427', 24, 118);
     g.font = '900 22px "Nunito", Arial';
-    g.fillText('MINI BANK', 24, 34);
+    g.fillText('ĐẦU HẺM BANK', 24, 34);
   });
   const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.3, metalness: 0.2 });
-  const side = new THREE.MeshStandardMaterial({ color: 0x3a86ff });
+  const side = new THREE.MeshStandardMaterial({ color: 0x1d4a3f });
   return new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.002, 0.054), [side, side, face, side, side, side]);
 }
 
@@ -35,20 +36,40 @@ export function bagMesh(): THREE.Group {
   return g;
 }
 
-/** Vẽ màn hình LCD quầy. */
+/** Màn hình quầy kiểu cũ: đèn LED hổ phách trên nền đen, chữ số mờ "88.88" phía sau, vạch quét ngang. */
 export function drawLcd(canvas: HTMLCanvasElement, lines: string[], total: number, big?: string): void {
   const g = canvas.getContext('2d')!;
-  g.fillStyle = '#0f1f14';
-  g.fillRect(0, 0, canvas.width, canvas.height);
-  g.fillStyle = '#9ef01a';
-  g.font = '700 30px "Courier New", monospace';
+  const W = canvas.width;
+  const H = canvas.height;
+  g.fillStyle = '#0b0d08';
+  g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, W * 0.7);
+  glow.addColorStop(0, 'rgba(90, 70, 10, 0.2)');
+  glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  g.fillStyle = glow;
+  g.fillRect(0, 0, W, H);
   g.textBaseline = 'top';
-  lines.slice(-4).forEach((l, i) => g.fillText(l.slice(0, 26), 16, 12 + i * 36));
-  g.fillStyle = '#d9f99d';
-  g.font = '900 52px "Courier New", monospace';
-  g.textAlign = 'right';
-  g.fillText(big ?? `$${total.toFixed(2)}`, canvas.width - 16, canvas.height - 64);
   g.textAlign = 'left';
-  g.font = '700 26px "Courier New", monospace';
-  g.fillText('TOTAL', 16, canvas.height - 50);
+  g.font = '700 28px "Courier New", monospace';
+  g.fillStyle = '#ffb000';
+  g.shadowColor = '#ff9a00';
+  g.shadowBlur = 8;
+  lines.slice(-4).forEach((l, i) => g.fillText(l.slice(0, 26), 16, 12 + i * 34));
+  const text = big ?? formatMoney(total);
+  g.font = '900 58px "Courier New", monospace';
+  g.textAlign = 'right';
+  g.shadowBlur = 0;
+  g.fillStyle = 'rgba(255, 176, 0, 0.1)';
+  g.fillText(text.replace(/[0-9]/g, '8'), W - 16, H - 74);
+  g.fillStyle = '#ffc933';
+  g.shadowColor = '#ff9a00';
+  g.shadowBlur = 14;
+  g.fillText(text, W - 16, H - 74);
+  g.shadowBlur = 0;
+  g.textAlign = 'left';
+  g.font = '700 24px "Courier New", monospace';
+  g.fillStyle = '#ffb000';
+  g.fillText('TỔNG', 16, H - 44);
+  g.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  for (let y = 0; y < H; y += 4) g.fillRect(0, y, W, 1);
 }

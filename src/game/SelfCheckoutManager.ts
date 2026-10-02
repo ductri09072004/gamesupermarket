@@ -1,3 +1,4 @@
+import { formatMoney } from '../core/Random';
 import * as THREE from 'three';
 import { REP_SELF_HELPED, SELF_ASSIST_SPEEDUP, SELF_HELP_SOLO_S, SELF_PAY_S, SELF_SCAN_S } from '../config/constants';
 import { getFurniture } from '../config/furniture';
@@ -173,7 +174,7 @@ export class SelfCheckoutManager implements KioskHelpApi {
     }
     ss.customer.human.reach();
     const name = getProduct(it.productId).name.slice(0, 20);
-    ss.lines.push(`${name}  $${it.price.toFixed(2)}`);
+    ss.lines.push(`${name}  ${formatMoney(it.price)}`);
   }
 
   private finish(k: FurnitureData, ss: Session): void {
@@ -189,7 +190,7 @@ export class SelfCheckoutManager implements KioskHelpApi {
       this.c.effects.fly(card, card.position.clone(), hand, { dur: 0.35, arc: 0.05 });
     }
     if (ss.helped) s.progression.changeReputation(REP_SELF_HELPED);
-    this.c.effects.floatText(`+$${r.revenue.toFixed(2)}`, at);
+    this.c.effects.floatText(`+${formatMoney(r.revenue)}`, at);
     ss.customer.finishCheckout(true, bagMesh());
     this.sessions.delete(k.uid);
     this.done.set(k.uid, { t: 2.5, total: r.revenue });

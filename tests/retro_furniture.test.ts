@@ -44,7 +44,7 @@ describe('kệ & tủ cổ (model Sketchfab)', () => {
 
   it('mẫu cũ chỉ còn trong bản lưu, cửa hàng mua sắm bán mẫu cổ; ván mở đầu dùng mẫu cổ', () => {
     const legacy = FURNITURE.filter((f) => f.legacy).map((f) => f.id).sort();
-    expect(legacy).toEqual(['fridge', 'freezer', 'shelf_large', 'shelf_small'].sort());
+    expect(legacy).toEqual(['fridge', 'freezer', 'self_checkout', 'shelf_large', 'shelf_small'].sort());
     const types = createNewState(1).furniture.map((f) => f.type);
     expect(types).toContain('shelf_hutch');
     expect(types).toContain('fridge_coke');

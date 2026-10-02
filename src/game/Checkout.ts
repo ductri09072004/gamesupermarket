@@ -1,3 +1,4 @@
+import { VND_PER_UNIT } from '../config/constants';
 import * as THREE from 'three';
 import { FEEL } from '../config/feel';
 import { getProduct } from '../config/products';
@@ -200,7 +201,7 @@ export class CheckoutController {
     const p = getProduct(it.productId);
     const scanned = ss.items.filter((x) => x.scanned);
     const total = itemsTotal(scanned);
-    ss.lcd.push(`${p.name.slice(0, 16).padEnd(16)} ${it.price.toFixed(2)}`);
+    ss.lcd.push(`${p.name.slice(0, 16).padEnd(16)} ${formatMoney(it.price)}`);
     drawLcd(parts.lcd.canvas, ss.lcd, total);
     parts.lcd.tex.needsUpdate = true;
     this.strip.scanning(scanned.length, ss.items.length, total);
@@ -236,7 +237,7 @@ export class CheckoutController {
     const total = itemsTotal(ss.items);
     const due = changeDueCents(total, ss.paid);
     this.strip.cash(total, ss.paid, fromCents(due), fromCents(this.drawer!.givenCents));
-    drawLcd(this.view!.counter!.lcd.canvas, [...ss.lcd.slice(-2), `PAID  ${ss.paid.toFixed(2)}`, `CHANGE ${fromCents(due).toFixed(2)}`], total);
+    drawLcd(this.view!.counter!.lcd.canvas, [...ss.lcd.slice(-2), `ĐƯA ${formatMoney(ss.paid)}`, `THỐI ${formatMoney(fromCents(due))}`], total);
     this.view!.counter!.lcd.tex.needsUpdate = true;
   }
 
@@ -256,7 +257,7 @@ export class CheckoutController {
     const total = itemsTotal(ss.items);
     this.c.sound('click');
     if (key === 'enter') {
-      if (verifyCardInput(ss.pos, total)) {
+      if (verifyCardInput(String((Number(ss.pos) || 0) / VND_PER_UNIT), total)) {
         this.finish(0, 'Thanh toán thẻ thành công', true);
       } else {
         this.c.sound('error');
@@ -265,9 +266,11 @@ export class CheckoutController {
       }
       return;
     }
-    ss.pos = posInput(ss.pos, key);
+    // bàn phím POS nhập số đồng nguyên: phím "." thành "000" như máy tính tiền ngoài chợ
+    if (key === ".") ss.pos = ss.pos && ss.pos.length <= 5 ? ss.pos + "000" : ss.pos;
+    else ss.pos = posInput(ss.pos, key);
     this.strip.card(total, ss.pos);
-    drawLcd(this.view!.counter!.lcd.canvas, ss.lcd, total, `$${ss.pos || '0'}`);
+    drawLcd(this.view!.counter!.lcd.canvas, ss.lcd, total, `${ss.pos || '0'}đ`);
     this.view!.counter!.lcd.tex.needsUpdate = true;
   }
 
@@ -279,7 +282,7 @@ export class CheckoutController {
     const at = this.world(new THREE.Vector3(0, 1.2, -0.6));
     const duration = (performance.now() - ss.startedAt) / 1000;
     const r = completeSale(c.s, ss.customer.id, ss.items, ss.method, ss.paid, changeCents, duration, { gx: at.x, gy: at.z });
-    c.effects.floatText(`+$${r.revenue.toFixed(2)}`, at.clone().setY(1.5));
+    c.effects.floatText(`+${formatMoney(r.revenue)}`, at.clone().setY(1.5));
     this.drawer!.clearGiven();
     this.drawer!.clearPaid();
     this.drawer!.close();

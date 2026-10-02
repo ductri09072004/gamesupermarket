@@ -1,3 +1,4 @@
+import { formatVnd } from '../core/Random';
 import * as THREE from 'three';
 import { prop } from '../engine/Props';
 import { DENOMINATIONS } from '../config/constants';
@@ -32,18 +33,18 @@ export interface CounterParts {
 const std = (key: string, color: number, r = 0.5, m = 0) => mat(key, () => new THREE.MeshStandardMaterial({ color, roughness: r, metalness: m }));
 
 function denomLabel(d: number): string {
-  return d >= 1 ? `$${d}` : `${Math.round(d * 100)}¢`;
+  return `${formatVnd(d)}${d >= 1 ? '' : 'đ'}`;
 }
 
 function counterSign(): THREE.Material {
   return mat('counterSign', () => {
     const t = textCanvas(512, 128, (c) => {
-      c.fillStyle = '#1f2a30';
+      c.fillStyle = '#1d4a3f';
       c.fillRect(0, 0, 512, 128);
-      c.fillStyle = '#2a9d8f';
+      c.fillStyle = '#b8402d';
       c.fillRect(0, 118, 512, 10);
-      c.fillStyle = '#ffffff';
-      c.font = '900 54px "Nunito", Arial';
+      c.fillStyle = '#f6d57a';
+      c.font = '400 52px "Alfa Slab One", "Nunito", Arial';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.fillText('TẠP HOÁ ĐẦU HẺM', 256, 60, 488);
@@ -60,12 +61,12 @@ function counterShell(def: FurnitureDef): THREE.Group {
   const g = new THREE.Group();
   const body = wood();
   const dark = powder(0x2b3238, 0.55);
-  const top = plastic(0xe7e5e4, 0.22);
+  const top = plastic(0xd9d2b8, 0.45);
   const back = d / 2 - 0.25;
   g.add(rblock(dark, -w / 2 + 0.03, w / 2 - 0.03, 0, 0.08, -d / 2 + 0.04, back, 0.006));
   g.add(rblock(body, -w / 2, w / 2, 0.08, h - 0.04, -d / 2, back, 0.012));
   g.add(block(counterSign(), -0.4, 0.4, 0.3, 0.5, -d / 2 - 0.004, -d / 2 - 0.001, false));
-  g.add(rblock(plastic(0x2a9d8f, 0.4), -w / 2 + 0.06, w / 2 - 0.06, 0.64, 0.7, -d / 2 - 0.008, -d / 2 + 0.01, 0.004, false));
+  g.add(rblock(plastic(0x8a3a2a, 0.5), -w / 2 + 0.06, w / 2 - 0.06, 0.64, 0.7, -d / 2 - 0.008, -d / 2 + 0.01, 0.004, false));
   // phía thu ngân: 2 vách đầu + kệ dưới ngăn kéo
   for (const [a, b] of [[-w / 2, -w / 2 + 0.05], [w / 2 - 0.05, w / 2]]) g.add(rblock(body, a, b, 0, h - 0.04, back, d / 2, 0.008));
   g.add(rblock(dark, -w / 2 + 0.05, w / 2 - 0.05, 0.08, 0.1, back, d / 2 - 0.03, 0.004));
@@ -141,7 +142,7 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   g.add(lcdGroup);
   // ngăn kéo tiền (phía thu ngân)
   const drawer = new THREE.Group();
-  const trayMat = std('tray', 0x2b2d42, 0.6);
+  const trayMat = std('tray', 0x3a2a1c, 0.7);
   drawer.add(block(trayMat, -0.3, 0.3, 0, 0.1, -0.2, 0.2));
   const trays: THREE.Mesh[] = [];
   DENOMINATIONS.forEach((den, i) => {
@@ -149,11 +150,11 @@ export function buildCounter(def: FurnitureDef): CounterParts {
     const col = bill ? i : i - 5;
     // nhãn mệnh giá ở mép gần người thu ngân (+Z); phần còn lại của khay là xấp tiền / cột xu
     const tex = textCanvas(128, 64, (c) => {
-      c.fillStyle = '#2b2d42';
+      c.fillStyle = '#3a2a1c';
       c.fillRect(0, 0, 128, 64);
-      c.fillStyle = bill ? '#b7e4c7' : '#ffe8a3';
+      c.fillStyle = bill ? '#d9c9a0' : '#d8b04a';
       c.fillRect(0, bill ? 46 : 40, 128, 24);
-      c.fillStyle = '#1b4332';
+      c.fillStyle = '#3b2616';
       c.font = '900 22px "Nunito", Arial';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
@@ -184,15 +185,15 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   g.add(drawer);
   // máy POS
   const pos = new THREE.Group();
-  pos.add(rblock(powder(0x1f2937, 0.5), -0.07, 0.07, 0, 0.03, -0.11, 0.11, 0.008));
-  const posScreen = block(mat('posScreen', () => new THREE.MeshStandardMaterial({ color: 0x9ef01a, emissive: 0x4a7a10, emissiveIntensity: 0.6 })), -0.055, 0.055, 0.03, 0.033, -0.1, -0.05, false);
+  pos.add(rblock(powder(0xcfc5a8, 0.55), -0.07, 0.07, 0, 0.03, -0.11, 0.11, 0.008));
+  const posScreen = block(mat('posScreen', () => new THREE.MeshStandardMaterial({ color: 0xffb000, emissive: 0x7a4a00, emissiveIntensity: 0.7 })), -0.055, 0.055, 0.03, 0.033, -0.1, -0.05, false);
   pos.add(posScreen);
   const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', 'back', 'clear', 'enter'];
   const posKeys: THREE.Mesh[] = [];
   keys.forEach((k, i) => {
     const r = Math.floor(i / 3);
     const c = i % 3;
-    const color = k === 'enter' ? 0x2a9d8f : k === 'clear' ? 0xe63946 : k === 'back' ? 0xf4a261 : 0xe5e7eb;
+    const color = k === 'enter' ? 0x4f7a43 : k === 'clear' ? 0xa8402e : k === 'back' ? 0xc99a3b : 0xe8dec0;
     const key = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.012, 0.026), mat(`key${color}`, () => new THREE.MeshStandardMaterial({ color, roughness: 0.5 })));
     key.position.set(-0.042 + c * 0.042, 0.036, -0.03 + r * 0.03);
     key.userData = { kind: 'poskey', key: k };

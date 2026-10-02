@@ -4,7 +4,7 @@ import { STORE_FRONT_Z } from '../config/constants';
 import { BOX_PHYSICS } from '../config/physics';
 import type { BoxData } from '../core/GameState';
 import type { Services } from '../core/Services';
-import { BOX_D, BOX_H, BOX_W } from '../entities/Box';
+import { boxDims } from '../config/boxes';
 import type { AABB } from '../world/Colliders';
 import type { Support } from '../player/StepSupport';
 
@@ -79,19 +79,20 @@ export class BoxPhysics {
     for (const b of floor) {
       alive.add(b.uid);
       const key = `${b.gx.toFixed(2)},${b.gy.toFixed(2)}`;
-      const n = stacks.get(key) ?? 0;
-      stacks.set(key, n + 1);
+      const base = stacks.get(key) ?? 0;
+      const dm = boxDims(b.productId);
+      stacks.set(key, base + dm.h);
       let body = this.bodies.get(b.uid);
       if (!body) {
         body = new CANNON.Body({
-          mass: this.massOf(b), material: this.boxMat, shape: new CANNON.Box(new CANNON.Vec3(BOX_W / 2, BOX_H / 2, BOX_D / 2)),
+          mass: this.massOf(b), material: this.boxMat, shape: new CANNON.Box(new CANNON.Vec3(dm.w / 2, dm.h / 2, dm.d / 2)),
           linearDamping: P.linearDamping, angularDamping: P.angularDamping, sleepSpeedLimit: 0.08, sleepTimeLimit: 0.6,
         });
         if (b.pose) {
           body.position.set(b.gx, b.pose.y, b.gy);
           body.quaternion.set(...b.pose.q);
         } else {
-          body.position.set(b.gx, n * BOX_H + BOX_H / 2 + 0.002, b.gy);
+          body.position.set(b.gx, base + dm.h / 2 + 0.002, b.gy);
           body.quaternion.setFromEuler(0, ((b.uid.charCodeAt(b.uid.length - 1) % 5) - 2) * 0.03, 0);
         }
         this.world.addBody(body);

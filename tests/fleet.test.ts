@@ -29,7 +29,7 @@ describe('đội xe cổ', () => {
     const ids = NPC_CAR_MODELS.map((v) => v.id);
     for (const v of variantsOf('car')) expect(ids).toContain(v.id);
     expect(ids).toContain('uaz469');
-    expect(DELIVERY_TRUCKS.map((t) => t.model).sort()).toEqual(['truck_gaz66', 'truck_supply', 'truck_zil131']);
+    expect(DELIVERY_TRUCKS.map((t) => t.model).sort()).toEqual(['truck_gaz66', 'truck_supply']);
   });
 
   it('thông số từng xe lấy theo kiểu đã chọn; kiểu lạ / thiếu → kiểu đầu tiên', () => {

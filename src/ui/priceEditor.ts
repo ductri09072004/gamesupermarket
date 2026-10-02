@@ -1,3 +1,4 @@
+import { VND_PER_UNIT } from '../config/constants';
 import { getProduct } from '../config/products';
 import type { Services } from '../core/Services';
 import { round2 } from '../core/Random';
@@ -8,13 +9,13 @@ import { h, money } from './dom';
 export function priceEditor(s: Services, productId: string, compact = false): HTMLElement {
   const p = getProduct(productId);
   const market = s.market(productId);
-  const input = h('input', { class: 'price-input', attrs: { type: 'number', step: '0.01', min: '0.01' } });
+  const input = h('input', { class: 'price-input', attrs: { type: 'number', step: '10', min: '10' } });
   const info = h('div', { class: 'price-info' });
   const row = h('div', { class: `price-row ${compact ? 'compact' : ''}` });
 
   const render = () => {
     const price = s.state.priceOf(productId);
-    input.value = price.toFixed(2);
+    input.value = String(Math.round(price * VND_PER_UNIT));
     const margin = profitMargin(price, p.costPerUnit);
     const ratio = price / market;
     const prob = buyProbability(ratio);
@@ -35,9 +36,9 @@ export function priceEditor(s: Services, productId: string, compact = false): HT
     render();
   };
 
-  input.addEventListener('change', () => set(parseFloat(input.value)));
+  input.addEventListener('change', () => set(parseFloat(input.value) / VND_PER_UNIT));
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') set(parseFloat(input.value));
+    if (e.key === 'Enter') set(parseFloat(input.value) / VND_PER_UNIT);
     e.stopPropagation();
   });
   const quick = (label: string, fn: () => number) => h('button', { class: 'btn tiny', text: label, onClick: () => set(fn()) });
@@ -51,9 +52,9 @@ export function priceEditor(s: Services, productId: string, compact = false): HT
       ]),
     ]),
     h('div', { class: 'price-controls' }, [
-      quick('−0.1', () => round2(cur() - 0.1)),
+      quick('−100', () => round2(cur() - 0.1)),
       input,
-      quick('+0.1', () => round2(cur() + 0.1)),
+      quick('+100', () => round2(cur() + 0.1)),
       quick('= TT', () => market),
       quick('+10%', () => round2(market * 1.1)),
       quick('+20%', () => round2(market * 1.2)),

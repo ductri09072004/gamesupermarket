@@ -20,11 +20,17 @@ function recolor(model: string, mat: THREE.Material, look: HumanLook): THREE.Mat
   else if (name === 'Hair') color = look.hair;
   else if (RECOLOR_MODELS.has(model) && name === 'Shirt') color = look.shirt;
   else if (RECOLOR_MODELS.has(model) && name === 'Pants') color = look.pants;
-  const key = `${model}:${name}:${color ?? 'base'}`;
+  const faded = color === null && name !== 'Skin' && name !== 'Hair';
+  const key = `${model}:${name}:${color ?? 'base'}${faded ? ':' + look.shirt : ''}`;
   let m = matCache.get(key);
   if (!m) {
     const c = mat.clone() as THREE.MeshStandardMaterial;
     if (color !== null) c.color.setHex(color);
+    // đồ vải bạc màu, ngả vàng như quần áo mặc nhiều năm; mỗi khách sáng tối hơi khác nhau
+    if (faded) {
+      const v = 0.8 + (((look.shirt >> 8) & 0xff) / 255) * 0.14;
+      (c as THREE.MeshStandardMaterial).color.multiply(new THREE.Color(v * 1.04, v * 0.97, v * 0.86));
+    }
     c.roughness = name === 'Hair' ? 0.6 : 0.85;
     c.metalness = 0;
     // file gốc để doubleSided → mặt sau cũng vào shadow map và tự đổ bóng lốm đốm (shadow acne)

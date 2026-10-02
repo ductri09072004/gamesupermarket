@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { getVariant, type VehicleVariant } from '../config/fleet';
 import type { VehicleType } from '../config/vehicles';
-import { BOX_D, BOX_H, BOX_W } from './Box';
+import { CARGO_SLOT } from '../config/boxes';
+
+const { w: BOX_W, h: BOX_H, d: BOX_D } = CARGO_SLOT;
 import { cityModel } from '../world/CityModels';
 
 /** Model xe: gốc giữa đáy, mặt trước -Z. wheels quay theo quãng đường; slots: vị trí đặt thùng hàng (local). */

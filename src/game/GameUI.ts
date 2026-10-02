@@ -53,6 +53,10 @@ export class GameUI {
     this.cleanups.push(
       mountToasts(s.bus),
       s.bus.on('ui:openPc', ({ app }) => this.openPc(app as AppId | undefined)),
+      s.bus.on('player:hit', ({ vx, vz }) => {
+        this.w.player.launch(vx, vz);
+        s.bus.emit('toast', { message: '🛵 Bị xe máy tông! Lần sau tránh xa lòng đường nhé.', kind: 'error' });
+      }),
       s.bus.on('day:closing', () => s.bus.emit('toast', { message: '22:00 — hết giờ bán. Tiễn khách cuối rồi nhấn N để kết thúc ngày.', kind: 'info' })),
       s.bus.on('game:over', () => showGameOver(s.data.day, () => host.quitToMenu())),
       s.bus.on('build:mode', ({ active }) => {

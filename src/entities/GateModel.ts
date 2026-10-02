@@ -8,13 +8,13 @@ export interface GateParts {
   light: THREE.MeshStandardMaterial;
 }
 
-const acrylic = new THREE.MeshStandardMaterial({ color: 0xe8f1f8, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.55 });
+const acrylic = new THREE.MeshStandardMaterial({ color: 0xcfc6a8, roughness: 0.5, metalness: 0.05, transparent: true, opacity: 0.75 });
 
 export function buildGate(def: FurnitureDef): GateParts {
   const g = new THREE.Group();
   const { w, d, h } = def.size;
   const light = new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 0.8, roughness: 0.3 });
-  const base = powder(0x9ca3af, 0.5);
+  const base = powder(0x4a5a42, 0.6);
   for (const sx of [-1, 1]) {
     const x = sx * (w / 2 - 0.07);
     g.add(rblock(base, x - 0.1, x + 0.1, 0, 0.06, -d / 2, d / 2, 0.02));

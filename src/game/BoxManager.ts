@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { getFurniture } from '../config/furniture';
 import { FEEL } from '../config/feel';
 import type { Services } from '../core/Services';
-import { BOX_H, BoxModel } from '../entities/Box';
+import { boxDims } from '../config/boxes';
+import { BoxModel } from '../entities/Box';
 import { slotBox } from '../systems/SlotLayout';
 import { furnitureMatrix } from '../world/Placement';
 
@@ -62,7 +63,7 @@ export class BoxManager {
       if (b.location !== 'floor' || b.uid === ignore) continue;
       if (Math.abs(b.gx - x) < 0.3 && Math.abs(b.gy - z) < 0.25) {
         const e = this.entries.get(b.uid);
-        const y = (e?.y ?? 0) + BOX_H;
+        const y = (e?.y ?? 0) + boxDims(b.productId).h;
         if (!best || y > best.y) best = { y, x: b.gx, z: b.gy };
       }
     }
@@ -103,9 +104,9 @@ export class BoxManager {
       }
       g.visible = true;
       const key = `${b.gx.toFixed(2)},${b.gy.toFixed(2)}`;
-      const n = stacks.get(key) ?? 0;
-      stacks.set(key, n + 1);
-      e.y = n * BOX_H;
+      const base = stacks.get(key) ?? 0;
+      stacks.set(key, base + boxDims(b.productId).h);
+      e.y = base;
       g.position.set(b.gx, e.y, b.gy);
       g.rotation.y = ((b.uid.charCodeAt(b.uid.length - 1) % 5) - 2) * 0.03;
       if (this.pendingDrops.has(b.uid)) {
@@ -152,9 +153,10 @@ export class BoxManager {
         if (!ph) continue;
         const g = e.model.group;
         g.quaternion.set(ph.q.x, ph.q.y, ph.q.z, ph.q.w);
-        half.set(0, -BOX_H / 2, 0).applyQuaternion(g.quaternion);
+        const bh = e.model.dims.h;
+        half.set(0, -bh / 2, 0).applyQuaternion(g.quaternion);
         g.position.set(ph.p.x + half.x, ph.p.y + half.y, ph.p.z + half.z);
-        e.y = ph.p.y - BOX_H / 2;
+        e.y = ph.p.y - bh / 2;
         continue;
       }
       e.dropT += dt / 0.55;

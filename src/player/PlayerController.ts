@@ -4,6 +4,7 @@ import {
   PLAYER_RADIUS, RUN_SPEED, WALK_SPEED,
 } from '../config/constants';
 import { FEEL } from '../config/feel';
+import { MOTO_HIT } from '../config/traffic';
 import type { Input } from '../engine/Input';
 import { moveCircle, type AABB } from '../world/Colliders';
 import { blockers, groundHeight, pushedBy, type Support } from './StepSupport';
@@ -22,6 +23,11 @@ export class PlayerController {
   sensitivity = 1;
   private vx = 0;
   private vz = 0;
+  /** Giây còn lại của cú văng (bị xe tông): không điều khiển được, trượt theo quán tính */
+  private knockT = 0;
+  /** Camera nghiêng khi ngã (rad) và hướng nghiêng */
+  private roll = 0;
+  private rollDir = 1;
   /** Pha bước chân: +1 mỗi bước (headbob và tiếng bước cùng nhịp) */
   private stepPhase = 0;
   private bobOffset = 0;
@@ -49,6 +55,19 @@ export class PlayerController {
     this.z = z;
     this.yaw = yaw;
     camera.rotation.order = 'YXZ';
+  }
+
+  /** Bị xe tông: văng theo (vx, vz) m/s, nảy lên, choáng một lúc. */
+  launch(vx: number, vz: number): void {
+    this.vx = vx;
+    this.vz = vz;
+    this.vy = MOTO_HIT.lift;
+    this.knockT = MOTO_HIT.stunS;
+    this.rollDir = Math.sign(vx * Math.cos(this.yaw) - vz * Math.sin(this.yaw)) || 1;
+  }
+
+  get knocked(): boolean {
+    return this.knockT > 0;
   }
 
   get grounded(): boolean {
@@ -113,10 +132,19 @@ export class PlayerController {
     const cos = Math.cos(this.yaw);
     const wx = (fx * cos + fz * sin) * target;
     const wz = (-fx * sin + fz * cos) * target;
-    this.updateJump(dt, this.moveEnabled && k.isDown('Space'));
-    const accel = 1 - Math.exp(-dt * 14 * (this.grounded ? 1 : AIR_CONTROL));
-    this.vx += (wx - this.vx) * accel;
-    this.vz += (wz - this.vz) * accel;
+    this.updateJump(dt, this.moveEnabled && this.knockT <= 0 && k.isDown('Space'));
+    if (this.knockT > 0) {
+      // đang bị văng: trượt theo quán tính, ma sát hãm dần
+      this.knockT -= dt;
+      const f = Math.exp(-MOTO_HIT.friction * dt);
+      this.vx *= f;
+      this.vz *= f;
+    } else {
+      const accel = 1 - Math.exp(-dt * 14 * (this.grounded ? 1 : AIR_CONTROL));
+      this.vx += (wx - this.vx) * accel;
+      this.vz += (wz - this.vz) * accel;
+    }
+    this.roll += ((this.knockT > 0 ? 0.45 * this.rollDir : 0) - this.roll) * (1 - Math.exp(-dt * 7));
     // thùng thấp bước lên được; thùng cao chặn lại (đi tiếp thì đẩy)
     const boxWalls = blockers(this.y, this.supports);
     const p = moveCircle(this.x, this.z, this.vx * dt, this.vz * dt, PLAYER_RADIUS, boxWalls.length ? [...colliders, ...boxWalls] : colliders);
@@ -151,7 +179,7 @@ export class PlayerController {
   applyCamera(): void {
     if (this.cameraOverride) return;
     this.camera.position.set(this.x, this.y + this.eye + this.bobOffset - this.landDip, this.z);
-    this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
+    this.camera.rotation.set(this.pitch, this.yaw, this.roll, 'YXZ');
   }
 
   teleport(x: number, z: number, yaw?: number): void {

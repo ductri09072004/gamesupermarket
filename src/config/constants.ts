@@ -34,7 +34,9 @@ export const STAFF_SPEED = 1.5;
 export const NPC_ANIM_CULL_DISTANCE = 25;
 
 // Kinh tế
-export const CURRENCY = '$';
+export const CURRENCY = 'đ';
+/** Số nội bộ × hệ số này = số đồng hiển thị (giá mì gói 0.75 → 750đ). */
+export const VND_PER_UNIT = 1000;
 export const START_MONEY = 1500;
 export const START_REPUTATION = 2.5;
 export const MAX_REPUTATION = 5;
@@ -156,7 +158,8 @@ export const SAVE_SLOTS = 5;
 export const SAVE_VERSION = 5;
 
 // Thu ngân
-export const DENOMINATIONS = [50, 20, 10, 5, 1, 0.25, 0.1, 0.05, 0.01];
+/** 50.000 · 20.000 · 10.000 · 5.000 · 1.000 · 200 · 100 · 50 · 10 đồng */
+export const DENOMINATIONS = [50, 20, 10, 5, 1, 0.2, 0.1, 0.05, 0.01];
 
 /** Cường độ ánh sáng môi trường khi dùng HDRI thật (RoomEnvironment code dùng 0.35). */
 export const ENV_INTENSITY = 0.5;

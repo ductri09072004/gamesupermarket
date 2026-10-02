@@ -49,6 +49,8 @@ export interface GameEvents {
   'build:mode': { active: boolean };
   'tutorial:done': { step: string };
   'weather:changed': { icon: string; rain: number; flood: number };
+  /** Xe máy tông người chơi đi bộ: vận tốc văng (m/s) và tốc độ xe */
+  'player:hit': { vx: number; vz: number; speed: number };
   'sound': { name: SoundName; pos?: { x: number; y: number; z: number }; pitch?: number; volume?: number };
   'settings:changed': Record<string, never>;
   'game:over': Record<string, never>;

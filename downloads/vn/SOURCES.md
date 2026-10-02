@@ -38,3 +38,4 @@ Tất cả là **CC Attribution 4.0** — dùng thương mại được, BẮT B
 | bread_basket.glb | Bread Vietnam | gomugomu | https://sketchfab.com/3d-models/74f3a391c70146efb80475c44387a72a |
 | non_la.glb | Vietnamese _ Non La | NNgan | https://sketchfab.com/3d-models/abd86436d03344b9a40c82e127fb6252 |
 | coconut.glb | Low Poly Coconut game Ready | .arthur | https://sketchfab.com/3d-models/0213a71af3314ac0aaae25030d565d44 |
+| cardboard_boxes_raw.glb → public/assets/models/props/boxes.glb | Set of Cardboard Boxes | NotAnotherApocalypticCo. | https://sketchfab.com/3d-models/8986ba512f704ac5b253286a0d1ad8bb |

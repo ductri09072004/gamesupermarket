@@ -1,3 +1,4 @@
+import { formatMoney } from '../core/Random';
 import * as THREE from 'three';
 import { bindWheelSteps } from './wheelSteps';
 import { FEEL } from '../config/feel';
@@ -183,7 +184,7 @@ export class BuildMode {
       c.s.data.furniture = c.s.data.furniture.filter((f) => f.uid !== h.from!.uid);
       this.changed();
     }
-    c.toast(`Đã bán ${def.name} (+$${refund.toFixed(2)})${packed ? ` — hàng đã đóng vào ${packed} thùng` : ''}`, 'info');
+    c.toast(`Đã bán ${def.name} (+${formatMoney(refund)})${packed ? ` — hàng đã đóng vào ${packed} thùng` : ''}`, 'info');
     c.sound('coin');
   }
 

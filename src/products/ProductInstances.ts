@@ -2,8 +2,17 @@ import * as THREE from 'three';
 import { getFurniture } from '../config/furniture';
 import { getProduct, PRODUCTS } from '../config/products';
 import type { FurnitureData } from '../core/GameState';
+import { hashString } from '../core/Random';
 import { itemPosition } from '../systems/SlotLayout';
 import { packaging } from './PackagingFactory';
+
+/** Băm số nguyên → [0,1). */
+function hash01(n: number): number {
+  let x = (n | 0) ^ 0x9e3779b9;
+  x = Math.imul(x ^ (x >>> 16), 0x85ebca6b);
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+  return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+}
 
 /** Ma trận world của nội thất (gốc giữa đáy footprint, xoay theo rot). */
 export type FurnitureMatrix = (f: FurnitureData) => THREE.Matrix4;
@@ -20,6 +29,11 @@ export class ProductInstances {
   private hidden = new Set<string>();
   private tmp = new THREE.Matrix4();
   private local = new THREE.Matrix4();
+  private tint = new THREE.Color();
+  private euler = new THREE.Euler();
+  private quat = new THREE.Quaternion();
+  private one = new THREE.Vector3(1, 1, 1);
+  private at = new THREE.Vector3();
   total = 0;
 
   constructor(private scene: THREE.Scene, private furnitureMatrix: FurnitureMatrix) {}
@@ -79,6 +93,7 @@ export class ProductInstances {
       const def = getFurniture(f.type);
       if (def.kind !== 'display' || this.hidden.has(f.uid)) continue;
       const fm = this.furnitureMatrix(f);
+      const fh = hashString(f.uid);
       f.slots.forEach((s, si) => {
         if (!s.productId || s.qty <= 0) return;
         const p = getProduct(s.productId);
@@ -86,11 +101,20 @@ export class ProductInstances {
         const shown = s.qty - (this.holdback.get(`${f.uid}:${si}`) ?? 0);
         for (let i = 0; i < shown; i++) {
           const pos = itemPosition(def, si, p, i);
-          const jitter = ((i * 7919) % 13) / 13 - 0.5;
-          this.local.makeRotationY(jitter * 0.08).setPosition(pos.x, pos.y, pos.z);
+          // số ngẫu nhiên xác định theo (nội thất, slot, vị trí) nên không nhấp nháy giữa các lần cập nhật
+          const r1 = hash01(fh + si * 131 + i * 7919);
+          const r2 = hash01(fh * 3 + si * 17 + i * 104729);
+          const r3 = hash01(fh * 7 + si * 29 + i * 15485863);
+          const lean = p.shape === 'bag' ? (r3 - 0.5) * 0.14 : 0;
+          this.euler.set(lean, (r1 - 0.5) * 0.22, p.shape === 'bag' ? (r2 - 0.5) * 0.06 : 0);
+          this.quat.setFromEuler(this.euler);
+          this.at.set(pos.x + (r2 - 0.5) * 0.008, pos.y, pos.z + (r3 - 0.5) * 0.008);
+          this.local.compose(this.at, this.quat, this.one);
           this.tmp.multiplyMatrices(fm, this.local);
           const n = idx.get(p.id) ?? 0;
           m.setMatrixAt(n, this.tmp);
+          const v = 0.9 + r1 * 0.12;
+          m.setColorAt(n, this.tint.setRGB(v, v * (0.97 + r2 * 0.03), v * (0.93 + r3 * 0.06)));
           idx.set(p.id, n + 1);
           this.total++;
         }
@@ -101,6 +125,7 @@ export class ProductInstances {
       if (!m) continue;
       m.count = idx.get(p.id) ?? 0;
       m.instanceMatrix.needsUpdate = true;
+      if (m.instanceColor) m.instanceColor.needsUpdate = true;
       m.computeBoundingSphere();
     }
   }

@@ -29,14 +29,14 @@ interface AppDef {
 }
 
 const APPS: AppDef[] = [
-  { id: 'market', name: 'Market', icon: '🛒', render: renderMarket },
-  { id: 'pricing', name: 'Pricing', icon: '🏷️', render: renderPricing },
-  { id: 'furniture', name: 'Furniture', icon: '🛋️', render: renderFurniture },
-  { id: 'licenses', name: 'Licenses', icon: '📜', render: renderLicenses },
-  { id: 'expansion', name: 'Expansion', icon: '🏗️', render: renderExpansion },
-  { id: 'staff', name: 'Staff', icon: '👥', render: renderStaff },
-  { id: 'bank', name: 'Bank', icon: '🏦', render: renderBank },
-  { id: 'garage', name: 'Garage', icon: '🚗', render: renderGarage },
+  { id: 'market', name: 'Đặt hàng', icon: '🛒', render: renderMarket },
+  { id: 'pricing', name: 'Bảng giá', icon: '🏷️', render: renderPricing },
+  { id: 'furniture', name: 'Nội thất', icon: '🛋️', render: renderFurniture },
+  { id: 'licenses', name: 'Giấy phép', icon: '📜', render: renderLicenses },
+  { id: 'expansion', name: 'Mở rộng', icon: '🏗️', render: renderExpansion },
+  { id: 'staff', name: 'Nhân sự', icon: '👥', render: renderStaff },
+  { id: 'bank', name: 'Ngân hàng', icon: '🏦', render: renderBank },
+  { id: 'garage', name: 'Nhà xe', icon: '🚗', render: renderGarage },
   { id: 'wholesale', name: 'Kho sỉ', icon: '🏭', render: renderWholesale, hidden: true },
 ];
 

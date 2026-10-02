@@ -1,0 +1,26 @@
+/* Thanh thu ngân: màn hình đèn LED hổ phách của máy tính tiền đời cũ, nút phím kem như bàn phím máy tính tiền. */
+.checkout-strip {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 140% at 50% 50%, #1a1708 0%, #0b0d08 70%);
+  border: 3px solid #cfc5a8; border-radius: 6px; font-family: "Courier New", Courier, monospace;
+  box-shadow: inset 0 0 0 2px #3b3326, inset 0 0 18px rgba(255, 176, 0, 0.12), 3px 4px 0 rgba(0, 0, 0, 0.45);
+}
+.cs-title { font: 900 14px "Courier New", monospace; text-transform: uppercase; letter-spacing: 0.06em; color: #ffc933; text-shadow: 0 0 6px rgba(255, 154, 0, 0.75); }
+.cs-info { font: 700 13px "Courier New", monospace; color: #ffb000; text-shadow: 0 0 5px rgba(255, 154, 0, 0.55); }
+.cs-info b { color: #ffd866; }
+.cs-info .ok { color: #8fe36a; }
+.cs-info .over { color: #ff7a5c; }
+.cs-info .short { color: #ffd23f; }
+.cs-hint { font: 11px "Courier New", monospace; color: #a88a3a; }
+.cs-btn {
+  font: 800 12px "Be Vietnam Pro", Tahoma, sans-serif; color: #3b2616; background: #e8dec0; border: 2px solid #3b3326; border-radius: 3px;
+  box-shadow: 0 3px 0 #8f8466; padding: 4px 10px; transition: transform 0.06s, box-shadow 0.06s;
+}
+.cs-btn:hover { background: #f4ecd2; }
+.cs-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #8f8466; }
+.cs-btn.primary { background: #4f7a43; color: #f9edd0; border-color: #1f3a1a; box-shadow: 0 3px 0 #2d4a27; }
+.cs-btn.primary:hover { background: #5d8b50; }
+.cs-btn.primary:active { box-shadow: 0 1px 0 #2d4a27; }
+.cs-btn kbd { background: rgba(59, 38, 22, 0.15); color: inherit; border: 0; border-radius: 2px; }
+.cs-btn.primary kbd { background: rgba(0, 0, 0, 0.25); }

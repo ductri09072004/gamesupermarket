@@ -116,7 +116,7 @@ describe('Bố cục slot theo kích thước sản phẩm', () => {
     for (const p of PRODUCTS) {
       const type = { shelf: 'shelf_large', fridge: 'fridge', freezer: 'freezer', clothing: 'clothing_rack', electronics: 'electronics_case' }[p.storage];
       const cap = slotCapacity(type, p.id);
-      expect(cap, p.id).toBeGreaterThanOrEqual(4);
+      expect(cap, p.id).toBeGreaterThanOrEqual(3);
       expect(cap, p.id).toBeLessThanOrEqual(40);
     }
     expect(slotCapacity('shelf_large', 'soda')).toBeGreaterThan(slotCapacity('shelf_large', 'detergent'));

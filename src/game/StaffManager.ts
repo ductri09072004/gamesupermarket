@@ -1,3 +1,4 @@
+import { formatMoney } from '../core/Random';
 import * as THREE from 'three';
 import { NPC_ANIM_CULL_DISTANCE } from '../config/constants';
 import { getFurniture } from '../config/furniture';
@@ -53,7 +54,7 @@ export class StaffManager implements StaffWorld {
   }
 
   saleFx(amount: number, at: THREE.Vector3): void {
-    this.c.effects.floatText(`+$${amount.toFixed(2)}`, at);
+    this.c.effects.floatText(`+${formatMoney(amount)}`, at);
   }
 
   /**

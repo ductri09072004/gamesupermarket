@@ -23,7 +23,7 @@ interface Floater {
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** Món bay (tween + cung + lắc nhẹ khi chạm) và chữ nổi "+$4.20" (object pool). */
+/** Món bay (tween + cung + lắc nhẹ khi chạm) và chữ nổi "+4.200đ" (object pool). */
 export class Effects {
   readonly group = new THREE.Group();
   private flies: Fly[] = [];

@@ -20,6 +20,8 @@ export class AudioEngine {
   private pool: THREE.PositionalAudio[] = [];
   private poolIndex = 0;
   private musicTimer: number | null = null;
+  /** Rung tốc độ băng cassette (wow): LFO chậm làm lệch cao độ nhạc */
+  private wow!: GainNode;
   private step = 0;
   private crowd: AudioBufferSourceNode | null = null;
   private crowdGain!: GainNode;
@@ -36,7 +38,26 @@ export class AudioEngine {
     this.ambient = ctx.createGain();
     this.crowdGain = ctx.createGain();
     this.crowdGain.gain.value = 0;
-    for (const g of [this.sfx, this.music, this.ambient]) g.connect(this.listener.getInput());
+    // âm thanh kiểu radio-cassette cũ: cắt dải tần (không có tiếng "sáng" của máy hiện đại)
+    const band = (gain: GainNode, hi: number, lo: number) => {
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = hi;
+      lp.Q.value = 0.7;
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = lo;
+      gain.connect(hp).connect(lp).connect(this.listener.getInput());
+    };
+    band(this.music, 3400, 170);
+    band(this.sfx, 7500, 60);
+    band(this.ambient, 7000, 40);
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.8;
+    this.wow = ctx.createGain();
+    this.wow.gain.value = 14; // cent
+    lfo.connect(this.wow);
+    lfo.start();
     this.crowdGain.connect(this.ambient);
     this.rainGain = ctx.createGain();
     this.rainGain.gain.value = 0;
@@ -200,6 +221,7 @@ export class AudioEngine {
     const g = ctx.createGain();
     o.type = type;
     o.frequency.value = freq;
+    this.wow.connect(o.detune);
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol, t + 0.04);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -208,19 +230,35 @@ export class AudioEngine {
     o.stop(t + dur + 0.05);
   }
 
-  /** Nhạc siêu thị nhẹ nhàng (electric piano + bass) sinh bằng oscillator. */
+  /** Tiếng xì băng cassette rất nhỏ, đi qua cùng bộ lọc với nhạc. */
+  private startHiss(): void {
+    const ctx = this.context;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.5;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = 0.02;
+    src.connect(g).connect(this.music);
+    src.start();
+  }
+
+  /** Nhạc cassette nhẹ nhàng (đàn phím + bass + nốt đàn gảy) sinh bằng oscillator, chậm và hơi lệch tông. */
   private startMusic(): void {
     if (this.musicTimer !== null) return;
     const chords = [[261.6, 329.6, 392, 493.9], [220, 277.2, 329.6, 415.3], [293.7, 349.2, 440, 523.3], [196, 246.9, 293.7, 392]];
     const melody = [0, 2, 1, 3, 2, 1, 0, 1];
-    const beat = 60 / 92 / 2;
+    const beat = 60 / 84 / 2;
+    this.startHiss();
     this.musicTimer = window.setInterval(() => {
       if (this.context.state !== 'running' || !this.settings?.music || this.settings.muted) { this.step++; return; }
       const s = this.step++;
       const chord = chords[Math.floor(s / 8) % chords.length];
       if (s % 8 === 0) chord.forEach((f) => this.tone(f, beat * 7.5, 'sine', 0.12));
       if (s % 4 === 0) this.tone(chord[0] / 2, beat * 3, 'triangle', 0.3);
-      if (s % 2 === 0) this.tone(chord[melody[(s / 2) % 8]] * 2, beat * 1.6, 'sine', 0.07);
+      if (s % 2 === 0) this.tone(chord[melody[(s / 2) % 8]] * 2, beat * 1.1, 'triangle', 0.09);
     }, beat * 1000);
   }
 

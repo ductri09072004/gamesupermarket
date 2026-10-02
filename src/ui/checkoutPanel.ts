@@ -51,16 +51,16 @@ export class CheckoutStrip {
   }
 
   scanning(done: number, total: number, sum: number): void {
-    this.set(`Quét ${done}/${total}`, `Tổng <b>${money(sum)}</b>`, 'Click món (hoặc Space)', false);
+    this.set(`Quét ${done}/${total}`, `Tổng <b>${money(sum)}</b>`, 'Bấm món (hoặc Space)', false);
   }
 
   cash(total: number, paid: number, due: number, given: number): void {
     const cls = given === due ? 'ok' : given > due ? 'over' : 'short';
-    this.set('Tiền mặt', `Tổng <b>${money(total)}</b> · Đưa <b>${money(paid)}</b> · Thối <b>${money(due)}</b> · Đã thối <b class="${cls}">${money(given)}</b>`, 'Click khay để lấy tiền', true, true);
+    this.set('Tiền mặt', `Tổng <b>${money(total)}</b> · Đưa <b>${money(paid)}</b> · Thối <b>${money(due)}</b> · Đã thối <b class="${cls}">${money(given)}</b>`, 'Bấm khay để lấy tiền', true, true);
   }
 
   card(total: number, typed: string, error = false): void {
-    this.set('Thẻ', `Tổng <b>${money(total)}</b> · POS <b class="${error ? 'short' : ''}">$${typed || '_'}</b>`, 'Bấm phím POS hoặc gõ số + Enter', false);
+    this.set('Thẻ', `Tổng <b>${money(total)}</b> · POS <b class="${error ? 'short' : ''}">${typed || '_'}đ</b>`, 'Bấm phím POS hoặc gõ số + Enter', false);
   }
 
   done(amount: number, note: string): void {

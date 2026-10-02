@@ -3,8 +3,10 @@ import './ui/theme.css';
 import './ui/menuRetro.css';
 import './ui/modalRetro.css';
 import './ui/hudRetro.css';
+import './ui/registerRetro.css';
 import './ui/toolRetro.css';
 import './ui/pcXp.css';
+import './ui/driveHud.css';
 import { Game } from './game/Game';
 import { watchInstall } from './ui/install';
 

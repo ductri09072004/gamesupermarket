@@ -15,12 +15,12 @@ export interface KioskParts {
   bagPoint: THREE.Vector3;
 }
 
-const BODY = 0x2f3e46;
+const BODY = 0x2c4a3e;
 
 function brandSign(): THREE.Material {
   return mat('kioskSign', () => {
     const t = textCanvas(256, 128, (c) => {
-      c.fillStyle = '#2a9d8f';
+      c.fillStyle = '#b8402d';
       c.fillRect(0, 0, 256, 128);
       c.fillStyle = '#fff';
       c.textAlign = 'center';
@@ -41,7 +41,7 @@ function shell(): THREE.Group {
   const g = new THREE.Group();
   const body = powder(BODY, 0.45);
   const dark = powder(0x1f272c, 0.55);
-  const top = plastic(0xd9dde2, 0.3);
+  const top = plastic(0xd9d2b8, 0.45);
   // đế + tủ máy quét giữa
   g.add(rblock(dark, -0.46, 0.48, 0, 0.06, -0.3, 0.36, 0.01));
   g.add(rblock(body, -0.2, 0.22, 0.06, 0.88, -0.32, 0.38, 0.02));

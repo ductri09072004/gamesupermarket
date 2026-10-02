@@ -43,3 +43,12 @@
 .float-panel .price-info.loss { background: #efc5b8; color: #a3281a; border-radius: 3px; }
 .float-panel .price-info.expensive { color: #9a5a12; }
 .float-panel .warn { color: #a3281a; }
+
+/* thư viện sản phẩm (F4) và tooltip */
+.gallery-ui {
+  background: repeating-linear-gradient(0deg, rgba(120, 90, 40, 0.05) 0 2px, transparent 2px 6px), #f3e6c8; color: #3b2616;
+  border: 3px solid #3b2616; border-radius: 6px; box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.4); font-family: "Be Vietnam Pro", "Nunito", sans-serif;
+}
+.gallery-ui .btn { font-family: "Be Vietnam Pro", sans-serif; font-weight: 800; color: #3b2616; background: #f9edd0; border: 2px solid #3b2616; border-radius: 3px; box-shadow: 2px 2px 0 rgba(59, 38, 22, 0.55); }
+.gallery-ui .muted { color: #7a6446; }
+.tooltip { background: #ffffe1; color: #000; border: 1px solid #000; border-radius: 0; font-family: Tahoma, "Be Vietnam Pro", sans-serif; font-weight: 400; font-size: 12px; padding: 2px 6px; }

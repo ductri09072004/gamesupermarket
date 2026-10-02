@@ -68,7 +68,7 @@ export class Game {
       ['Đang in nhãn sản phẩm', () => { for (const p of PRODUCTS) labelTexture(p); }],
       ['Đang tạo bao bì 3D', () => { for (const p of PRODUCTS) packaging(p.id); }],
       ['Đang dựng cửa hàng', () => this.buildMenuWorld()],
-      ['Đang biên dịch shader', () => this.r.renderer.compile(this.r.scene, this.r.camera)],
+      ['Đang biên dịch shader', () => this.r.precompile()],
     ]);
     this.loop.start();
     this.assets.hideLoading();
@@ -171,6 +171,12 @@ export class Game {
       toggleGallery: () => this.toggleGallery(),
       toggleDebug: () => this.world?.customers.setDebug(this.debug.toggle()),
     });
+    // biên dịch trước shader của TOÀN BỘ cảnh (kể cả phố ngoài tầm nhìn): không thì lần đầu quay camera / lên xe
+    // lòi ra vật liệu mới, three.js biên dịch lúc đó làm màn hình đứng hình cả giây
+    this.r.precompile();
+    // lần nữa sau khi đèn / hàng hoá / phố đã dựng xong (trạng thái đèn đổi → biến thể shader đổi theo)
+    const world = this.world;
+    window.setTimeout(() => { if (this.world === world) this.r.precompile(); }, 1500);
   }
 
   quitToMenu(): void {

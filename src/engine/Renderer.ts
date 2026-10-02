@@ -100,6 +100,18 @@ export class Renderer {
     }
   };
 
+  /**
+   * Biên dịch trước shader của cả cảnh (và cảnh vật cầm tay) vào ĐÚNG render target mà hậu kỳ dùng (HalfFloat, tuyến tính):
+   * biên dịch vào canvas cho ra biến thể shader khác nên không giúp gì, lần đầu quay camera / lên xe vẫn bị đứng hình.
+   */
+  precompile(): void {
+    const prev = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(this.post.composer.readBuffer);
+    this.renderer.compile(this.scene, this.camera);
+    this.renderer.compile(this.heldScene, this.heldCamera);
+    this.renderer.setRenderTarget(prev);
+  }
+
   render(dt: number): void {
     this.heldCamera.quaternion.copy(this.camera.quaternion);
     this.heldCamera.position.set(0, 0, 0);

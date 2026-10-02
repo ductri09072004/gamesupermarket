@@ -4,7 +4,7 @@ import { vehicleDef } from '../config/vehicles';
 import { cargoUsed } from '../systems/VehicleSystem';
 import { forward, stepDrive, type DriveState } from '../systems/VehicleDrive';
 import { resolveCircle, type AABB } from '../world/Colliders';
-import { h, uiRoot } from '../ui/dom';
+import { DriveHud } from '../ui/driveHud';
 import type { World } from './World';
 import { DriveImpact } from './DriveImpact';
 import { PotholeBumps } from './PotholeBumps';
@@ -19,9 +19,13 @@ export class Driving {
   private camPos = new THREE.Vector3();
   private orbit = 0;
   private orbitIdle = 0;
-  private hud: HTMLElement | null = null;
+  private hud: DriveHud | null = null;
   private engine: THREE.PositionalAudio | null = null;
-  private lamp: THREE.SpotLight | null = null;
+  /**
+   * Đèn pha dùng chung: tạo sẵn lúc dựng thế giới và luôn nằm trong scene (cường độ 0 khi không lái).
+   * Thêm / bớt đèn lúc vào xe làm three.js biên dịch lại shader của MỌI vật liệu → màn hình đứng cả giây.
+   */
+  private readonly lamp = new THREE.SpotLight(0xfff1c4, 0, 38, 0.55, 0.5, 1.2);
   private impact: DriveImpact;
   private bumps: PotholeBumps;
   private wade: WadeDrive;
@@ -31,6 +35,7 @@ export class Driving {
     this.impact = new DriveImpact(w);
     this.bumps = new PotholeBumps(w);
     this.wade = new WadeDrive(w);
+    w.scene.add(this.lamp, this.lamp.target);
   }
 
   get active(): boolean {
@@ -58,13 +63,11 @@ export class Driving {
     const view = w.vehicles.get(uid);
     if (view) {
       this.engine = w.audio.attachHum(view.root, 0.9);
-      this.lamp = new THREE.SpotLight(0xfff1c4, 0, 38, 0.55, 0.5, 1.2);
       this.lamp.position.set(0, 0.9, -def.size[2] / 2);
       this.lamp.target.position.set(0, 0, -def.size[2] / 2 - 10);
       view.root.add(this.lamp, this.lamp.target);
     }
-    this.hud = h('div', { class: 'drive-hud' });
-    uiRoot().append(this.hud);
+    this.hud = new DriveHud(def.maxSpeed * 3.6);
     w.sound('door', new THREE.Vector3(v.x, 1, v.z), 0.7);
   }
 
@@ -104,11 +107,11 @@ export class Driving {
       if (this.engine.isPlaying) this.engine.stop();
       this.engine.removeFromParent();
     }
-    this.lamp?.target.removeFromParent();
-    this.lamp?.removeFromParent();
+    // trả đèn về scene (không gỡ khỏi scene để số đèn không đổi)
+    this.lamp.intensity = 0;
+    this.w.scene.add(this.lamp, this.lamp.target);
     this.engine = null;
-    this.lamp = null;
-    this.hud?.remove();
+    this.hud?.destroy();
     this.hud = null;
     this.uid = null;
   }
@@ -181,14 +184,8 @@ export class Driving {
     w.player.z = v.z;
     this.updateCamera(dt, def.camDist, def.camHeight, look);
     if (this.engine) this.engine.setPlaybackRate(0.55 + Math.abs(this.state.speed) / def.maxSpeed * 1.3);
-    if (this.lamp) this.lamp.intensity = w.lighting.night * 40;
-    if (this.hud) {
-      const used = cargoUsed(v, w.s.data.boxes);
-      this.hud.innerHTML = `<div class="dh-speed">${Math.round(Math.abs(this.state.speed) * 3.6)}<small> km/h</small></div>`
-        + `<div class="dh-name">${def.icon} ${def.name} · ${this.state.speed < -0.2 ? 'R' : 'D'}</div>`
-        + `<div class="dh-cargo">📦 ${used}/${def.capacity} ${def.countBySize ? 'suất' : 'thùng'}</div>`
-        + '<div class="dh-keys"><kbd>W</kbd>/<kbd>S</kbd> ga · lùi &nbsp;<kbd>A</kbd>/<kbd>D</kbd> lái &nbsp;<kbd>Space</kbd> phanh tay &nbsp;<kbd>E</kbd> xuống xe</div>';
-    }
+    this.lamp.intensity = w.lighting.night * 40;
+    this.hud?.update({ kmh: this.state.speed * 3.6, name: def.name, icon: def.icon, used: cargoUsed(v, w.s.data.boxes), capacity: def.capacity, unit: def.countBySize ? 'suất' : 'thùng' }, dt);
   }
 
   private updateCamera(dt: number, dist: number, height: number, look: { dx: number; dy: number }): void {
@@ -201,10 +198,10 @@ export class Driving {
     const yaw = this.state.yaw + this.orbit;
     const f = forward(yaw);
     const target = new THREE.Vector3(this.state.x - f.x * dist, height, this.state.z - f.z * dist);
-    this.camPos.lerp(target, Math.min(1, dt * 6));
+    this.camPos.lerp(target, Math.min(1, dt * 9));
     cam.position.copy(this.camPos).add(this.impact.cameraShake(this.shakeV));
     const ahead = forward(this.state.yaw);
-    cam.lookAt(this.state.x + ahead.x * 2, 1.0, this.state.z + ahead.z * 2);
+    cam.lookAt(this.state.x + ahead.x * 2.5, 0.95, this.state.z + ahead.z * 2.5);
   }
 
   /** Vị trí mắt người chơi dùng cho âm thanh khi đang lái (tai đặt ở camera). */
@@ -214,5 +211,7 @@ export class Driving {
 
   destroy(): void {
     if (this.active) this.cleanup();
+    this.lamp.target.removeFromParent();
+    this.lamp.removeFromParent();
   }
 }

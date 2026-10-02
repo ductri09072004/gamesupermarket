@@ -1,3 +1,4 @@
+import { CARGO_SLOT } from '../config/boxes';
 import * as THREE from 'three';
 import { vehicleDef, type VehicleType } from '../config/vehicles';
 import type { VehicleData } from '../core/GameState';
@@ -94,6 +95,7 @@ export class VehicleManager {
       m.setOpen(b.open);
       m.setContents(b.productId, b.qty);
       m.group.position.copy(slot);
+      m.group.scale.setScalar(Math.min(1, CARGO_SLOT.w / m.dims.w, CARGO_SLOT.h / m.dims.h, CARGO_SLOT.d / m.dims.d));
       m.group.rotation.y = ((i % 3) - 1) * 0.04;
       parent.add(m.group);
       view.cargo.push(m);

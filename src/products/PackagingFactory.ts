@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { getProduct, type ProductDef } from '../config/products';
 import { capParts, garmentParts } from './Apparel';
 import { labelTexture } from './LabelTexture';
+import { crinkleNormal, dentNormal, grainRoughness, paperNormal } from './PackagingFx';
 
 export interface Packaging {
   geometry: THREE.BufferGeometry;
@@ -47,9 +48,30 @@ function paperMat(color: string, rough = 0.75): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 });
 }
 
-function labelMat(p: ProductDef, opts: THREE.MeshStandardMaterialParameters = {}): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ map: labelTexture(p), roughness: 0.55, metalness: 0, ...opts });
+type Surface = 'paper' | 'plastic' | 'metal';
+
+/** Gắn hạt nhiễu theo chất liệu: giấy có thớ, ni-lông nhăn, kim loại lõm xước; độ nhám loang để phản chiếu không đều. */
+function surface(m: THREE.MeshStandardMaterial, kind: Surface, repeat = 2): THREE.MeshStandardMaterial {
+  const n = kind === 'plastic' ? crinkleNormal() : kind === 'metal' ? dentNormal() : paperNormal();
+  m.normalMap = n.clone();
+  m.normalMap.repeat.set(repeat, repeat);
+  m.normalMap.needsUpdate = true;
+  m.normalScale.setScalar(kind === 'plastic' ? 0.9 : kind === 'metal' ? 0.35 : 0.3);
+  m.roughnessMap = grainRoughness().clone();
+  m.roughnessMap.repeat.set(repeat, repeat);
+  m.roughnessMap.needsUpdate = true;
+  m.envMapIntensity = kind === 'paper' ? 0.6 : 1.1;
+  return m;
 }
+
+function labelMat(p: ProductDef, opts: THREE.MeshStandardMaterialParameters = {}, kind: Surface = 'paper'): THREE.MeshStandardMaterial {
+  return surface(new THREE.MeshStandardMaterial({ map: labelTexture(p), roughness: 0.55, metalness: 0, ...opts }), kind);
+}
+
+/** Chai thuỷ tinh có màu (nước mắm, bia, rượu vang...) — còn lại là chai nhựa. */
+const GLASS: Record<string, { tint: number; cap: number }> = {
+  fishsauce: { tint: 0x7a4a14, cap: 0xd8b04a }, beer: { tint: 0x6b3f10, cap: 0xc9a227 }, wine: { tint: 0x23401c, cap: 0x8c1d1d }, ketchup: { tint: 0x7a2a1c, cap: 0xb8402d },
+};
 
 function build(p: ProductDef): Packaging {
   const [w, h, d] = p.size;
@@ -60,7 +82,7 @@ function build(p: ProductDef): Packaging {
     case 'box': {
       const g = boxGeo(w, h, d, 0.006);
       // Sau khi xoay: group 4 (+z gốc) thành mặt trước -Z
-      return { geometry: g, materials: [side, side, side, side, labelMat(p, { roughness: 0.7 }), side] };
+      return { geometry: g, materials: [side, side, side, side, labelMat(p, { roughness: 0.7 }), side].map((m, i) => (i === 4 ? m : surface(m.clone() as THREE.MeshStandardMaterial, 'paper'))) };
     }
     case 'bag': {
       const g = new THREE.BoxGeometry(w, h, d, 8, 10, 2);
@@ -77,7 +99,7 @@ function build(p: ProductDef): Packaging {
       g.computeVertexNormals();
       g.translate(0, h / 2, 0);
       g.rotateY(Math.PI);
-      const lm = labelMat(p, { roughness: 0.35, metalness: 0.15 });
+      const lm = labelMat(p, { roughness: 0.35, metalness: 0.15 }, 'plastic');
       return { geometry: g, materials: [side, side, side, side, lm, lm] };
     }
     case 'can': {
@@ -91,7 +113,7 @@ function build(p: ProductDef): Packaging {
       rim.rotateX(Math.PI / 2);
       rim.translate(0, h, 0);
       const geo = combine([part(body, 0), part(top, 1), part(bottom, 1), part(rim, 1)]);
-      return { geometry: geo, materials: [labelMat(p, { metalness: 0.6, roughness: 0.3 }), metal] };
+      return { geometry: geo, materials: [labelMat(p, { metalness: 0.6, roughness: 0.3 }, 'metal'), metal] };
     }
     case 'bottle': {
       const pts: THREE.Vector2[] = [];
@@ -103,11 +125,17 @@ function build(p: ProductDef): Packaging {
       const cap = new THREE.CylinderGeometry(r * 0.4, r * 0.4, h * 0.1, 20);
       cap.translate(0, h * 0.95, 0);
       const clear = p.id === 'water';
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: clear ? 0xeaf7ff : p.color, roughness: 0.15, metalness: 0, transparent: clear, opacity: clear ? 0.38 : 1,
-      });
+      const glass = GLASS[p.id];
+      const bodyMat = glass
+        ? new THREE.MeshStandardMaterial({ color: glass.tint, roughness: 0.06, metalness: 0.1, transparent: true, opacity: 0.86, envMapIntensity: 1.6 })
+        : surface(new THREE.MeshStandardMaterial({
+          color: clear ? 0xeaf7ff : p.color, roughness: 0.2, metalness: 0, transparent: clear, opacity: clear ? 0.38 : 1,
+        }), 'plastic', 3);
+      const capMat = glass
+        ? new THREE.MeshStandardMaterial({ color: glass.cap, roughness: 0.3, metalness: 0.9 })
+        : new THREE.MeshStandardMaterial({ color: p.label.accent, roughness: 0.4 });
       const geo = combine([part(body, 1), part(band, 0), part(cap, 2)]);
-      return { geometry: geo, materials: [labelMat(p, { roughness: 0.35 }), bodyMat, new THREE.MeshStandardMaterial({ color: p.label.accent, roughness: 0.4 })] };
+      return { geometry: geo, materials: [labelMat(p, { roughness: 0.35 }, 'plastic'), bodyMat, capMat] };
     }
     case 'jar': {
       const body = new THREE.CylinderGeometry(r * 0.98, r * 0.92, h * 0.8, 28, 1, true);
@@ -117,7 +145,7 @@ function build(p: ProductDef): Packaging {
       const lid = new THREE.CylinderGeometry(r, r, h * 0.2, 28);
       lid.translate(0, h * 0.9, 0);
       const geo = combine([part(body, 0), part(bottom, 1), part(lid, 1)]);
-      return { geometry: geo, materials: [labelMat(p, { roughness: 0.3 }), accent] };
+      return { geometry: geo, materials: [labelMat(p, { roughness: 0.3 }, 'plastic'), accent] };
     }
     case 'carton': {
       const bodyH = h * 0.8;
@@ -134,7 +162,7 @@ function build(p: ProductDef): Packaging {
       const bodyParts = part(body, 0);
       // nhãn trên mặt trước (group gốc +z sau khi xoay = -Z) — dùng UV của cả hộp cho đơn giản
       const geo = combine([bodyParts, part(gable, 1), part(fin, 1), part(cap, 2)]);
-      return { geometry: geo, materials: [labelMat(p, { roughness: 0.6 }), side, accent] };
+      return { geometry: geo, materials: [labelMat(p, { roughness: 0.6 }), surface(side.clone(), 'paper'), accent] };
     }
     case 'tube': {
       const body = new THREE.CylinderGeometry(r, r, h * 0.82, 24, 4, true);
@@ -151,7 +179,7 @@ function build(p: ProductDef): Packaging {
       const crimp = new THREE.BoxGeometry(r * 2.7, h * 0.06, r * 0.3);
       crimp.translate(0, h * 0.97, 0);
       const geo = combine([part(body, 0), part(cap, 1), part(crimp, 2)]);
-      return { geometry: geo, materials: [labelMat(p, { roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }), side] };
+      return { geometry: geo, materials: [labelMat(p, { roughness: 0.4 }, 'plastic'), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }), side] };
     }
     case 'garment':
     case 'pants':

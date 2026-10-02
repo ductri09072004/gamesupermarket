@@ -1,11 +1,9 @@
 import * as THREE from 'three';
+import { boxDims, type BoxDims } from '../config/boxes';
 import { getProduct } from '../config/products';
+import { propNode } from '../engine/Props';
 import { textCanvas } from '../products/LabelTexture';
 import { packaging } from '../products/PackagingFactory';
-
-export const BOX_W = 0.46;
-export const BOX_H = 0.3;
-export const BOX_D = 0.36;
 
 const cardboard = new THREE.MeshStandardMaterial({ color: 0xc89b6d, roughness: 0.92 });
 const cardboardIn = new THREE.MeshStandardMaterial({ color: 0x8a6440, roughness: 0.95, side: THREE.DoubleSide });
@@ -47,9 +45,17 @@ function labelMat(productId: string): THREE.MeshStandardMaterial {
 
 const unit = new THREE.BoxGeometry(1, 1, 1);
 
-/** Thùng carton: 5 mặt + 4 nắp có bản lề, băng keo, nhãn in, hàng bên trong khi mở. */
+/**
+ * Thùng carton 3 cỡ (xem config/boxes.ts). Đóng kín: model GLB (hộp thật có băng keo, chữ in) + nhãn sản phẩm dán trên mặt trước / sau.
+ * Khi mở / gập: chuyển sang bản dựng bằng code (5 mặt + 4 nắp có bản lề, hàng bên trong) cùng kích thước.
+ */
 export class BoxModel {
   readonly group = new THREE.Group();
+  readonly dims: BoxDims;
+  /** Bản dựng bằng code (mặt, nắp, băng keo, hàng bên trong) — chỉ hiện khi thùng mở / đang gập */
+  private proc = new THREE.Group();
+  private glb: THREE.Object3D | null = null;
+  private decals: THREE.Mesh[] = [];
   private flaps: THREE.Object3D[] = [];
   private contents = new THREE.Group();
   private tape: THREE.Mesh;
@@ -61,16 +67,15 @@ export class BoxModel {
 
   constructor(public productId: string) {
     const t = 0.006;
-    const W = BOX_W;
-    const H = BOX_H;
-    const D = BOX_D;
+    this.dims = boxDims(productId);
+    const { w: W, h: H, d: D } = this.dims;
     const face = (x: number, y: number, z: number, sx: number, sy: number, sz: number) => {
       const m = new THREE.Mesh(unit, [cardboard, cardboard, cardboard, cardboard, cardboard, cardboard]);
       m.position.set(x, y, z);
       m.scale.set(sx, sy, sz);
       m.castShadow = true;
       m.receiveShadow = true;
-      this.group.add(m);
+      this.proc.add(m);
       return m;
     };
     face(0, t / 2, 0, W, t, D);
@@ -87,7 +92,7 @@ export class BoxModel {
     inner.position.y = H / 2 + t / 2;
     inner.scale.set(0.999, 0.999, 0.999);
     (inner.material as THREE.Material).side = THREE.BackSide;
-    this.group.add(inner);
+    this.proc.add(inner);
     // nắp: dài theo X (2 nắp trước/sau), ngắn theo Z (2 nắp trái/phải)
     const mk = (px: number, pz: number, sx: number, sz: number, axis: 'x' | 'z', sign: number) => {
       const pivot = new THREE.Group();
@@ -98,7 +103,7 @@ export class BoxModel {
       m.castShadow = true;
       pivot.add(m);
       pivot.userData = { axis, sign };
-      this.group.add(pivot);
+      this.proc.add(pivot);
       this.flaps.push(pivot);
     };
     mk(0, -D / 2, W, D / 2, 'z', 1);
@@ -108,13 +113,33 @@ export class BoxModel {
     this.tape = new THREE.Mesh(unit, tapeMat);
     this.tape.scale.set(0.07, 0.002, D + 0.02);
     this.tape.position.y = H + t + 0.001;
-    this.group.add(this.tape, this.contents);
+    this.proc.add(this.tape, this.contents);
+    this.group.add(this.proc);
+    this.glb = propNode('boxes', this.dims.node);
+    if (this.glb) {
+      this.glb.scale.setScalar(this.dims.k);
+      this.group.add(this.glb);
+      // nhãn sản phẩm dán lên mặt trước (-Z) và mặt sau (+Z)
+      const lw = Math.min(W * 0.55, 0.3);
+      const lh = Math.min(lw * 0.625, H * 0.75);
+      const mat = labelMat(productId).clone();
+      mat.polygonOffset = true;
+      mat.polygonOffsetFactor = -2;
+      for (const sign of [-1, 1]) {
+        const d = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), mat);
+        d.position.set(0, H * 0.5, sign * (D / 2 + 0.0012));
+        d.rotation.y = sign < 0 ? Math.PI : 0;
+        this.group.add(d);
+        this.decals.push(d);
+      }
+    }
     this.group.traverse((o) => { o.userData.boxModel = true; });
     this.applyOpen();
   }
 
   setOpen(open: boolean, instant = false): void {
     this.openTarget = open ? 1 : 0;
+    this.applyOpen();
     if (instant) {
       this.openT = this.openTarget;
       this.applyOpen();
@@ -135,6 +160,11 @@ export class BoxModel {
     });
     this.tape.visible = k < 0.05;
     this.contents.visible = k > 0.3;
+    // đóng kín và còn nguyên → model GLB; mở / đang mở / gập → bản dựng bằng code
+    const closed = !!this.glb && this.openT === 0 && this.openTarget === 0 && !this.folded;
+    if (this.glb) this.glb.visible = closed;
+    for (const d of this.decals) d.visible = closed;
+    this.proc.visible = !closed;
   }
 
   /** Hiển thị hàng bên trong (tối đa vừa lưới trong thùng). */
@@ -152,9 +182,10 @@ export class BoxModel {
     const p = getProduct(productId);
     const pk = packaging(productId);
     const [pw, ph, pd] = p.size;
-    const iw = BOX_W - 0.03;
-    const idp = BOX_D - 0.03;
-    const s = Math.min(1, (BOX_H - 0.02) / ph, iw / pw, idp / pd);
+    const { w: bw, h: bh, d: bd } = this.dims;
+    const iw = bw - 0.03;
+    const idp = bd - 0.03;
+    const s = Math.min(1, (bh - 0.02) / ph, iw / pw, idp / pd);
     const cols = Math.max(1, Math.floor(iw / (pw * s)));
     const rows = Math.max(1, Math.floor(idp / (pd * s)));
     const n = Math.min(qty, cols * rows);
@@ -163,7 +194,7 @@ export class BoxModel {
       const r = Math.floor(i / cols);
       const m = new THREE.Mesh(pk.geometry, pk.materials);
       m.scale.setScalar(s);
-      m.position.set(-iw / 2 + (c + 0.5) * (iw / cols), 0.008 + Math.max(0, BOX_H - 0.02 - ph * s) * 0.6, -idp / 2 + (r + 0.5) * (idp / rows));
+      m.position.set(-iw / 2 + (c + 0.5) * (iw / cols), 0.008 + Math.max(0, bh - 0.02 - ph * s) * 0.6, -idp / 2 + (r + 0.5) * (idp / rows));
       this.contents.add(m);
     }
   }
@@ -171,6 +202,7 @@ export class BoxModel {
   /** Gập thùng rỗng (trước khi vứt). */
   fold(): void {
     this.folded = true;
+    this.applyOpen();
   }
 
   update(dt: number): void {
@@ -178,7 +210,7 @@ export class BoxModel {
       const d = Math.sign(this.openTarget - this.openT) * dt * 5;
       this.openT = Math.abs(this.openTarget - this.openT) < Math.abs(d) ? this.openTarget : this.openT + d;
       this.applyOpen();
-    }
+    } else if (this.glb && this.openT === 0 && !this.glb.visible && !this.folded) this.applyOpen();
     if (this.folded && this.group.scale.y > 0.06) {
       this.group.scale.y = Math.max(0.05, this.group.scale.y - dt * 4);
       this.group.scale.x = Math.min(1.35, this.group.scale.x + dt * 1.2);

@@ -93,3 +93,45 @@ export const BUS = {
   hw: 1.32,
   hl: 4.68,
 };
+
+/**
+ * Xe máy lách vật cản (người chơi, ô tô, xe khác) thay vì dừng chờ: lệch ngang sang bên còn chỗ rồi nhập lại làn.
+ * offLeft / offRight: biên độ lệch cho phép so với làn xe máy (m) — hẻm một chiều nên được chạy sang cả nửa trái lòng đường.
+ */
+export const MOTO_DODGE = {
+  /** Bắt đầu để ý vật cản cách N m phía trước */
+  look: 11,
+  /** Khoảng chừa thêm bên cạnh vật cản (m) */
+  margin: 0.35,
+  /** Tốc độ đánh lái ngang (m/s) khi lách / khi trở về làn */
+  latSpeed: 3.6,
+  returnSpeed: 2.2,
+  offLeft: 3.2,
+  offRight: 0.4,
+  /** Hệ số tốc độ khi đang lệch khỏi làn */
+  slow: 0.85,
+  /** Bóp còi khi lách vật cản gần hơn N m (giây nghỉ giữa 2 lần còi) */
+  hornDist: 7,
+  hornCooldownS: 5,
+};
+
+/** Xe máy tông người chơi đi bộ khi lách không kịp: văng ra một đoạn, choáng một lúc. */
+export const MOTO_HIT = {
+  /** Chỉ tông khi xe đang chạy nhanh hơn N m/s */
+  minSpeed: 1.5,
+  /** Vận tốc văng = launch + perSpeed × tốc độ xe (m/s) */
+  launch: 6,
+  perSpeed: 0.9,
+  /** Hệ số hướng văng sang ngang (xa tim xe) */
+  sideKick: 0.35,
+  /** Tốc độ nảy lên (m/s) */
+  lift: 3.4,
+  /** Ma sát trượt khi đang văng (1/s) — văng xa ≈ v / friction */
+  friction: 2.6,
+  /** Choáng không điều khiển được (giây) */
+  stunS: 0.9,
+  /** Giây nghỉ trước khi có thể bị tông lần nữa */
+  cooldownS: 2.5,
+  /** Xe máy giảm tốc sau va chạm (nhân) */
+  slow: 0.55,
+};

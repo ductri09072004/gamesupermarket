@@ -1,3 +1,4 @@
+import { formatMoney } from '../core/Random';
 type Child = Node | string | number | null | undefined | false;
 
 export interface Props {
@@ -38,10 +39,9 @@ export function clear(el: HTMLElement): void {
   while (el.firstChild) el.removeChild(el.firstChild);
 }
 
-/** Tiền có dấu phân cách hàng nghìn: $1,234.50 */
+/** Tiền đồng có dấu chấm ngăn nghìn: 1.234.500đ */
 export function money(n: number): string {
-  const sign = n < 0 ? '-' : '';
-  return `${sign}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return formatMoney(n);
 }
 
 /** Số chạy từ from → to. */

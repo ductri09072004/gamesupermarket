@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { FEEL } from '../config/feel';
 import { getFurniture } from '../config/furniture';
 import type { BoxData } from '../core/GameState';
-import { BOX_D, BOX_H, BoxModel } from '../entities/Box';
+import { boxDims } from '../config/boxes';
+import { BoxModel } from '../entities/Box';
 import { productMesh } from '../products/PackagingFactory';
 import { itemPosition } from '../systems/SlotLayout';
 import { getProduct } from '../config/products';
@@ -53,8 +54,9 @@ export class Actions {
       }
     }
     // không thả xuyên tường: lùi về gần người chơi nếu vị trí thả nằm trong vật cản
+    const dm = boxDims(b.productId);
     const blocked = (px: number, pz: number) => c.furniture.colliders().concat(c.store.colliders())
-      .some((a) => px + BOX_D / 2 > a.minX && px - BOX_D / 2 < a.maxX && pz + BOX_D / 2 > a.minZ && pz - BOX_D / 2 < a.maxZ);
+      .some((a) => px + dm.d / 2 > a.minX && px - dm.d / 2 < a.maxX && pz + dm.d / 2 > a.minZ && pz - dm.d / 2 < a.maxZ);
     if (blocked(x, z)) {
       x = c.player.x + fwd.x * 0.35;
       z = c.player.z + fwd.z * 0.35;
@@ -69,7 +71,7 @@ export class Actions {
     c.s.bus.emit('boxes:changed', {});
     // rơi thật từ tầm tay (hoặc thả lên nóc thùng đang nhìn)
     const onTop = t.kind === 'box' && t.uid ? c.boxes.stackTop(x, z, b.uid) : null;
-    const from = new THREE.Vector3(x, onTop ? onTop.y + BOX_H / 2 + 0.05 : 1.0, z);
+    const from = new THREE.Vector3(x, onTop ? onTop.y + dm.h / 2 + 0.05 : 1.0, z);
     c.physics.launch(b.uid, from, onTop ? new THREE.Vector3() : fwd.clone().setY(0).normalize());
     c.boxes.update(0);
     c.sound('thud', new THREE.Vector3(x, 0.1, z));

@@ -16,7 +16,7 @@ export const LICENSES: LicenseDef[] = [
   { id: 3, name: 'Hoá phẩm', icon: '🧴', price: 1500, levelRequired: 6, description: 'Dầu gội, kem đánh răng, bột giặt, giấy.', requires: 2 },
   { id: 4, name: 'Đồ uống cao cấp', icon: '☕', price: 2500, levelRequired: 8, description: 'Cà phê, trà, nước ép, bia, vang.', requires: 3 },
   { id: 5, name: 'Thời trang', icon: '👕', price: 1800, levelRequired: 5, description: 'Áo, quần, váy, mũ, tất. Mở khoá Giá treo quần áo.', requires: 1 },
-  { id: 6, name: 'Điện tử', icon: '🎧', price: 3000, levelRequired: 7, description: 'Tai nghe, sạc, pin, loa, đồng hồ... Mở khoá Tủ kính điện tử.', requires: 5 },
+  { id: 6, name: 'Điện tử', icon: '🎧', price: 3000, levelRequired: 7, description: 'Tai nghe, ổ cắm, pin, đài radio, đồng hồ... Mở khoá Tủ kính điện tử.', requires: 5 },
 ];
 
 export function getLicense(id: number): LicenseDef {

@@ -1,8 +1,9 @@
-import { CLOSE_MINUTE, DEV_MONEY_BONUS, FAST_SPEED, MAX_REPUTATION, OPEN_MINUTE } from '../config/constants';
+import { formatVnd } from '../core/Random';
+import { CLOSE_MINUTE, DEV_MONEY_BONUS, FAST_SPEED, MAX_REPUTATION, OPEN_MINUTE, VND_PER_UNIT } from '../config/constants';
 import type { Services } from '../core/Services';
 import { xpNeeded } from '../systems/ProgressionSystem';
 import { formatClock } from '../systems/TimeSystem';
-import { h, money, uiRoot } from './dom';
+import { h, uiRoot } from './dom';
 import { icon } from './icons';
 
 export interface HudActions {
@@ -38,7 +39,7 @@ export class Hud {
   constructor(private s: Services, actions: HudActions) {
     const d = s.data;
     this.shownMoney = d.money;
-    this.moneyEl = h('div', { class: 'hud-money' }, [h('span', { class: 'mn-cur', text: '$' }), this.intEl, this.decEl]);
+    this.moneyEl = h('div', { class: 'hud-money' }, [this.intEl, this.decEl]);
     this.setMoney(d.money);
     this.xpWrap = h('div', { class: 'hud-xp' }, [this.xpFill]);
     this.fastBtn = h('button', { class: 'hud-btn hud-fast', html: `${icon('fast', 13)}<b>${FAST_SPEED}×</b>`, title: `Tua nhanh ${FAST_SPEED}× (T)`, onClick: () => s.time.toggleFast() });
@@ -59,7 +60,7 @@ export class Hud {
       ]),
       h('div', { class: 'hud-side' }, [
         h('div', { class: 'hud-actions' }, [cust, this.fastBtn, menuBtn]),
-        d.devMode ? h('button', { class: 'hud-dev', text: 'DEV  +$100k', onClick: () => s.economy.addMoney(DEV_MONEY_BONUS, 'Developer') }) : null,
+        d.devMode ? h('button', { class: 'hud-dev', text: 'DEV  +100 triệu đ', onClick: () => s.economy.addMoney(DEV_MONEY_BONUS, 'Developer') }) : null,
       ]),
       this.endBtn,
     ]);
@@ -88,9 +89,9 @@ export class Hud {
   }
 
   private setMoney(v: number): void {
-    const [i, dec] = money(Math.abs(v)).slice(1).split('.');
-    this.intEl.textContent = (v < 0 ? '-' : '') + i;
-    this.decEl.textContent = `.${dec}`;
+    this.intEl.textContent = (v < 0 ? '-' : '') + formatVnd(v);
+    this.decEl.textContent = 'đ';
+    this.intEl.style.fontSize = Math.abs(v) * VND_PER_UNIT >= 1e8 ? '17px' : '';
   }
 
   private animateMoney(target: number, delta: number): void {

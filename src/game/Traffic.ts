@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { BUS, MOTO_TRAFFIC, ONE_WAY_BLOCKS, TRAFFIC, YIELD } from '../config/traffic';
+import { BUS, MOTO_HIT, MOTO_TRAFFIC, ONE_WAY_BLOCKS, TRAFFIC, YIELD } from '../config/traffic';
 import { CAR_IMPACT } from '../config/physics';
 import { activeQuality } from '../config/quality';
 import type { SoundName } from '../core/EventBus';
 import type { CarBody } from '../systems/CarImpact';
-import { busPassengers, trafficDensity, wearsRaincoat } from '../systems/TrafficSystem';
+import { busPassengers, trafficDensity } from '../systems/TrafficSystem';
 import type { AABB } from '../world/Colliders';
 import { carLoops, poseAt, type Route } from '../world/CityRoutes';
 import type { CityLayout } from '../world/CityLayout';
@@ -12,6 +12,8 @@ import { BusService } from './TrafficBus';
 import { yieldStep } from './TrafficYield';
 import { carModel, busModel, motoModel, type VehicleKind } from './TrafficModels';
 import { carBody, stepKnock, type Knock } from './TrafficKnock';
+import { hitByMoto, motoThreats, steerMoto } from './TrafficMoto';
+import { targetSpeed } from './TrafficSpeed';
 
 interface Stop {
   /** Quãng đường (trên tuyến) tới điểm dừng */
@@ -20,7 +22,7 @@ interface Stop {
   t: number;
 }
 
-interface Car {
+export interface Car {
   kind: VehicleKind;
   obj: THREE.Object3D;
   route: Route;
@@ -50,6 +52,10 @@ interface Car {
   yieldLeft: number;
   /** Bị vật cản chặn ở khung này */
   blockedNow: boolean;
+  /** Xe máy: chặn kín hai bên, không lách được → phanh */
+  noDodge: boolean;
+  /** Xe máy: giây chờ trước khi bóp còi tiếp */
+  hornT: number;
 }
 
 const MASS: Record<VehicleKind, number> = { car: CAR_IMPACT.mass.traffic, moto: CAR_IMPACT.mass.moto, bus: CAR_IMPACT.mass.bus };
@@ -77,6 +83,9 @@ export class Traffic {
   hour = 12;
   rain = 0;
   onSound: (name: SoundName, x: number, z: number) => void = () => {};
+  /** Xe máy tông người chơi đi bộ: vận tốc văng (m/s) */
+  onHitPlayer: (vx: number, vz: number, speed: number) => void = () => {};
+  private hitCool = 0;
   /** Buýt thả khách: vị trí cửa xe, số người */
   onPassengers: (x: number, z: number, n: number) => void = () => {};
 
@@ -96,7 +105,7 @@ export class Traffic {
   private add(kind: VehicleKind, route: Route, d: number, obj: THREE.Object3D, max: number, life: number, dims?: { hw: number; hl: number }): Car {
     const wob = kind === 'moto' ? { f: (Math.PI * 2) / (MOTO_TRAFFIC.wobbleS[0] + this.rng() * (MOTO_TRAFFIC.wobbleS[1] - MOTO_TRAFFIC.wobbleS[0])), ph: this.rng() * 6.28 } : null;
     const [hw, hl] = dims ? [dims.hw, dims.hl] : kind === 'moto' ? [MOTO_TRAFFIC.hw, MOTO_TRAFFIC.hl] : kind === 'bus' ? [BUS.hw, BUS.hl] : [0.92, 2.05];
-    const car: Car = { kind, obj, route, d, speed: max, max, life, hw, hl, knock: null, wob, stop: null, blockedT: 0, off: 0, yieldLeft: 0, blockedNow: false, ...poseAt(route, d) };
+    const car: Car = { kind, obj, route, d, speed: max, max, life, hw, hl, knock: null, wob, stop: null, blockedT: 0, off: 0, yieldLeft: 0, blockedNow: false, noDodge: false, hornT: 0, ...poseAt(route, d) };
     this.pose(car);
     this.group.add(obj);
     this.cars.push(car);
@@ -116,7 +125,7 @@ export class Traffic {
       if (player && Math.hypot(p.x - player.x, p.z - player.z) < TRAFFIC.spawnHideDist) continue;
       if (this.cars.some((c) => c.route === route && Math.hypot(c.x - p.x, c.z - p.z) < gap)) continue;
       const life = TRAFFIC.lifeMin + this.rng() * TRAFFIC.lifeRand;
-      if (moto) this.add('moto', route, d, motoModel(this.rng, wearsRaincoat(this.rain, this.rng())).obj, MOTO_TRAFFIC.speed * (0.75 + this.rng() * 0.5), life);
+      if (moto) this.add('moto', route, d, motoModel(this.rng).obj, MOTO_TRAFFIC.speed * (0.75 + this.rng() * 0.5), life);
       else {
         const c = carModel(this.rng);
         this.add('car', route, d, c.obj, TRAFFIC.speed * (0.8 + this.rng() * 0.4), life, c);
@@ -175,37 +184,6 @@ export class Traffic {
     });
   }
 
-  /** Vận tốc mong muốn: giảm khi có vật cản phía trước cùng làn, sắp vào cua hoặc buýt sắp tới trạm. */
-  private targetSpeed(c: Car, obstacles: Array<{ x: number; z: number; lat: number }>): number {
-    let v = c.max * this.speedScale;
-    const ahead = poseAt(c.route, c.d + TRAFFIC.lookAhead);
-    if (ahead.dx * c.dx + ahead.dz * c.dz < 0.9) v = Math.min(v, c.kind === 'moto' ? MOTO_TRAFFIC.cornerSpeed : TRAFFIC.cornerSpeed);
-    const check = (x: number, z: number, lat: number) => {
-      const rx = x - c.x;
-      const rz = z - c.z;
-      const along = rx * c.dx + rz * c.dz;
-      const side = Math.abs(rx * c.dz - rz * c.dx);
-      if (along <= 0 || along > TRAFFIC.brakeDist || side > lat) return;
-      v = Math.min(v, Math.max(0, (along - TRAFFIC.stopDist) / (TRAFFIC.brakeDist - TRAFFIC.stopDist)) * c.max);
-    };
-    // xe cùng chiều phía trước (bề ngang cần né theo cỡ 2 xe), hoặc xe đang nằm chắn đường sau va chạm
-    for (const o of this.cars) {
-      if (o === c) continue;
-      if (o.knock) check(o.knock.body.x, o.knock.body.z, 2.2);
-      else if (o.dx * c.dx + o.dz * c.dz > 0.3) check(o.x, o.z, (c.hw + o.hw) * 0.85);
-    }
-    for (const o of obstacles) check(o.x, o.z, o.lat);
-    c.blockedNow = v < 0.4 && c.speed < 0.6 && !(c.stop && c.stop.state !== 'approach');
-    const s = c.stop;
-    if (s && s.state !== 'done') {
-      const total = c.route.total;
-      let dist = (((s.d - c.d) % total) + total) % total;
-      if (dist > total / 2) dist = 0; // đã lố qua điểm dừng
-      v = s.state === 'dwell' ? 0 : Math.min(v, Math.sqrt(2 * BUS.decel * Math.max(0, dist - 0.2)));
-    }
-    return v;
-  }
-
   /** Buýt vào trạm / rời trạm: tiếng xả hơi, thả khách khi dừng hẳn. */
   private stepStop(c: Car, dt: number): void {
     const s = c.stop;
@@ -226,9 +204,18 @@ export class Traffic {
     }
   }
 
-  /** obstacles: người chơi đi bộ, xe người chơi… (lat = nửa bề ngang cần né). */
-  update(dt: number, player: { x: number; z: number }, obstacles: Array<{ x: number; z: number; lat: number }>): void {
+  /** obstacles: người chơi đi bộ, xe người chơi… (lat = nửa bề ngang cần né). onFoot: người chơi đang đi bộ (có thể bị xe máy tông). */
+  update(dt: number, player: { x: number; z: number }, obstacles: Array<{ x: number; z: number; lat: number }>, onFoot = false): void {
     this.clock += dt;
+    this.hitCool = Math.max(0, this.hitCool - dt);
+    if (onFoot && this.hitCool <= 0) {
+      const v = hitByMoto(this.cars, player.x, player.z);
+      if (v) {
+        this.hitCool = MOTO_HIT.cooldownS;
+        this.onSound('crash', v.x, v.z);
+        this.onHitPlayer(v.vx, v.vz, v.speed);
+      }
+    }
     this.spawnT -= dt;
     this.motoT -= dt;
     if (this.spawnT <= 0) {
@@ -246,7 +233,10 @@ export class Traffic {
         this.pose(c);
         continue;
       }
-      const target = this.targetSpeed(c, obstacles);
+      if (c.kind === 'moto') {
+        if (steerMoto(c, motoThreats(c, this.cars, obstacles), dt).honk) this.onSound('horn', c.x, c.z);
+      }
+      const target = targetSpeed(c, this.cars, obstacles, this.speedScale);
       const dv = target - c.speed;
       c.speed += Math.max(-TRAFFIC.brake * dt, Math.min(TRAFFIC.accel * dt, dv));
       const step = Math.max(0, c.speed) * dt;

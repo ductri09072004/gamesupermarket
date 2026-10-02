@@ -192,7 +192,6 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `models/props/old_freezer_chest.glb` | FRIDGADAIRE CHEST FREEZER | Solis | https://sketchfab.com/3d-models/3ef76426815844fe80cbcfc1b89962f0 | CC BY 4.0 |
 | `models/city/truck_gaz66.glb` | GAZ-66 Offroad Truck | Yo.Ri | https://sketchfab.com/3d-models/1cc3374ed6874124991c8058ec79c3d3 | CC BY 4.0 |
 | `models/city/truck_supply.glb` | Soviet Supply Truck | Allen508 | https://sketchfab.com/3d-models/1eabdf618eca427f9b97b839ffc0315e | CC BY 4.0 |
-| `models/city/truck_zil131.glb` | Broken Zil 131 3D model | Dzikus | https://sketchfab.com/3d-models/4af3e43c916a4011b3b7e8a8ad897800 | CC BY 4.0 |
 | `models/city/jeep_uaz469.glb` | Military Uaz 469 car 3D model | Dzikus | https://sketchfab.com/3d-models/17f7fa53c9744a33983695f746ad4af8 | CC BY 4.0 |
 | `models/city/pickup_peugeot404.glb` | Peugeot 404 Pick-up ( bâché ) | Mohamed Fsili | https://sketchfab.com/3d-models/5d071f00d81743a09b9c81deac98c76f | CC BY 4.0 |
 | `models/city/moto_vespa_red.glb` | Old Scooter | Nadia Ribitis | https://sketchfab.com/3d-models/5e9b5072b2224ba982366490ad5f31d9 | CC BY 4.0 |
@@ -215,3 +214,4 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `textures/signs/wear_a.png`, `wear_b.png`, `streak.png` | ambientCG — PaintedMetal006 / PaintedMetal013 / Rust009 (tách kênh alpha, làm vết tróc sơn & vệt nước) | CC0 |
 | `fonts/*.woff2` | Google Fonts — Baloo 2, Alfa Slab One, Lobster, Be Vietnam Pro, Bungee, Patrick Hand (có bộ ký tự tiếng Việt) | SIL OFL 1.1 |
 | `models/characters/mx_*.glb`, `models/characters/mx_clips.glb` | Adobe Mixamo — nhân vật Bryce, Brian, Josh, Leonard, Lewis, Louise, Megan, Sophie, Elizabeth, Martha, Jody, Suzie, Pete, Joe, Chad, Alex và các hoạt ảnh (Standard Walk/Run, Breathing Idle, Picking Up, Jab Cross…) — https://www.mixamo.com — dùng miễn phí kể cả thương mại, không bắt buộc ghi nguồn; đã giảm còn ~6k tam giác, nén texture | Mixamo (Adobe) |
+| `models/props/boxes.glb` | Set of Cardboard Boxes (4 hộp 3 cỡ, tách và chuẩn hoá về mét, gốc giữa đáy) | NotAnotherApocalypticCo. | https://sketchfab.com/3d-models/8986ba512f704ac5b253286a0d1ad8bb | CC BY 4.0 |

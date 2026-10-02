@@ -1,3 +1,4 @@
+import { formatVnd } from '../core/Random';
 import * as THREE from 'three';
 import { textCanvas } from '../products/LabelTexture';
 
@@ -92,13 +93,14 @@ function drawNote(g: CanvasRenderingContext2D, W: number, H: number, denom: numb
   g.font = '900 34px "Nunito", Arial';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  for (const [x, y] of [[44, 44], [W - 44, 44], [44, H - 44], [W - 44, H - 44]]) g.fillText(String(denom), x, y);
+  g.font = '900 24px "Nunito", Arial';
+  for (const [x, y] of [[58, 44], [W - 58, 44], [58, H - 44], [W - 58, H - 44]]) g.fillText(formatVnd(denom), x, y);
   g.font = '900 44px "Nunito", Arial';
   g.fillStyle = `${p.ink}dd`;
-  g.fillText(`$${denom}`, cx, 38);
+  g.fillText(`${formatVnd(denom)} ĐỒNG`, cx, 38);
   g.font = '800 18px "Nunito", Arial';
   g.letterSpacing = '3px';
-  g.fillText('ĐẦU HẺM BANK · LEGAL TENDER', cx, H - 34);
+  g.fillText('NGÂN HÀNG ĐẦU HẺM · TIỀN ĐỒNG', cx, H - 34);
   g.letterSpacing = '0px';
   // số sê-ri đỏ sẫm
   g.fillStyle = '#8f2d2d';
@@ -174,9 +176,9 @@ function coinFace(denom: number): THREE.CanvasTexture {
     g.font = '900 46px "Nunito", Arial';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(String(Math.round(denom * 100)), 64, 66);
+    g.fillText(formatVnd(denom), 64, 66, 100);
     g.fillStyle = 'rgba(255,255,255,0.45)';
-    g.fillText(String(Math.round(denom * 100)), 62, 64);
+    g.fillText(formatVnd(denom), 62, 64, 100);
   });
   t.anisotropy = 8;
   return t;
@@ -184,8 +186,8 @@ function coinFace(denom: number): THREE.CanvasTexture {
 
 const coinMats = new Map<number, THREE.Material[]>();
 const coinGeo = new THREE.CylinderGeometry(COIN_R, COIN_R, COIN_T, 40);
-/** Đường kính tương đối: 25¢ lớn nhất, 10¢ nhỏ nhất (như tiền xu Mỹ) */
-const COIN_SCALE: Record<number, number> = { 0.25: 1.0, 0.1: 0.75, 0.05: 0.875, 0.01: 0.8 };
+/** Đường kính tương đối của đồng xu: 200đ lớn nhất, 10đ nhỏ nhất */
+const COIN_SCALE: Record<number, number> = { 0.2: 1.0, 0.1: 0.8, 0.05: 0.88, 0.01: 0.75 };
 
 function coinMaterials(denom: number): THREE.Material[] {
   let m = coinMats.get(denom);
