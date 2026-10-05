@@ -27,6 +27,12 @@ export class Keyboard {
     window.addEventListener('blur', this.onBlur);
   }
 
+  /** Giả lập nhấn / nhả phím (bench tự động, test). */
+  simulate(code: string, down: boolean): void {
+    if (down) this.down.add(code);
+    else this.down.delete(code);
+  }
+
   isDown(code: string): boolean {
     return !isTyping() && this.down.has(code);
   }

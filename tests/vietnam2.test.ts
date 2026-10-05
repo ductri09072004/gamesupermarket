@@ -1,52 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { VENDOR_GOODS, VENDOR_TAKE, VENDOR_TAKE_CHEAP } from '../src/config/city';
 import { getFurniture } from '../src/config/furniture';
-import { POTHOLE } from '../src/config/physics';
-import { getVehicle } from '../src/config/vehicles';
 import { createNewState } from '../src/core/GameState';
-import { mulberry32 } from '../src/core/Random';
 import { migrate } from '../src/core/SaveSystem';
-import { brokenItems, bumpStrength, dropChance, holesUnder, wheelPoints } from '../src/systems/PotholeSystem';
 import { competingShift, incenseBurning, incenseLitToday, vendorTakeChance } from '../src/systems/VendorSystem';
 import { cityLayout } from '../src/world/CityLayout';
 
-describe('ổ gà khi lái xe', () => {
-  it('bánh xe máy thẳng hàng, ô tô 4 bánh; lăn qua ổ gà thì bắt được', () => {
-    expect(wheelPoints(0, 0, 0, getVehicle('moto'))).toHaveLength(2);
-    const car = wheelPoints(0, 0, 0, getVehicle('car'));
-    expect(car).toHaveLength(4);
-    // yaw 0 → đầu xe hướng -Z: bánh trước ở z < 0
-    expect(Math.min(...car.map(([, z]) => z))).toBeLessThan(0);
-    const [fx, fz] = car[0];
-    expect(holesUnder(car, [{ x: fx, z: fz, r: 0.4 }, { x: 50, z: 50, r: 0.4 }])).toEqual([0]);
-    expect(holesUnder(car, [{ x: fx + 1, z: fz, r: 0.4 }])).toEqual([]);
-  });
-
-  it('đi chậm không rơi thùng; nhanh & ổ to thì rơi nhiều hơn; xe máy dễ rơi nhất, ô tô ít nhất', () => {
-    expect(dropChance(POTHOLE.minSpeed - 0.5, 0.5, 'moto')).toBe(0);
-    expect(dropChance(12, 0.5, 'moto')).toBeGreaterThan(dropChance(6, 0.5, 'moto'));
-    expect(dropChance(10, 0.6, 'moto')).toBeGreaterThan(dropChance(10, 0.25, 'moto'));
-    expect(dropChance(10, 0.4, 'moto')).toBeGreaterThan(dropChance(10, 0.4, 'pickup'));
-    expect(dropChance(10, 0.4, 'pickup')).toBeGreaterThan(dropChance(10, 0.4, 'car'));
-    expect(dropChance(40, 1, 'moto')).toBeLessThanOrEqual(POTHOLE.maxDrop);
-    expect(bumpStrength(0, 0.5)).toBe(0);
-    expect(bumpStrength(30, 1)).toBe(1);
-  });
-
-  it('số món vỡ không vượt số món trong thùng', () => {
-    const rng = mulberry32(3);
-    for (let i = 0; i < 200; i++) {
-      const n = brokenItems(15, 2, rng);
-      expect(n).toBeGreaterThanOrEqual(0);
-      expect(n).toBeLessThanOrEqual(2);
-    }
-  });
-
-  it('bố cục có ổ gà trên đường chính trước cửa hàng', () => {
+describe('mặt đường', () => {
+  it('bố cục không còn ổ gà trên đường', () => {
     const L = cityLayout(10, 12);
-    const main = L.roads[1];
-    const holes = L.damage.filter((d) => d.kind === 'pothole' && d.z > main.z0 && d.z < main.z1 && d.x > -10 && d.x < 30);
-    expect(holes.length).toBeGreaterThan(5);
+    expect(L.damage.map((d) => d.kind).includes('pothole' as never)).toBe(false);
   });
 });
 

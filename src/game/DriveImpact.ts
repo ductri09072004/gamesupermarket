@@ -109,11 +109,6 @@ export class DriveImpact {
     this.w.s.bus.emit('sound', { name: speed > 6 ? 'crash' : 'thud', pos: { x, y: 0.7, z }, volume: Math.min(1.4, 0.4 + speed / 10), pitch: 0.85 + Math.random() * 0.2 });
   }
 
-  /** Rung camera do xóc (ổ gà), 0..1. */
-  jolt(amount: number): void {
-    this.shake = Math.min(1, Math.max(this.shake, amount * 0.8));
-  }
-
   /** Độ lệch camera do rung sau va chạm. */
   cameraShake(out: THREE.Vector3): THREE.Vector3 {
     const a = this.shake * this.shake * 0.35;

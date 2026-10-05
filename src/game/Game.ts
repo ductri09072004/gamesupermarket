@@ -9,6 +9,7 @@ import { Services, setServices } from '../core/Services';
 import { Assets } from '../engine/Assets';
 import { AudioEngine } from '../engine/Audio';
 import { Input } from '../engine/Input';
+import { perf } from '../engine/Perf';
 import { Loop } from '../engine/Loop';
 import { Renderer } from '../engine/Renderer';
 import { loadHdriEnvironment } from '../engine/Environment';
@@ -41,6 +42,8 @@ export class Game {
   private gallery: Gallery;
   private debug = new DebugPanel();
   private frameDt = 0;
+  /** CPU của logic (ms) cộng dồn giữa 2 lần vẽ — ghi vào bộ đo hiệu năng */
+  private updMs = 0;
 
   constructor(container: HTMLElement) {
     this.r = new Renderer(container);
@@ -51,7 +54,12 @@ export class Game {
     this.r.scene.add(this.r.camera);
     this.gallery = new Gallery(this.r.scene.environment);
     this.gallery.onClose = () => this.toggleGallery();
-    this.loop = new Loop((dt) => this.update(dt), (dt) => this.render(dt));
+    this.loop = new Loop((dt) => {
+      const t = performance.now();
+      this.update(dt);
+      this.updMs += performance.now() - t;
+    }, (dt) => this.render(dt));
+    perf.env = this.describeEnv();
     (window as unknown as { __game: Game }).__game = this;
   }
 
@@ -91,6 +99,7 @@ export class Game {
       this.world?.rebuildCity(); // bán kính dựng phố & số đèn phụ thuộc mức đồ hoạ
     }
     this.r.setFov(st.fov);
+    perf.env.quality = st.quality;
     if (this.world) {
       this.world.player.sensitivity = st.sensitivity;
       this.world.player.headbob = st.headbob;
@@ -155,9 +164,10 @@ export class Game {
   }
 
   /** slot: hồ sơ ghi tiến trình ván này (bỏ trống → hồ sơ gần nhất, hoặc ô trống đầu tiên) */
-  startSession(data: SaveData, slot = saveSlots.lastSlot() ?? saveSlots.firstEmpty() ?? 1): void {
+  startSession(data: SaveData, slot: number | null = saveSlots.lastSlot() ?? saveSlots.firstEmpty() ?? 1): void {
     this.disposeWorld();
     bus.clear();
+    perf.listen(bus);
     this.audio.attach(bus);
     saveSlots.setActive(slot);
     const s = new Services(data);
@@ -237,8 +247,11 @@ export class Game {
     this.frameDt = dt;
     this.watchSlow(dt);
     this.r.renderer.info.reset();
+    const t0 = performance.now();
     if (this.gallery.active) this.gallery.render(this.r.renderer, dt);
     else this.r.render(dt);
+    perf.frame(this.updMs, performance.now() - t0, this.r.info.render.calls, this.r.info.render.triangles);
+    this.updMs = 0;
     const w = this.world;
     if (w) {
       this.debug.update(dt, this.r.info, [
@@ -246,6 +259,24 @@ export class Game {
         `Khách: ${w.customers.customers.length} · Món trên kệ: ${w.products.total} · Chế độ: ${w.mode}`,
       ]);
     }
+  }
+
+  /** Máy / GPU / chất lượng đồ hoạ — đính vào báo cáo hiệu năng (laptop 2 GPU: xem trình duyệt đang dùng GPU nào). */
+  private describeEnv(): Record<string, unknown> {
+    const gl = this.r.renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    return {
+      gpu: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'không đọc được',
+      gpuVendor: ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) : '',
+      webgl: gl.getParameter(gl.VERSION),
+      cores: nav.hardwareConcurrency,
+      memoryGB: nav.deviceMemory,
+      devicePixelRatio: window.devicePixelRatio,
+      screen: `${screen.width}x${screen.height}`,
+      viewport: `${innerWidth}x${innerHeight}`,
+      userAgent: nav.userAgent,
+    };
   }
 
   get fps(): number {

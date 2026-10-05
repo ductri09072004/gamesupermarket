@@ -1,3 +1,4 @@
+import { perf } from '../engine/Perf';
 import type { Settings } from '../core/GameState';
 import type { Services } from '../core/Services';
 import { Computer, type AppId } from '../ui/computer';
@@ -184,6 +185,8 @@ export class GameUI {
   private onKey(e: KeyboardEvent): void {
     const w = this.w;
     if (e.code === 'F3') { e.preventDefault(); this.host.toggleDebug(); return; }
+    if (e.code === 'F7') { e.preventDefault(); perf.reset(); perf.mark('đo lại'); this.s.bus.emit('toast', { message: 'Đã đặt lại bộ đo hiệu năng', kind: 'info' }); return; }
+    if (e.code === 'F8') { e.preventDefault(); perf.download(); this.s.bus.emit('toast', { message: 'Đã xuất báo cáo hiệu năng (file JSON)', kind: 'success' }); return; }
     if (e.code === 'F4') { e.preventDefault(); this.host.toggleGallery(); return; }
     if (e.code === 'KeyN' && w.mode === 'play' && !this.isUiOpen() && this.s.day.canEndDay()) { this.endDay(); return; }
     if (w.build.active && !this.isUiOpen() && w.build.onKey(e)) {

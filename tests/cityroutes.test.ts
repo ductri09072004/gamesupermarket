@@ -49,13 +49,15 @@ describe('tuyến xe & người đi bộ', () => {
   it('người đi bộ đi trên vỉa hè, không xuyên nhà', () => {
     const L = cityLayout(10);
     const houses = L.colliders.filter((c) => c.tag === 'building');
+    const rects = houses.map((h) => ({ x0: h.minX, x1: h.maxX, z0: h.minZ, z1: h.maxZ }));
+    let hits = 0;
     for (const r of walkLoops(L.blocks, 1.6)) {
       for (let d = 0; d < r.total; d += 1) {
         const p = poseAt(r, d);
         const me = { x0: p.x - 0.3, x1: p.x + 0.3, z0: p.z - 0.3, z1: p.z + 0.3 };
-        for (const h of houses) expect(rectsOverlap(me, { x0: h.minX, x1: h.maxX, z0: h.minZ, z1: h.maxZ })).toBe(false);
-        for (const road of L.roads) expect(rectsOverlap(me, road)).toBe(false);
+        if (rects.some((h) => rectsOverlap(me, h)) || L.roads.some((road) => rectsOverlap(me, road))) hits++;
       }
     }
+    expect(hits).toBe(0);
   });
 });

@@ -144,24 +144,6 @@
     "characters/mx_Alex.glb"
   ],
   "city": [
-    "city/1Story.glb",
-    "city/1Story_GableRoof.glb",
-    "city/1Story_Sign.glb",
-    "city/2Story.glb",
-    "city/2Story_2.glb",
-    "city/2Story_Balcony.glb",
-    "city/2Story_Columns.glb",
-    "city/2Story_Sign.glb",
-    "city/2Story_Slim.glb",
-    "city/2Story_Wide.glb",
-    "city/2Story_Wide_2Doors.glb",
-    "city/3Story_Balcony.glb",
-    "city/3Story_Slim.glb",
-    "city/3Story_Small.glb",
-    "city/4Story.glb",
-    "city/4Story_Center.glb",
-    "city/4Story_Wide_2Doors.glb",
-    "city/6Story_Stack.glb",
     "city/BirchTree_1.glb",
     "city/Bush_1.glb",
     "city/Bush_2.glb",
@@ -230,18 +212,6 @@
     "city/sign_iron.glb",
     "city/awning_cloth.glb",
     "city/awning_tin.glb"
-  ],
-  "cityTextures": [
-    "textures/buildings/Texture_Blue.png",
-    "textures/buildings/Texture_Dark.png",
-    "textures/buildings/Texture_DarkBlue.png",
-    "textures/buildings/Texture_Green.png",
-    "textures/buildings/Texture_Grey.png",
-    "textures/buildings/Texture_Light.png",
-    "textures/buildings/Texture_Light2.png",
-    "textures/buildings/Texture_Red.png",
-    "textures/buildings/Texture_Signs.png",
-    "textures/buildings/Texture_Yellow.png"
   ],
   "props": [
     "props/cash_register.glb",

@@ -1,0 +1,12 @@
+/* Bảng hiệu năng (F3) và kết quả bench */
+.debug-panel { background: rgba(8, 10, 8, 0.82); color: #b8f08a; padding: 8px 10px; border-radius: 4px; border: 1px solid rgba(184, 240, 138, 0.35); }
+.perf-graph { display: block; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 6px; }
+.perf-text { margin: 0; font: 12px/1.45 "Courier New", monospace; color: inherit; white-space: pre; }
+.bench-result { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, 92vw); padding: 18px 22px; z-index: 200; background: #f3e6c8; color: #3b2616; border: 3px solid #3b2616; border-radius: 6px; box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.4); font: 14px/1.5 "Be Vietnam Pro", sans-serif; pointer-events: auto; }
+.bench-result h3 { margin: 0 0 8px; font: 20px "Alfa Slab One", serif; color: #1d4a3f; }
+.bench-result.fail h3 { color: #a3281a; }
+.bench-result table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.bench-result td { padding: 2px 6px; border-bottom: 1px dashed #c9b383; }
+.bench-result td:last-child { text-align: right; font-weight: 700; }
+.bench-result .issue { color: #a3281a; font-weight: 600; }
+.bench-status { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 200; padding: 4px 14px; background: rgba(8, 10, 8, 0.85); color: #b8f08a; font: 13px "Courier New", monospace; border-radius: 4px; pointer-events: none; }

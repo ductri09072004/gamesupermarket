@@ -1,10 +1,10 @@
 import {
-  BUSHES, CITY_SEED, LAMP_SPACING, PARKED_CARS, ROAD_WIDTH, STREET_BUILDINGS, TREES, TREE_SPACING, WALK_WIDTH,
+  BUILDINGS, CITY_SEED, LAMP_SPACING, PARKED_CARS, ROAD_WIDTH, TREES, TREE_SPACING, WALK_WIDTH,
 } from '../config/city';
 import { SIDEWALK_DEPTH, WALL_THICKNESS, WAREHOUSE_LOT } from '../config/constants';
 import { mulberry32, pick } from '../core/Random';
 import type { AABB } from './Colliders';
-import { fillEdge, infillBlocks, oppositeShops, ringEdges, sideShops } from './CityFill';
+import { backfillBlock, oppositeShops, sideShops, tileBlock } from './CityFill';
 import { streetLife, type StallArea } from './CityStreetLife';
 import { roadDamage, type RoadMark } from './RoadDamage';
 import { polePlan, type PoleSpot, type Wire } from './CityWires';
@@ -32,6 +32,9 @@ export interface Placement {
   sign?: string;
   /** Độ cao đặt (m), mặc định 0 — vd. dừa trên mặt bàn */
   y?: number;
+  /** Co giãn nhà theo bề ngang / bề sâu (m → hệ số) để lấp khít khối phố; mặc định 1 */
+  sx?: number;
+  sz?: number;
   /** Chỉ hiện trong khung giờ game [từ, đến) — hàng rong theo giờ */
   hours?: [number, number];
 }
@@ -65,7 +68,7 @@ export interface CityLayout {
   hz: number[];
   /** Vùng sạp hàng rong (không có va chạm vì theo giờ) — cột điện né, người đi bộ bước xuống đường vòng qua */
   stalls: StallArea[];
-  /** Ổ gà, miếng vá, nắp cống trên mặt đường */
+  /** Miếng vá, nắp cống trên mặt đường */
   damage: RoadMark[];
   /** Cột điện & dây điện chằng chịt */
   wiring: { poles: PoleSpot[]; wires: Wire[] };
@@ -85,6 +88,12 @@ export function footprint(x: number, z: number, w: number, d: number, rot: numbe
   const hw = (q ? d : w) / 2;
   const hd = (q ? w : d) / 2;
   return { x0: x - hw, x1: x + hw, z0: z - hd, z1: z + hd };
+}
+
+/** Hình chữ nhật chiếm chỗ của một nhà (đã tính co giãn sx/sz). */
+export function houseRect(p: Placement): Rect {
+  const [w, , d] = BUILDINGS[p.model];
+  return footprint(p.x, p.z, w * (p.sx ?? 1), d * (p.sz ?? 1), p.rot);
 }
 
 /** Mép vỉa hè giáp đường (tim đường chính = trước cửa hàng). */
@@ -141,24 +150,12 @@ export function cityLayout(D: number, W = 12): CityLayout {
   addSolid(shed, 'depot');
   addSolid({ x0: depot.kiosk.x - 0.6, x1: depot.kiosk.x + 0.6, z0: depot.kiosk.z - 0.4, z1: depot.kiosk.z + 0.4 }, 'kiosk');
   // hàng xóm sát hai bên siêu thị trước, rồi mới tới nhà ven các khối phố
-  sideShops(D, W, lot.x0 - 1.5, taken, placements, addSolid);
+  sideShops(D, W, lot.x0, taken, placements, addSolid);
   oppositeShops(hz[1] + HALF + walk, -24, 58, taken, placements, addSolid);
 
-  // nhà dọc 4 cạnh mỗi khối, mặt tiền quay ra đường
-  for (const b of blocks) {
-    const inner: Rect = { x0: b.x0 + walk, x1: b.x1 - walk, z0: b.z0 + walk, z1: b.z1 - walk };
-    for (const e of ringEdges(b, walk)) fillEdge(rng, e, taken, placements, addSolid, STREET_BUILDINGS);
-    // bụi cây trong sân sau
-    for (let k = 0; k < 6; k++) {
-      const x = inner.x0 + 10 + rng() * (inner.x1 - inner.x0 - 20);
-      const z = inner.z0 + 10 + rng() * (inner.z1 - inner.z0 - 20);
-      const r = { x0: x - 1, x1: x + 1, z0: z - 1, z1: z + 1 };
-      if (taken.some((t) => rectsOverlap(t, r, 0.5))) continue;
-      placements.push({ kind: 'bush', model: pick(rng, BUSHES), x, z, rot: rng() * Math.PI * 2, variant: 0 });
-    }
-  }
-
-  infillBlocks(rng, blocks, walk, taken, placements, addSolid);
+  // lấp kín mỗi khối phố bằng nhà ống Việt (không chừa đất trống bên trong)
+  for (const b of blocks) tileBlock(rng, b, walk, taken, placements, addSolid);
+  for (const b of blocks) backfillBlock(rng, b, walk, taken, placements, addSolid);
 
   // cây & đèn dọc vỉa hè (sát lề đường), chừa giao lộ, lối vào bãi, trước cửa hàng
   const noTree: Rect[] = [{ x0: -4, x1: 30, z0: F - walk, z1: F }, { x0: lot.x0, x1: lot.x1, z0: F - walk, z1: F },
@@ -208,7 +205,7 @@ export function cityLayout(D: number, W = 12): CityLayout {
     { minX: bounds.x0, maxX: bounds.x1, minZ: bounds.z0 - 10, maxZ: bounds.z0, tag: 'bound' },
     { minX: bounds.x0, maxX: bounds.x1, minZ: bounds.z1, maxZ: bounds.z1 + 10, tag: 'bound' },
   );
-  // đoạn đường ngay trước cửa hàng luôn có cụm ổ gà & miếng vá (người chơi thấy ngay)
+  // đoạn đường ngay trước cửa hàng luôn có cụm miếng vá (người chơi thấy ngay)
   const hot = { x0: -10, x1: 30, z0: roads[1].z0, z1: roads[1].z1 };
   const crosswalk = { x0: -7, x1: -3, z0: roads[1].z0, z1: roads[1].z1 };
   const damage = roadDamage(roads, [hot], [crosswalk]);

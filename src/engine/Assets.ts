@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { h, uiRoot } from '../ui/dom';
 import { loadPbrTextures, type TextureEntry } from '../world/Materials';
 import { registerCharacter } from '../entities/CharacterModels';
-import { registerBuildingAtlas, registerCityModel } from '../world/CityModels';
+import { registerCityModel } from '../world/CityModels';
 import { registerProp } from './Props';
 
 interface Manifest {
@@ -14,9 +14,8 @@ interface Manifest {
   textures?: Record<string, TextureEntry>;
   /** Nhân vật rig, ví dụ "characters/Casual_Male.glb" (tên file = tên model) */
   characters?: string[];
-  /** Model thành phố "city/<Tên>.glb" và atlas màu nhà "textures/buildings/Texture_<Màu>.png" */
+  /** Model thành phố "city/<Tên>.glb" */
   city?: string[];
-  cityTextures?: string[];
   /** Đồ vật "props/<tên>.glb" (máy tính tiền, đèn, xe tải...) */
   props?: string[];
 }
@@ -111,14 +110,6 @@ export class Assets {
         registerCityModel(base(path), (await loader.loadAsync(`assets/models/${path}`)).scene);
       } catch {
         console.warn(`[Assets] Không nạp được ${path}, dùng hình khối thay thế.`);
-      }
-    }));
-    const tl = new THREE.TextureLoader();
-    await Promise.all((this.manifest.cityTextures ?? []).map(async (path) => {
-      try {
-        registerBuildingAtlas(base(path).replace('Texture_', ''), await tl.loadAsync(`assets/${path}`));
-      } catch {
-        console.warn(`[Assets] Không nạp được ${path}`);
       }
     }));
   }

@@ -13,6 +13,8 @@ const T = WALL_THICKNESS;
 const PARTY = 0.5;
 const GLASS_H = 2.45;
 const DOOR_H = 2.3;
+/** Góc mở tối đa của cánh cửa gỗ (rad, ~100°) */
+const DOOR_SWING = 1.75;
 /** Cửa thông giữa cửa hàng và kho trên tường chung (z tuyệt đối) */
 const WH_GAP = { z0: WAREHOUSE.doorZ - 0.5, z1: WAREHOUSE.doorZ + 0.5, h: 2.2 };
 
@@ -26,7 +28,7 @@ function place(m: THREE.Object3D, x0: number, x1: number, y0: number, y1: number
 }
 
 /**
- * Cửa hàng: sàn bóng, tường, trần, dải đèn, mặt kính trước, cửa trượt; kho kế bên; vỏ nhà cố định chứa phần chưa mở khoá.
+ * Cửa hàng: sàn bóng, tường, trần, dải đèn, mặt kính trước, cửa gỗ hai cánh; kho kế bên; vỏ nhà cố định chứa phần chưa mở khoá.
  * Phần cửa hàng dựng theo toạ độ cục bộ (tường sau z = 0, mặt tiền z = D) trong nhóm `active`, dịch theo z = STORE_FRONT_Z − D
  * để mặt tiền luôn nằm đúng chỗ khi mở rộng (vách sau lùi ra, phố đứng yên).
  */
@@ -99,22 +101,32 @@ export class Store {
     }
     this.mullions = new THREE.InstancedMesh(unitBox, frameMat, 64);
     this.active.add(this.mullions);
+    // cửa gỗ hai cánh kiểu cũ: bản lề ở mép ngoài, đẩy mở ra phía vỉa hè (cánh trái xoay -, cánh phải xoay +)
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x6a4527, roughness: 0.75 });
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0x7d5632, roughness: 0.8 });
+    const brassMat = new THREE.MeshStandardMaterial({ color: 0xc9a24a, metalness: 0.8, roughness: 0.35 });
+    const LEAF = DOOR_WIDTH / 2;
     const makeDoor = () => {
-      const g = new THREE.Group();
-      const inner = new THREE.Mesh(new THREE.BoxGeometry(0.92, DOOR_H - 0.1, 0.06), glassMat);
-      inner.position.y = DOOR_H / 2;
-      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.5, 0.08), frameMat);
-      handle.position.set(0.4, 1.05, 0);
-      // khung dạng viền: 4 thanh
-      const bars = [
-        [-0.5, -0.46, 0, DOOR_H], [0.46, 0.5, 0, DOOR_H], [-0.5, 0.5, 0, 0.06], [-0.5, 0.5, DOOR_H - 0.06, DOOR_H],
-      ].map(([a, b, c, d]) => {
-        const bar = new THREE.Mesh(unitBox, frameMat);
-        place(bar, a, b, c, d, -0.03, 0.03);
-        return bar;
-      });
-      g.add(inner, handle, ...bars);
-      return g;
+      const pivot = new THREE.Group();
+      const part = (mat: THREE.Material, x0: number, x1: number, y0: number, y1: number, z0: number, z1: number) => {
+        const m = new THREE.Mesh(unitBox, mat);
+        place(m, x0, x1, y0, y1, z0, z1);
+        m.castShadow = true;
+        pivot.add(m);
+      };
+      // khung: 2 đố đứng, thanh ngang trên / giữa / dưới; ô dưới ván gỗ, ô trên kính
+      part(woodMat, 0, 0.1, 0, DOOR_H, -0.04, 0.04);
+      part(woodMat, LEAF - 0.1, LEAF, 0, DOOR_H, -0.04, 0.04);
+      part(woodMat, 0, LEAF, DOOR_H - 0.12, DOOR_H, -0.04, 0.04);
+      part(woodMat, 0, LEAF, 0.95, 1.08, -0.04, 0.04);
+      part(woodMat, 0, LEAF, 0, 0.14, -0.04, 0.04);
+      part(panelMat, 0.1, LEAF - 0.1, 0.14, 0.95, -0.025, 0.025);
+      part(glassMat, 0.1, LEAF - 0.1, 1.08, DOOR_H - 0.12, -0.01, 0.01);
+      part(woodMat, LEAF / 2 - 0.02, LEAF / 2 + 0.02, 1.08, DOOR_H - 0.12, -0.03, 0.03);
+      // tay nắm đồng ở mép giữa, hai mặt
+      part(brassMat, LEAF - 0.2, LEAF - 0.16, 0.95, 1.25, 0.04, 0.07);
+      part(brassMat, LEAF - 0.2, LEAF - 0.16, 0.95, 1.25, -0.07, -0.04);
+      return pivot;
     };
     this.doorL = makeDoor();
     this.doorR = makeDoor();
@@ -243,18 +255,24 @@ export class Store {
   }
 
   private layoutDoors(): void {
-    const o = this.doorOpen * 0.95;
-    this.doorL.position.set(DOOR_X - 0.5 - o, 0, this.D + T + 0.04);
-    this.doorR.position.set(DOOR_X + 0.5 + o, 0, this.D + T + 0.04);
+    const z = this.D + T + 0.04;
+    const swing = this.doorOpen * DOOR_SWING;
+    this.doorL.position.set(DOOR_X - DOOR_WIDTH / 2, 0, z);
+    this.doorR.position.set(DOOR_X + DOOR_WIDTH / 2, 0, z);
+    this.doorL.rotation.y = -swing;
+    this.doorR.rotation.y = swing;
   }
 
-  /** Cửa trượt tự mở khi có người tới gần. */
-  update(dt: number, people: Array<{ x: number; z: number }>): void {
+  /**
+   * Cửa gỗ hai cánh: mở toang khi tiệm đang mở cửa (chống cửa cho khách ra vào), đóng lại khi đóng cửa;
+   * có người đứng sát cửa thì đẩy hé ra.
+   */
+  update(dt: number, people: Array<{ x: number; z: number }>, shopOpen = false): void {
     const c = { x: DOOR_X, z: STORE_FRONT_Z + T / 2 };
     const near = people.some((p) => Math.abs(p.x - c.x) < 1.6 && Math.abs(p.z - c.z) < 1.8);
-    const target = near ? 1 : 0;
+    const target = shopOpen ? 1 : near ? 0.6 : 0;
     const was = this.doorOpen;
-    this.doorOpen += Math.sign(target - this.doorOpen) * Math.min(Math.abs(target - this.doorOpen), dt * 2.2);
+    this.doorOpen += Math.sign(target - this.doorOpen) * Math.min(Math.abs(target - this.doorOpen), dt * 1.1);
     if (was === 0 && this.doorOpen > 0) this.onDoorOpen();
     if (was !== this.doorOpen) this.layoutDoors();
   }

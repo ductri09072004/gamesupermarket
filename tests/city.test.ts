@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BUILDINGS, ROAD_WIDTH, WALK_WIDTH } from '../src/config/city';
 import { MAX_STORE_H, MAX_STORE_W, WAREHOUSE_LOT } from '../src/config/constants';
-import { cityLayout, curbZ, footprint, rectsOverlap, type Rect } from '../src/world/CityLayout';
+import { cityLayout, curbZ, houseRect, rectsOverlap, type Rect } from '../src/world/CityLayout';
 
 describe('Bố cục thành phố', () => {
   for (const [D, W] of [[10, 12], [MAX_STORE_H, MAX_STORE_W], [14, 18]]) {
@@ -18,25 +18,22 @@ describe('Bố cục thành phố', () => {
       const far = shops.filter((p) => p.rot !== 0);
       // hàng xóm cùng dãy bên trái nằm ngoài vỏ nhà (cửa hàng + kho kế bên)
       expect(near.filter((p) => p.x < 0).every((p) => p.x < WAREHOUSE_LOT.x0)).toBe(true);
-      for (const p of near) expect(Math.abs(p.z + BUILDINGS[p.model][2] / 2 - (D + 0.2))).toBeLessThan(0.01);
+      for (const p of near) expect(Math.abs(p.z + (BUILDINGS[p.model][2] * (p.sz ?? 1)) / 2 - (D + 0.2))).toBeLessThan(0.01);
       expect(far.length).toBeGreaterThan(5);
       const farFacade = L.hz[1] + ROAD_WIDTH / 2 + WALK_WIDTH;
-      for (const p of far) expect(Math.abs(p.z - BUILDINGS[p.model][2] / 2 - farFacade)).toBeLessThan(0.01);
+      for (const p of far) expect(Math.abs(p.z - (BUILDINGS[p.model][2] * (p.sz ?? 1)) / 2 - farFacade)).toBeLessThan(0.01);
     });
 
     it(`D=${D}: nhà không đè lên đường, cửa hàng, bãi đỗ, kho sỉ, và không đè nhau`, () => {
-      const houses = L.placements.filter((p) => p.kind === 'building').map((p) => {
-        const [w, , d] = BUILDINGS[p.model];
-        return footprint(p.x, p.z, w, d, p.rot);
-      });
+      const houses = L.placements.filter((p) => p.kind === 'building').map(houseRect);
       expect(houses.length).toBeGreaterThan(120);
       for (const [i, h] of houses.entries()) {
-        for (const r of L.roads) expect(rectsOverlap(h, r)).toBe(false);
-        expect(rectsOverlap(h, store)).toBe(false);
-        expect(rectsOverlap(h, L.lot)).toBe(false);
-        expect(rectsOverlap(h, L.depot.shed)).toBe(false);
-        expect(rectsOverlap(h, L.depot.pad)).toBe(false);
-        for (const o of houses.slice(i + 1)) expect(rectsOverlap(h, o)).toBe(false);
+        for (const r of L.roads) expect(rectsOverlap(h, r, -0.01)).toBe(false);
+        expect(rectsOverlap(h, store, -0.01)).toBe(false);
+        expect(rectsOverlap(h, L.lot, -0.01)).toBe(false);
+        expect(rectsOverlap(h, L.depot.shed, -0.01)).toBe(false);
+        expect(rectsOverlap(h, L.depot.pad, -0.01)).toBe(false);
+        for (const o of houses.slice(i + 1)) expect(rectsOverlap(h, o, -0.01)).toBe(false); // nhà sát nhau tới sai số số thực
       }
     });
 

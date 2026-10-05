@@ -53,7 +53,9 @@ function blade(spec: SignSpec): THREE.Object3D | null {
 export function buildShopSigns(placements: Placement[], group: THREE.Group): THREE.MeshStandardMaterial[] {
   const lit: THREE.MeshStandardMaterial[] = [];
   placements.filter((p) => p.sign).forEach((p, i) => {
-    const [w, , d] = BUILDINGS[p.model];
+    const [bw, , bd] = BUILDINGS[p.model];
+    const w = bw * (p.sx ?? 1);
+    const d = bd * (p.sz ?? 1);
     const theme = SHOP_SIGNS[p.sign!];
     const color = COLORS[i % COLORS.length];
     const rng = mulberry32(i * 131 + 7);

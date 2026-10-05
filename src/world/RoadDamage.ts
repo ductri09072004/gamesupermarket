@@ -3,12 +3,12 @@ import { ROAD_DAMAGE, ROAD_WIDTH } from '../config/city';
 import { mulberry32, type Rng } from '../core/Random';
 import type { Rect } from './CityLayout';
 
-/** Hư hỏng mặt đường: ổ gà (xe xóc khi đi qua — đợt sau), miếng vá nhựa đường, nắp cống. */
+/** Hư hỏng mặt đường: miếng vá nhựa đường, nắp cống. */
 export interface RoadMark {
-  kind: 'pothole' | 'patch' | 'manhole';
+  kind: 'patch' | 'manhole';
   x: number;
   z: number;
-  /** Bán kính (ổ gà, nắp cống) hoặc nửa chiều dài (miếng vá) */
+  /** Bán kính (nắp cống) hoặc nửa chiều dài (miếng vá) */
   r: number;
   rot: number;
   /** Tỉ lệ ngang/dọc (miếng vá dài) */
@@ -16,8 +16,8 @@ export interface RoadMark {
 }
 
 /**
- * Sinh dữ liệu thuần theo hạt giống: ổ gà tập trung ở vệt bánh xe, nắp cống gần tim đường.
- * `hotspots`: đoạn đường xuống cấp nặng (vd. trước cửa hàng) — thêm cụm ổ gà + miếng vá dày.
+ * Sinh dữ liệu thuần theo hạt giống: miếng vá rải theo mặt đường, nắp cống gần tim đường.
+ * `hotspots`: đoạn đường xuống cấp nặng (vd. trước cửa hàng) — thêm cụm miếng vá dày.
  */
 export function roadDamage(roads: Rect[], hotspots: Rect[] = [], avoid: Rect[] = []): RoadMark[] {
   const rng = mulberry32(ROAD_DAMAGE.seed);
@@ -27,9 +27,6 @@ export function roadDamage(roads: Rect[], hotspots: Rect[] = [], avoid: Rect[] =
     const mid = (h.z0 + h.z1) / 2;
     for (let i = 0; i < Math.round(len / 4); i++) {
       const x = h.x0 + rng() * len;
-      const off = (rng() < 0.5 ? -1 : 1) * (0.4 + rng() * (ROAD_WIDTH / 2 - 0.9));
-      out.push({ kind: 'pothole', x, z: mid + off, r: 0.25 + rng() * 0.4, rot: rng() * 6.28, aspect: 0.7 + rng() * 0.5 });
-      if (rng() < 0.6) out.push({ kind: 'pothole', x: x + (rng() - 0.5) * 1.2, z: mid + off + (rng() - 0.5) * 0.8, r: 0.15 + rng() * 0.2, rot: rng() * 6.28, aspect: 1 });
       if (rng() < 0.5) out.push({ kind: 'patch', x: x + 2, z: mid + (rng() - 0.5) * (ROAD_WIDTH - 2), r: 0.4 + rng() * 0.5, rot: (rng() - 0.5) * 0.3, aspect: 0.5 + rng() * 0.4 });
     }
   }
@@ -47,9 +44,6 @@ export function roadDamage(roads: Rect[], hotspots: Rect[] = [], avoid: Rect[] =
         out.push({ kind: m.kind, x, z, r: m.r, rot: m.rot, aspect: m.aspect });
       }
     };
-    // vệt bánh xe: cách tim đường 0.4m tới sát lề (chừa 0.5m), mỗi bên
-    const track = (g: Rng) => (g() < 0.5 ? -1 : 1) * (0.4 + g() * (ROAD_WIDTH / 2 - 0.9));
-    scatter(ROAD_DAMAGE.potholesPer100m, (g) => ({ kind: 'pothole', r: 0.22 + g() * 0.38, rot: g() * 6.28, aspect: 0.7 + g() * 0.5, off: track(g) }));
     scatter(ROAD_DAMAGE.patchesPer100m, (g) => ({ kind: 'patch', r: 0.4 + g() * 0.55, rot: (alongX ? 0 : Math.PI / 2) + (g() - 0.5) * 0.3, aspect: 0.35 + g() * 0.4, off: (g() - 0.5) * (ROAD_WIDTH - 2) }));
     scatter(ROAD_DAMAGE.manholesPer100m, (g) => ({ kind: 'manhole', r: 0.36, rot: g() * 6.28, aspect: 1, off: (g() - 0.5) * 1.6 }));
   }
@@ -83,32 +77,6 @@ function blob(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, rn
 
 const textures = () => {
   const rng = mulberry32(99);
-  const pothole = tex((g, S) => {
-    // mép vỡ sáng (đá dăm lộ) → lòng ổ gà tối, đáy có sỏi + vũng ẩm
-    blob(g, S / 2, S / 2, S * 0.47, rng, 0.3);
-    g.fillStyle = '#6f6a61';
-    g.fill();
-    blob(g, S / 2, S / 2, S * 0.38, rng, 0.35);
-    const gr = g.createRadialGradient(S / 2, S / 2, 4, S / 2, S / 2, S * 0.4);
-    gr.addColorStop(0, '#17150f');
-    gr.addColorStop(0.7, '#2a2722');
-    gr.addColorStop(1, '#46423a');
-    g.fillStyle = gr;
-    g.fill();
-    for (let i = 0; i < 60; i++) {
-      const a = rng() * 6.28;
-      const d = rng() * S * 0.34;
-      g.fillStyle = rng() < 0.5 ? '#5d584f' : '#3a362f';
-      g.fillRect(S / 2 + Math.cos(a) * d, S / 2 + Math.sin(a) * d, 2 + rng() * 4, 2 + rng() * 3);
-    }
-    // đá vụn văng ra ngoài mép
-    for (let i = 0; i < 30; i++) {
-      const a = rng() * 6.28;
-      const d = S * (0.45 + rng() * 0.05);
-      g.fillStyle = '#77726a';
-      g.fillRect(S / 2 + Math.cos(a) * d, S / 2 + Math.sin(a) * d, 2 + rng() * 3, 2 + rng() * 3);
-    }
-  });
   const patch = tex((g, S) => {
     // miếng vá nhựa: hơi tối hơn mặt đường, viền méo có vệt nhựa chảy, lấm tấm đá dăm (mờ dần ở mép)
     g.globalAlpha = 0.8;
@@ -145,14 +113,14 @@ const textures = () => {
     }
     g.restore();
   });
-  return { pothole, patch, manhole };
+  return { patch, manhole };
 };
 
 /** Decal phẳng trên mặt đường (InstancedMesh / loại), không ghi depth để khỏi nhấp nháy với mặt đường. */
 export function buildRoadDamage(marks: RoadMark[], group: THREE.Group): void {
   const t = textures();
   const plane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  const kinds: Array<[RoadMark['kind'], number]> = [['patch', -0.0285], ['pothole', -0.027], ['manhole', -0.0265]];
+  const kinds: Array<[RoadMark['kind'], number]> = [['patch', -0.0285], ['manhole', -0.0265]];
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   for (const [kind, y] of kinds) {

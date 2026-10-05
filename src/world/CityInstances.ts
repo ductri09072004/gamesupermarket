@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { BUILDINGS, BUILDING_TEXTURES, isVnHouse, SCOOTER_FILTERS, VN_PASTELS } from '../config/city';
+import { BUILDINGS, isVnHouse, SCOOTER_FILTERS, VN_PASTELS } from '../config/city';
 import { BIKE_MODELS } from '../config/fleet';
-import { buildingAtlas, cityModel } from './CityModels';
+import { cityModel } from './CityModels';
 import type { Placement } from './CityLayout';
 
 const CHUNK = 70;
@@ -46,23 +46,6 @@ export function scooterMaterial(base: THREE.Material, variant: number): THREE.Ma
   }
   m = mat;
   variantMats.set(key, m);
-  return m;
-}
-
-function buildingMaterial(base: THREE.Material, variant: number): THREE.Material {
-  const tex = buildingAtlas(BUILDING_TEXTURES[variant % BUILDING_TEXTURES.length]);
-  const key = `${base.name}:${variant}:${!!tex}`;
-  let m = variantMats.get(key);
-  if (!m) {
-    const c = (base as THREE.MeshStandardMaterial).clone();
-    if (tex) {
-      c.map = tex;
-      c.color.set(0xffffff);
-    }
-    c.roughness = 0.85;
-    m = c;
-    variantMats.set(key, m);
-  }
   return m;
 }
 
@@ -113,7 +96,7 @@ export function buildCityInstances(placements: Placement[], group: THREE.Group):
     // chia theo ô CHUNK m để frustum culling loại được cả cụm ngoài tầm nhìn
     const chunk = `${Math.floor(p.x / CHUNK)},${Math.floor(p.z / CHUNK)}`;
     // nhà Việt: màu sơn nhuộm bằng instanceColor → mọi biến thể chung 1 InstancedMesh
-    const byVariant = (p.kind === 'building' && !isVnHouse(p.model)) || p.model === 'vn_scooter';
+    const byVariant = p.model === 'vn_scooter';
     const key = `${byVariant ? `${p.model}|${p.variant}` : p.model}@${chunk}${p.hours ? `~${p.hours}` : ''}`;
     const list = byKey.get(key) ?? [];
     list.push(p);
@@ -137,9 +120,7 @@ export function buildCityInstances(placements: Placement[], group: THREE.Group):
       if (!mesh.isMesh) return;
       let material = mesh.material;
       const vnHouse = first.kind === 'building' && isVnHouse(first.model);
-      if (first.kind === 'building' && !vnHouse) {
-        material = Array.isArray(material) ? material.map((m) => buildingMaterial(m, first.variant)) : buildingMaterial(material, first.variant);
-      } else if (first.model === 'vn_scooter') {
+      if (first.model === 'vn_scooter') {
         material = Array.isArray(material) ? material.map((m) => scooterMaterial(m, first.variant)) : scooterMaterial(material, first.variant);
       }
       // đèn đường (Quaternius 'Light') và đèn âm trần nhà phố Việt (emissive mạnh) → sáng theo đêm
@@ -150,7 +131,7 @@ export function buildCityInstances(placements: Placement[], group: THREE.Group):
       const inst = new THREE.InstancedMesh(mesh.geometry, material, list.length);
       list.forEach((p, i) => {
         q.setFromAxisAngle(up, p.rot);
-        place.compose(new THREE.Vector3(p.x, p.y ?? 0, p.z), q, new THREE.Vector3(1, 1, 1));
+        place.compose(new THREE.Vector3(p.x, p.y ?? 0, p.z), q, new THREE.Vector3(p.sx ?? 1, 1, p.sz ?? 1));
         inst.setMatrixAt(i, tmp.multiplyMatrices(place, mesh.matrixWorld));
         // tường (vật liệu gộp màu đỉnh) nhuộm màu sơn theo biến thể; kính & đèn giữ nguyên
         if (vnHouse && (material as THREE.Material).name === 'vn_house_base') inst.setColorAt(i, tint.setHex(VN_PASTELS[p.variant % VN_PASTELS.length]));

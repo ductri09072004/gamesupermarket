@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { BUILDINGS, isVnHouse, VN_PROPS } from '../src/config/city';
+import { isVnHouse, VN_PROPS } from '../src/config/city';
 import { MAX_STORE_W } from '../src/config/constants';
-import { cityLayout, curbZ, footprint, rectsOverlap } from '../src/world/CityLayout';
+import { cityLayout, curbZ, footprint, houseRect, rectsOverlap } from '../src/world/CityLayout';
 
 describe('phố Việt Nam', () => {
   const D = 10;
@@ -28,8 +28,7 @@ describe('phố Việt Nam', () => {
       const [w, , d] = VN_PROPS[p.model as keyof typeof VN_PROPS];
       const r = footprint(p.x, p.z, w, d, p.rot);
       for (const h of houses) {
-        const [hw, , hd] = BUILDINGS[h.model];
-        expect(rectsOverlap(r, footprint(h.x, h.z, hw, hd, h.rot))).toBe(false);
+        expect(rectsOverlap(r, houseRect(h))).toBe(false);
       }
       // xe máy đỗ tràn được phép lấn nửa xe xuống lòng đường (≤ 1m), đồ khác thì không
       const spill = p.model === 'vn_scooter' ? -1 : -0.05;
@@ -56,10 +55,9 @@ describe('phố Việt Nam', () => {
     expect(stallModels.size).toBeGreaterThan(10);
   });
 
-  it('ổ gà, miếng vá, nắp cống nằm trên mặt đường', () => {
+  it('miếng vá, nắp cống nằm trên mặt đường, không còn ổ gà', () => {
     const kinds = new Set(L.damage.map((d) => d.kind));
-    expect([...kinds].sort()).toEqual(['manhole', 'patch', 'pothole']);
-    expect(L.damage.filter((d) => d.kind === 'pothole').length).toBeGreaterThan(20);
+    expect([...kinds].sort()).toEqual(['manhole', 'patch']);
     for (const d of L.damage) {
       expect(L.roads.some((r) => d.x >= r.x0 && d.x <= r.x1 && d.z >= r.z0 && d.z <= r.z1)).toBe(true);
     }

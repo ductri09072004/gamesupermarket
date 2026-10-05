@@ -48,12 +48,12 @@ Cấu hình build nằm ở [`vercel.json`](./vercel.json).
 - **Nội thất chuyên dụng**: *Giá treo quần áo* (3 thanh treo face-out, cần giấy phép Thời trang), *Tủ kính điện tử* (kệ kính 4 tầng có đèn LED, cần giấy phép Điện tử), *Máy bán hàng tự động* (16 ngăn lò xo, nhận đồ uống/đồ kệ vừa ngăn — khách tự mua & trả tiền ngay tại máy, không qua quầy).
 - **Kệ theo tầng & ngăn**: mỗi ngăn tự tính lưới vị trí theo kích thước sản phẩm; khung highlight + bóng mờ món kế tiếp; món bay vào kệ với tween, lắc nhẹ, tiếng "tộc" đổi cao độ.
 - **Quầy thu ngân 3D**: khách đặt từng món lên băng chuyền, món bay qua máy quét (laser nháy, bíp), màn hình LCD canvas, ngăn kéo tiền trượt ra với các khay mệnh giá, tiền thối xếp trên quầy, máy POS có phím bấm được.
-- **Không khí**: tone mapping ACES, bóng đổ, môi trường phòng (PMREM), dải đèn trần phát sáng + bloom, cửa kính trượt tự động, ánh sáng ngoài trời đổi theo giờ, đèn đường & biển hiệu sáng ban đêm, âm thanh 3D (tiếng máy lạnh tủ đông, chuông cửa, bước chân, nhạc nền, tiếng đám đông).
+- **Không khí**: tone mapping ACES, bóng đổ, môi trường phòng (PMREM), dải đèn trần phát sáng + bloom, cửa gỗ hai cánh (chống mở lúc mở tiệm, đóng khi đóng cửa), ánh sáng ngoài trời đổi theo giờ, đèn đường & biển hiệu sáng ban đêm, âm thanh 3D (tiếng máy lạnh tủ đông, chuông cửa, bước chân, nhạc nền, tiếng đám đông).
 - Logic cũ (tiền, giá, khách, kho, thời gian, lưu game) được giữ lại trong `src/systems` — không import Three.
 
 ### Thành phố & xe
 - **Bản đồ thành phố** quanh cửa hàng: lưới 3 đường ngang × 4 đường dọc, vỉa hè lát gạch, cỏ, ~100 ngôi nhà, cây, đèn đường,
-  đèn giao thông, xe đỗ ven đường — model thật (Quaternius, CC0) + texture PBR Poly Haven cho đường nhựa/vỉa hè/cỏ.
+  đèn giao thông, xe đỗ ven đường — nhà phố Việt (Sketchfab, CC-BY), cây/xe/đèn đường model thật + texture PBR Poly Haven cho đường nhựa/vỉa hè/cỏ.
 - **Garage** (app 🚗 trên máy tính): mua **xe máy** (chở tối đa 2 thùng), **ô tô con** (8 suất), **bán tải** (20 suất).
   Thùng cồng kềnh (gạo, bánh mì, giấy vệ sinh, bột giặt, hoodie, loa…) tính 2 suất; xe máy đếm theo thùng.
 - **Kho sỉ** (khối nhà bên phải, sau ngã tư): quầy tự phục vụ bán rẻ hơn 20% so với đặt online, thùng có ngay ở bãi vạch vàng
@@ -83,3 +83,11 @@ src/
   ui/         DOM overlay: HUD, máy tính & apps, bảng giá nổi, thanh thu ngân, báo cáo ngày, menu, cài đặt, tutorial
 tests/        vitest
 ```
+
+## Đo hiệu năng (mục tiêu 60 FPS ổn định)
+
+- **F3** trong game: đồ thị thời gian từng khung (xanh ≤ 20ms, vàng, cam > 25ms, đỏ > 50ms; cột xanh dương = CPU logic), FPS, "1% thấp", số khung giật, draw calls. Vạch trắng = sự kiện (lên xe, mở menu...).
+- **F7** đặt lại bộ đo · **F8** tải báo cáo JSON (máy/GPU, thống kê, kết luận đạt/không, 40 khung chậm nhất kèm sự kiện xung quanh).
+- **Bench tự động**: mở `http://localhost:5173/?bench=drive` (hoặc địa chỉ đã deploy kèm `?bench=drive`) trong một **tab Chrome/Edge đang hiển thị**, không thu nhỏ. Game tự chạy kịch bản ~75 giây (đứng tiệm → mở cửa → máy tính → xây dựng → mua xe → lên xe → lái một vòng → xuống xe), in bảng kết quả theo từng pha và tải file JSON. Không ghi đè bản lưu nào.
+- Ngưỡng và kết luận đạt/không nằm ở `src/config/perf.ts`, logic thống kê ở `src/systems/PerfStats.ts` (có test).
+- Laptop có 2 GPU: Windows → Settings → System → Display → Graphics → thêm trình duyệt → "High performance" để chạy bằng GPU rời. Báo cáo ghi rõ GPU nào đang được dùng.

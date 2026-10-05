@@ -1,19 +1,12 @@
 import { NPC_CAR_MODELS } from './fleet';
 /**
- * Thành phố quanh cửa hàng. Model Quaternius (CC0) trong public/assets/models/city, kích thước thật (m) đo sau khi
- * chuyển đổi: [rộng X, cao, sâu Z], mặt tiền quay +Z.
+ * Thành phố quanh cửa hàng. Model trong public/assets/models/city, kích thước thật (m): [rộng X, cao, sâu Z], mặt tiền quay +Z.
+ * Toàn bộ nhà là nhà phố Việt Nam (không còn kiến trúc nước ngoài).
  */
-export const BUILDINGS: Record<string, [number, number, number]> = {
-  '1Story': [5.39, 4.18, 5.44], '1Story_GableRoof': [5.26, 5.06, 5.95], '1Story_Sign': [5.39, 4.48, 5.39],
-  '2Story': [5.4, 6.86, 6.33], '2Story_2': [5.4, 6.91, 5.44], '2Story_Balcony': [5.4, 7.36, 6.33],
-  '2Story_Columns': [5.4, 6.92, 6.22], '2Story_Sign': [5.39, 6.89, 5.39], '2Story_Slim': [2.79, 6.89, 5.39],
-  '2Story_Wide': [9.56, 6.87, 5.64], '2Story_Wide_2Doors': [17.07, 6.87, 5.64], '3Story_Balcony': [5.4, 10.53, 6.27],
-  '3Story_Slim': [2.79, 9.98, 5.39], '3Story_Small': [4.77, 9.62, 4.94], '4Story': [6.05, 12.73, 6.33],
-  '4Story_Center': [6.05, 12.73, 6.33], '4Story_Wide_2Doors': [17.07, 12.88, 6.74], '6Story_Stack': [5.4, 19.51, 6.25],
-};
+export const BUILDINGS: Record<string, [number, number, number]> = {};
 /**
  * Nhà phố Việt Nam (Sketchfab, CC-BY — xem CREDITS.md), đã chuẩn hoá: mét, gốc giữa đáy, mặt tiền +Z.
- * Màu phẳng, không dùng atlas Quaternius — tường sáng được nhuộm màu pastel theo `variant`.
+ * Màu phẳng — tường sáng được nhuộm màu pastel theo `variant`.
  */
 export const VN_HOUSES: Record<string, [number, number, number]> = {
   vn_tube_1: [4.5, 8.6, 10.61], vn_tube_2: [5, 10.8, 10.39], vn_tube_3: [4.71, 15.05, 13.46],
@@ -29,11 +22,9 @@ export const SCOOTER_FILTERS = ['none', 'hue-rotate(200deg)', 'hue-rotate(80deg)
 export const VN_PASTELS = [0xffffff, 0xf7e3a1, 0xc9e7d3, 0xf5c9b8, 0xcfe0f2, 0xf1dcc0];
 
 /** Nhà mặt phố thấp tầng làm cửa hiệu cạnh siêu thị — toàn nhà ống Việt cho phố trước mặt người chơi */
-export const SHOP_BUILDINGS = ['vn_tube_1', 'vn_tube_2', 'vn_tube_hanoi', 'vn_house_2f', 'vn_house_urban', 'vn_tube_4', 'vn_tube_5', 'vn_house_urban2', 'vn_tube_6', '2Story_Sign'];
-/** Nhà cao tầng lấp lõi khối phố (skyline) */
-export const INFILL_BUILDINGS = ['3Story_Balcony', '4Story', '4Story_Center', '4Story_Wide_2Doors', '6Story_Stack', '3Story_Small', '2Story_Balcony', '2Story_Wide', 'vn_tube_3', 'vn_tube_2', 'vn_tube_3', 'vn_house_urban3', 'vn_house_urban3'];
-/** Nhà dọc mặt đường các khối phố: nhà ống Việt chiếm ~2/3, xen nhà Quaternius cho đa dạng */
-export const STREET_BUILDINGS = [...Object.keys(VN_HOUSES), ...Object.keys(VN_HOUSES), ...Object.keys(BUILDINGS).filter((k) => !(k in VN_HOUSES))];
+export const SHOP_BUILDINGS = ['vn_tube_1', 'vn_tube_2', 'vn_tube_hanoi', 'vn_house_2f', 'vn_house_urban', 'vn_tube_4', 'vn_tube_5', 'vn_house_urban2', 'vn_tube_6'];
+/** Mọi nhà phố Việt, dùng lấp kín các khối phố (kéo giãn vừa khít, xem world/CityFill) */
+export const STREET_BUILDINGS = Object.keys(VN_HOUSES);
 
 /** Đồ vỉa hè Việt Nam (CC-BY): [rộng, cao, sâu] m, mặt trước +Z */
 export const VN_PROPS = {
@@ -94,8 +85,8 @@ export const STREET_LIFE = {
 export const SIDEWALK_BIKES = { facadeChance: 0.55, spillChance: 0.5 };
 /** Cột điện bê tông & dây điện chằng chịt */
 export const POLE = { seed: 424242, height: 8.5, spacing: 22, inset: 0.35, walk: 3, wireRadius: 0.012 };
-/** Hư hỏng mặt đường: ổ gà / miếng vá / nắp cống trên mỗi 100m đường */
-export const ROAD_DAMAGE = { seed: 777, potholesPer100m: 10, patchesPer100m: 6, manholesPer100m: 2 };
+/** Hư hỏng mặt đường: miếng vá / nắp cống trên mỗi 100m đường */
+export const ROAD_DAMAGE = { seed: 777, patchesPer100m: 6, manholesPer100m: 2 };
 /** Biển hiệu các cửa hiệu hàng xóm */
 /** Dòng phụ & kiểu biển cho từng loại tiệm (bg/ink/accent là màu CSS) — xem world/SignFactory */
 export const SHOP_SIGNS: Record<string, { sub: string; style: 'lightbox' | 'enamel' | 'paint' | 'alu'; bg: string; ink: string; accent: string }> = {
@@ -111,8 +102,6 @@ export const SHOP_SIGNS: Record<string, { sub: string; style: 'lightbox' | 'enam
   'GIẶT ỦI': { sub: 'Giặt sấy · Ủi · Lấy liền', style: 'alu', bg: '#1a5276', ink: '#ffffff', accent: '#9bd3f0' },
 };
 export const SHOP_NAMES = ['TIỆM BÁNH', 'CÀ PHÊ', 'NHÀ THUỐC', 'PHỞ 24H', 'TIỆM HOA', 'SỬA XE', 'TẠP HOÁ', 'TIỆM TÓC', 'TRÀ SỮA', 'GIẶT ỦI'];
-/** Bảng màu (atlas 32×32) dùng chung cho mọi nhà — phối ngẫu nhiên để phố nhiều màu. */
-export const BUILDING_TEXTURES = ['Blue', 'Dark', 'DarkBlue', 'Green', 'Grey', 'Light', 'Light2', 'Red', 'Yellow'];
 export const TREES = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5', 'BirchTree_1'];
 export const BUSHES = ['Bush_1', 'Bush_2'];
 /** Ô tô đỗ trong bãi & chạy ngoài phố: xe cổ (Volga, Willys, Cadillac…) — cùng bộ với xe người chơi có thể mua */

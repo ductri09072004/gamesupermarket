@@ -1,3 +1,4 @@
+import { perf } from '../engine/Perf';
 import * as THREE from 'three';
 import { DOOR_WIDTH, DOOR_X, EYE_HEIGHT, PLAYER_RADIUS, STORE_FRONT_Z, WALL_THICKNESS } from '../config/constants';
 import { vehicleDef } from '../config/vehicles';
@@ -7,7 +8,6 @@ import { resolveCircle, type AABB } from '../world/Colliders';
 import { DriveHud } from '../ui/driveHud';
 import type { World } from './World';
 import { DriveImpact } from './DriveImpact';
-import { PotholeBumps } from './PotholeBumps';
 import { WadeDrive } from './WadeDrive';
 
 const SUBSTEPS = 3;
@@ -27,13 +27,11 @@ export class Driving {
    */
   private readonly lamp = new THREE.SpotLight(0xfff1c4, 0, 38, 0.55, 0.5, 1.2);
   private impact: DriveImpact;
-  private bumps: PotholeBumps;
   private wade: WadeDrive;
   private shakeV = new THREE.Vector3();
 
   constructor(private w: World) {
     this.impact = new DriveImpact(w);
-    this.bumps = new PotholeBumps(w);
     this.wade = new WadeDrive(w);
     w.scene.add(this.lamp, this.lamp.target);
   }
@@ -52,6 +50,7 @@ export class Driving {
       w.toast('Chất thùng lên xe (click) hoặc thả xuống (Q) trước khi lái', 'error');
       return;
     }
+    perf.mark('lên xe');
     this.uid = uid;
     Object.assign(this.state, { x: v.x, z: v.z, yaw: v.yaw, speed: 0, steer: 0 });
     w.mode = 'drive';
@@ -79,6 +78,7 @@ export class Driving {
       w.toast('Dừng xe hẳn rồi mới xuống (S / Space)', 'error');
       return;
     }
+    perf.mark('xuống xe');
     const def = vehicleDef(v);
     // bước xuống phía bên trái xe; bị chắn thì thử bên phải / phía sau
     const f = forward(v.yaw);
@@ -175,7 +175,6 @@ export class Driving {
       }
     }
     this.impact.hitTraffic(this.state, def);
-    this.impact.jolt(this.bumps.check(this.state, def, v));
     this.wade.apply(this.state, def, dt);
     v.x = this.state.x;
     v.z = this.state.z;

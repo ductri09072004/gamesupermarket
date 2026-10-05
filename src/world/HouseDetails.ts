@@ -74,15 +74,15 @@ export function houseDetails(placements: Placement[]): { props: Placement[]; tan
   const props: Placement[] = [];
   const tanks: Tank[] = [];
   const toWorld = (p: Placement, lx: number, lz: number) => ({
-    x: p.x + Math.cos(p.rot) * lx + Math.sin(p.rot) * lz,
-    z: p.z - Math.sin(p.rot) * lx + Math.cos(p.rot) * lz,
+    x: p.x + Math.cos(p.rot) * lx * (p.sx ?? 1) + Math.sin(p.rot) * lz * (p.sz ?? 1),
+    z: p.z - Math.sin(p.rot) * lx * (p.sx ?? 1) + Math.cos(p.rot) * lz * (p.sz ?? 1),
   });
   let lantern = 0;
   for (const p of placements) {
     if (p.kind !== 'building' || !isVnHouse(p.model)) continue;
     const s = shapeOf(p.model);
     if (!s) continue;
-    const [w, h, d] = BUILDINGS[p.model];
+    const [w, h, d] = BUILDINGS[p.model]; // toạ độ gốc; toWorld tự nhân hệ số co giãn
     // cục nóng điều hoà: tầng 2 trở lên, sát mép trái/phải mặt tiền
     for (let y = 3.6; y < h - 1.1; y += 3.2) {
       if (rng() > 0.6) continue;

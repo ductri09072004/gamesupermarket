@@ -47,24 +47,6 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `textures/pavement/hexagonal_concrete_paving_1k_rough.jpg` | Poly Haven — https://polyhaven.com/a/hexagonal_concrete_paving | CC0 |
 | `textures/grass/leafy_grass_1k_diff.jpg` | Poly Haven — https://polyhaven.com/a/leafy_grass | CC0 |
 | `textures/grass/leafy_grass_1k_nor_gl.jpg` | Poly Haven — https://polyhaven.com/a/leafy_grass | CC0 |
-| `models/city/1Story.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/1Story_GableRoof.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/1Story_Sign.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story_2.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story_Balcony.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story_Columns.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story_Sign.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story_Slim.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story_Wide.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/2Story_Wide_2Doors.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/3Story_Balcony.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/3Story_Slim.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/3Story_Small.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/4Story.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/4Story_Center.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/4Story_Wide_2Doors.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
-| `models/city/6Story_Stack.glb` | Quaternius — Ultimate Textured Building Pack (https://quaternius.com/packs/ultimatetexturedbuildings.html), chuyển FBX→GLB | CC0 |
 | `models/city/BirchTree_1.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
 | `models/city/Bush_1.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
 | `models/city/Bush_2.glb` | Quaternius — Ultimate Nature Pack (https://quaternius.com/packs/ultimatenature.html), chuyển FBX→GLB | CC0 |
@@ -83,7 +65,6 @@ Model, nhãn sản phẩm và âm thanh được **sinh bằng code**. HDRI môi
 | `models/city/Taxi.glb` | Quaternius — Cars Pack (https://quaternius.com/packs/cars.html), chuyển FBX→GLB | CC0 |
 | `models/city/TrafficCone.glb` | Quaternius — Public Transport Pack (https://quaternius.com/packs/publictransport.html), chuyển FBX→GLB | CC0 |
 | `models/city/TrafficLight.glb` | Quaternius — Public Transport Pack (https://quaternius.com/packs/publictransport.html), chuyển FBX→GLB | CC0 |
-| `textures/buildings/*.png` | Quaternius — Ultimate Textured Building Pack | CC0 |
 | `models/furniture/rack.glb` | Poly Haven — https://polyhaven.com/a/worn_metal_rack (ghép 2 kệ cạnh nhau, texture WebP 1K) | CC0 |
 | `textures/powder_coat/metal028_512_nor_gl.jpg` | ambientCG — https://ambientcg.com/view?id=Metal028 (thu về 512px) | CC0 |
 | `textures/powder_coat/metal028_512_rough.jpg` | ambientCG — https://ambientcg.com/view?id=Metal028 (thu về 512px) | CC0 |

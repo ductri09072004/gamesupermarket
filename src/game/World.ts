@@ -241,7 +241,7 @@ export class World implements GameCtx {
     this.effects.update(dt);
     this.sign.update(dt);
     const people = [{ x: this.player.x, z: this.player.z }, ...this.customers.customers.map((c) => ({ x: c.x, z: c.z })), ...this.staff.all().map((n) => ({ x: n.x, z: n.z }))];
-    this.store.update(dt, people);
+    this.store.update(dt, people, this.s.data.storeOpen && this.s.time.isOpenHours());
     this.lights.update(dt);
     this.weather.update(dt);
     applyTimeOfDay(this, s.time.hour);
