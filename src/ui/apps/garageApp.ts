@@ -2,11 +2,12 @@ import { getVariant, variantsOf } from '../../config/fleet';
 import { VEHICLES, vehicleDef } from '../../config/vehicles';
 import type { AppContext } from '../computer';
 import { h, money } from '../dom';
+import { vehicleImg } from '../productThumb';
 
 /** Kiểu xe đang chọn để mua theo loại xe (giữ khi vẽ lại giao diện) */
 const picked = new Map<string, string>();
 
-/** Garage: mua xe máy / ô tô / bán tải (chọn kiểu xe cổ); gọi xe đang kẹt về bãi đỗ cạnh cửa hàng. */
+/** Garage: mua xe máy / ô tô / bán tải (chọn kiểu xe cổ); gọi xe đang kẹt về chỗ đỗ trước cửa hàng. */
 export function renderGarage(body: HTMLElement, ctx: AppContext): void {
   const { s } = ctx;
   const cards = VEHICLES.map((base) => {
@@ -25,7 +26,7 @@ export function renderGarage(body: HTMLElement, ctx: AppContext): void {
       : null;
     const action = owned
       ? h('button', {
-        class: 'btn block', text: '📍 Gọi về bãi đỗ',
+        class: 'btn block', text: '📍 Gọi về trước cửa hàng',
         onClick: () => { s.bus.emit('vehicle:recall', { uid: owned.uid }); ctx.rerender(); },
       })
       : h('button', {
@@ -34,7 +35,7 @@ export function renderGarage(body: HTMLElement, ctx: AppContext): void {
         onClick: () => { s.bus.emit('vehicle:buy', { type: base.id, variant: kind?.id }); s.bus.emit('sound', { name: 'coin' }); ctx.rerender(); },
       });
     return h('div', { class: `product-card ${owned ? 'in-cart' : ''}` }, [
-      h('div', { class: 'swatch big', text: base.icon, style: { background: '#e8eef5' } }),
+      h('div', { class: 'pc-photo' }, [vehicleImg(base.id, kind?.id, 110, base.icon)]),
       h('div', { class: 'pc-name', text: def.name }),
       chips,
       h('div', { class: 'muted small', text: def.description }),

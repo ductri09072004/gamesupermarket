@@ -143,6 +143,16 @@ export interface Settings {
   volAmbient: number;
 }
 
+/** Khoản vay ngân hàng: lãi đơn theo ngày, trả cả gốc + lãi khi đáo hạn (hoặc tất toán sớm). */
+export interface LoanData {
+  id: string;
+  principal: number;
+  dailyRate: number;
+  termDays: number;
+  startDay: number;
+  dueDay: number;
+}
+
 export interface SaveData {
   version: number;
   seed: number;
@@ -168,6 +178,8 @@ export interface SaveData {
   staff: StaffData[];
   transactions: Transaction[];
   debtDays: number;
+  /** Các khoản vay còn nợ */
+  loans: LoanData[];
   stats: DayStats;
   settings: Settings;
   tutorial: Record<string, boolean>;
@@ -241,6 +253,7 @@ export function createNewState(seed = Date.now() % 1_000_000): SaveData {
     staff: [],
     transactions: [],
     debtDays: 0,
+    loans: [],
     stats: emptyStats(START_REPUTATION),
     settings: {
       muted: false, music: true, gameOverEnabled: true, cameraFollow: true, quality: 'lite', fov: 70, sensitivity: 1,

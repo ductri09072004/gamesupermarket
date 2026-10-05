@@ -14,6 +14,9 @@ export const BOX_PHYSICS = {
   staticHeight: 2.6,
   /** Tốc độ ném khi thả thùng (m/s) */
   throwSpeed: 1.2,
+  /** Quăng thùng (phím R): tốc độ ngang & đứng (m/s) */
+  hurlSpeed: 6.5,
+  hurlLift: 2.2,
   /** Người chơi tì vào đẩy thùng: lực tối đa (N), đẩy tới tối đa tốc độ này (m/s) */
   pushForce: 95,
   pushSpeed: 1.3,

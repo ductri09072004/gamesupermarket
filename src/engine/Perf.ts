@@ -104,7 +104,6 @@ export class PerfRecorder {
     this.offs = [
       bus.on('store:toggled', ({ open }) => this.mark(open ? 'mở cửa hàng' : 'đóng cửa hàng')),
       bus.on('ui:modal', ({ name, open }) => this.mark(`${open ? 'mở' : 'đóng'} ${name}`)),
-      bus.on('build:mode', ({ active }) => this.mark(active ? 'vào chế độ xây dựng' : 'thoát xây dựng')),
       bus.on('checkout:mode', ({ active }) => this.mark(active ? 'vào quầy thu ngân' : 'rời quầy')),
       bus.on('vehicle:buy', ({ type }) => this.mark(`mua xe ${type}`)),
       bus.on('order:arrived', () => this.mark('hàng tới')),

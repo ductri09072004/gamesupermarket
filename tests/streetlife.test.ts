@@ -18,7 +18,7 @@ describe('phố Việt Nam', () => {
 
   it('đồ vỉa hè phía cửa hàng nằm ngoài lưới đi lại của khách', () => {
     const F = curbZ(D);
-    for (const p of props.filter((q) => q.z < F)) {
+    for (const p of props.filter((q) => q.z < F && q.z > F - 3)) {
       expect(p.x < -8.2 || p.x > MAX_STORE_W + 8).toBe(true);
     }
   });

@@ -89,12 +89,16 @@ export class Traffic {
   /** Buýt thả khách: vị trí cửa xe, số người */
   onPassengers: (x: number, z: number, n: number) => void = () => {};
 
+  /** Mép đường chính phía cửa hàng (z) */
+  private curbZ = Infinity;
+
   reset(L: CityLayout): void {
+    this.curbZ = L.roads[1].z0;
     for (const c of this.cars) c.obj.removeFromParent();
     this.cars = [];
-    const blocks = ONE_WAY_BLOCKS.map((i) => L.blocks[i]).filter(Boolean);
-    this.routes = carLoops(blocks);
-    this.motoRoutes = carLoops(blocks, MOTO_TRAFFIC.lane, MOTO_TRAFFIC.cornerR);
+    const centers = ONE_WAY_BLOCKS.map((i) => L.loopCenters[i]).filter(Boolean);
+    this.routes = carLoops(centers);
+    this.motoRoutes = carLoops(centers, MOTO_TRAFFIC.lane, MOTO_TRAFFIC.cornerR);
     this.service.reset(this.routes, L.busStop.bay);
     // vào game đã có sẵn một nửa số xe cho phố khỏi vắng
     const k = activeQuality().traffic;
@@ -195,7 +199,8 @@ export class Traffic {
         s.state = 'dwell';
         s.t = BUS.dwellS;
         this.onSound('airBrake', c.x, c.z);
-        const door = { x: c.x + c.dx * DOOR.fwd - c.dz * DOOR.side, z: c.z + c.dz * DOOR.fwd + c.dx * DOOR.side };
+        // đường chính rộng 1,5 làn: buýt chạy giữa làn, hành khách bước xuống sát mép vỉa hè phía cửa hàng
+        const door = { x: c.x + c.dx * DOOR.fwd - c.dz * DOOR.side, z: Math.min(c.z + c.dz * DOOR.fwd + c.dx * DOOR.side, this.curbZ - 0.2) };
         this.onPassengers(door.x, door.z, busPassengers(this.hour, this.rng));
       }
     } else if ((s.t -= dt) <= 0) {

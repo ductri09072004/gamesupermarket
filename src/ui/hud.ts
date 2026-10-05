@@ -1,5 +1,5 @@
 import { formatVnd } from '../core/Random';
-import { CLOSE_MINUTE, DEV_MONEY_BONUS, FAST_SPEED, MAX_REPUTATION, OPEN_MINUTE, VND_PER_UNIT } from '../config/constants';
+import { CLOSE_MINUTE, DEV_MONEY_BONUS, MAX_REPUTATION, OPEN_MINUTE, VND_PER_UNIT } from '../config/constants';
 import type { Services } from '../core/Services';
 import { xpNeeded } from '../systems/ProgressionSystem';
 import { formatClock } from '../systems/TimeSystem';
@@ -12,8 +12,8 @@ export interface HudActions {
 }
 
 /**
- * HUD: một bảng trạng thái bên trái (tiền, ngày + giờ + trạng thái cửa hàng, cấp + danh tiếng) và hai nút bên phải
- * (tua nhanh 3×, menu). Âm thanh, lưu, xây dựng nằm trong menu để màn hình không bị rối.
+ * HUD: một bảng trạng thái bên trái (tiền, ngày + giờ + trạng thái cửa hàng, cấp + danh tiếng); góc phải là bản đồ nhỏ
+ * (không còn nút trên màn hình: Esc = menu, T = tua nhanh). Âm thanh, lưu, xây dựng nằm trong menu.
  */
 export class Hud {
   private root: HTMLElement;
@@ -29,8 +29,6 @@ export class Hud {
   private xpFill = h('i');
   private xpWrap: HTMLElement;
   private stars = h('span', { class: 'hud-stars' });
-  private custEl = h('span', { class: 'hud-cust-n', text: '0' });
-  private fastBtn: HTMLButtonElement;
   private endBtn: HTMLButtonElement;
   private shownMoney: number;
   private raf = 0;
@@ -42,11 +40,8 @@ export class Hud {
     this.moneyEl = h('div', { class: 'hud-money' }, [this.intEl, this.decEl]);
     this.setMoney(d.money);
     this.xpWrap = h('div', { class: 'hud-xp' }, [this.xpFill]);
-    this.fastBtn = h('button', { class: 'hud-btn hud-fast', html: `${icon('fast', 13)}<b>${FAST_SPEED}×</b>`, title: `Tua nhanh ${FAST_SPEED}× (T)`, onClick: () => s.time.toggleFast() });
-    const menuBtn = h('button', { class: 'hud-btn hud-menu', html: icon('menu', 16), title: 'Menu (Esc)', onClick: actions.onMenu });
-    this.endBtn = h('button', { class: 'hud-endday', html: `${icon('moon', 15)}<span>Kết thúc ngày</span><kbd>N</kbd>`, onClick: actions.onEndDay });
+    this.endBtn = h('button', { class: 'hud-endday', html: `${icon('moon', 15)}<span>Kết thúc ngày</span><kbd>Enter</kbd>`, onClick: actions.onEndDay });
     this.endBtn.style.display = 'none';
-    const cust = h('span', { class: 'hud-chip', title: 'Khách trong cửa hàng', html: icon('user', 12) }, [this.custEl]);
     this.root = h('div', { class: 'hud' }, [
       h('section', { class: 'hud-panel hud-main' }, [
         this.moneyEl,
@@ -59,7 +54,6 @@ export class Hud {
         ]),
       ]),
       h('div', { class: 'hud-side' }, [
-        h('div', { class: 'hud-actions' }, [cust, this.fastBtn, menuBtn]),
         d.devMode ? h('button', { class: 'hud-dev', text: 'DEV  +100 triệu đ', onClick: () => s.economy.addMoney(DEV_MONEY_BONUS, 'Developer') }) : null,
       ]),
       this.endBtn,
@@ -75,7 +69,6 @@ export class Hud {
       bus.on('reputation:changed', () => this.renderStars()),
       bus.on('store:toggled', () => this.renderTime()),
       bus.on('day:canEnd', ({ canEnd }) => { this.endBtn.style.display = canEnd ? 'flex' : 'none'; }),
-      bus.on('customer:count', ({ count }) => { this.custEl.textContent = String(count); }),
       bus.on('weather:changed', ({ icon: ic, rain, flood }) => {
         this.weatherEl.textContent = ic;
         this.weatherEl.title = flood > 0.03 ? 'Đường ngập' : rain > 0.05 ? 'Trời mưa' : 'Thời tiết';
@@ -127,11 +120,7 @@ export class Hud {
   }
 
   private renderSpeed(): void {
-    const t = this.s.time;
-    this.fastBtn.classList.toggle('active', t.isFast);
-    this.fastBtn.disabled = t.isSpeedLocked;
-    this.fastBtn.title = t.isSpeedLocked ? 'Đang thu ngân — tốc độ thường' : `Tua nhanh ${FAST_SPEED}× (T)`;
-    this.clockEl.classList.toggle('paused', t.paused);
+    this.clockEl.classList.toggle('paused', this.s.time.paused);
   }
 
   private renderLevel(): void {

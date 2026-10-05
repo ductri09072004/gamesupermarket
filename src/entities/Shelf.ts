@@ -15,7 +15,7 @@ import { buildFurnitureModel } from './FurnitureModels';
 import { buildSelfCheckout, type KioskParts } from './SelfCheckoutModel';
 import { buildAltar, type AltarParts } from './AltarModel';
 import { buildGate, type GateParts } from './GateModel';
-import { drawLcd } from '../game/CheckoutProps';
+import { BLANK_RECEIPT, drawReceipt } from '../game/CheckoutProps';
 import { prop } from '../engine/Props';
 
 export interface PriceInfo {
@@ -51,8 +51,7 @@ export class FurnitureView {
     if (def.kind === 'checkout') {
       this.counter = buildCounter(def);
       this.model = this.counter.group;
-      drawLcd(this.counter.lcd.canvas, ['TẠP HOÁ ĐẦU HẺM', 'Xin chào quý khách'], 0);
-      this.counter.lcd.tex.needsUpdate = true;
+      drawReceipt(this.counter.receipt, BLANK_RECEIPT);
     } else if (def.kind === 'selfcheckout') {
       this.kiosk = buildSelfCheckout(def);
       this.model = this.kiosk.group;

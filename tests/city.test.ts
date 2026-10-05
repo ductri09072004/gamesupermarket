@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILDINGS, ROAD_WIDTH, WALK_WIDTH } from '../src/config/city';
+import { BUILDINGS, MAIN_ROAD_WIDTH, WALK_WIDTH } from '../src/config/city';
 import { MAX_STORE_H, MAX_STORE_W, WAREHOUSE_LOT } from '../src/config/constants';
 import { cityLayout, curbZ, houseRect, rectsOverlap, type Rect } from '../src/world/CityLayout';
 
@@ -20,7 +20,7 @@ describe('Bố cục thành phố', () => {
       expect(near.filter((p) => p.x < 0).every((p) => p.x < WAREHOUSE_LOT.x0)).toBe(true);
       for (const p of near) expect(Math.abs(p.z + (BUILDINGS[p.model][2] * (p.sz ?? 1)) / 2 - (D + 0.2))).toBeLessThan(0.01);
       expect(far.length).toBeGreaterThan(5);
-      const farFacade = L.hz[1] + ROAD_WIDTH / 2 + WALK_WIDTH;
+      const farFacade = L.hz[1] + MAIN_ROAD_WIDTH / 2 + WALK_WIDTH;
       for (const p of far) expect(Math.abs(p.z - (BUILDINGS[p.model][2] * (p.sz ?? 1)) / 2 - farFacade)).toBeLessThan(0.01);
     });
 

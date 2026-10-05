@@ -4,6 +4,7 @@ import type { Services } from '../core/Services';
 import { round2 } from '../core/Random';
 import { buyProbability, clampPrice, isLoss, profitMargin } from '../systems/PricingSystem';
 import { h, money } from './dom';
+import { productImg } from './productThumb';
 
 /** Bộ chỉnh giá 1 sản phẩm: giá vốn, thị trường, ô nhập, nút nhanh, % lợi nhuận, cảnh báo lỗ. */
 export function priceEditor(s: Services, productId: string, compact = false): HTMLElement {
@@ -45,7 +46,7 @@ export function priceEditor(s: Services, productId: string, compact = false): HT
   const cur = () => s.state.priceOf(productId);
   row.append(
     h('div', { class: 'price-head' }, [
-      h('span', { class: 'swatch', text: p.icon, style: { background: p.color } }),
+      productImg(p.id, 32),
       h('div', {}, [
         h('b', { text: p.name }),
         h('div', { class: 'muted', text: `Vốn ${money(p.costPerUnit)} · Thị trường ${money(market)}` }),

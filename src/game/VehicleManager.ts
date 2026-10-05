@@ -46,7 +46,7 @@ export class VehicleManager {
     return this.views.get(uid);
   }
 
-  /** Chỗ đỗ trống đầu tiên trong bãi cạnh cửa hàng (3 chỗ dành cho xe người chơi). */
+  /** Chỗ đỗ trống đầu tiên dọc vỉa hè trước cửa hàng (3 chỗ). */
   freeSpot(ignore?: string): Spot {
     const spots = this.spots();
     const own = spots.slice(0, 3);

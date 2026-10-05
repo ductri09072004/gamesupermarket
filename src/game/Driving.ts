@@ -47,7 +47,7 @@ export class Driving {
     const v = w.s.vehicles.get(uid);
     if (!v || w.mode !== 'play') return;
     if (w.held.box) {
-      w.toast('Chất thùng lên xe (click) hoặc thả xuống (Q) trước khi lái', 'error');
+      w.toast('Chất thùng lên xe (click) hoặc đặt xuống (G) trước khi lái', 'error');
       return;
     }
     perf.mark('lên xe');
@@ -117,7 +117,7 @@ export class Driving {
   }
 
   onKey(e: KeyboardEvent): void {
-    if (e.code === 'KeyE' && !e.repeat) this.exit();
+    if (e.code === 'KeyF' && !e.repeat) this.exit();
   }
 
   /** Vật cản cho xe: tường, nhà, cây, xe khác + chắn cửa kính cửa hàng. */

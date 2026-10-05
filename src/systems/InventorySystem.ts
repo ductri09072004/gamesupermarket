@@ -55,7 +55,7 @@ export function canStockSlot(furn: FurnitureData, slot: number, productId: strin
 
 /** Xếp 1 món từ thùng lên kệ (slot chỉ định hoặc tự tìm). */
 export function stockOne(box: BoxData, furn: FurnitureData, slot?: number): Result {
-  if (!box.open) return { ok: false, reason: 'Thùng đang đóng — nhấn F để mở' };
+  if (!box.open) return { ok: false, reason: 'Thùng đang đóng — bấm chuột trái để mở' };
   if (box.qty <= 0) return { ok: false, reason: 'Thùng đã hết hàng' };
   const r = slot === undefined ? findStockSlot(furn, box.productId) : canStockSlot(furn, slot, box.productId);
   if (!r.ok) return r;
@@ -70,7 +70,7 @@ export function stockOne(box: BoxData, furn: FurnitureData, slot?: number): Resu
 export function takeBackOne(box: BoxData, furn: FurnitureData, slotIndex?: number): Result {
   const def = getFurniture(furn.type);
   if (def.kind !== 'display') return { ok: false, reason: 'Không thể lấy hàng từ đây' };
-  if (!box.open) return { ok: false, reason: 'Thùng đang đóng — nhấn F để mở' };
+  if (!box.open) return { ok: false, reason: 'Thùng đang đóng — bấm chuột trái để mở' };
   const ok = (i: number) => furn.slots[i]?.qty > 0 && (furn.slots[i].productId === box.productId || box.qty === 0);
   let idx = slotIndex !== undefined ? (ok(slotIndex) ? slotIndex : -1) : furn.slots.findIndex((s) => s.productId === box.productId && s.qty > 0);
   if (idx < 0 && slotIndex === undefined && box.qty === 0) idx = furn.slots.findIndex((s) => s.qty > 0);

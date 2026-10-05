@@ -18,6 +18,7 @@ export class DaySystem {
     economy.spend(ex.rent, 'Tiền thuê mặt bằng', true);
     economy.spend(ex.electricity, 'Tiền điện', true);
     if (ex.wages > 0) economy.spend(ex.wages, 'Lương nhân viên', true);
+    this.s.loans.settleDue();
     data.debtDays = nextDebtDays(data.money, data.debtDays);
     data.gameOver = isGameOver(data.debtDays, data.settings.gameOverEnabled);
     const report = buildReport(data, ex);

@@ -122,13 +122,6 @@ async function driveScenario(game: Game): Promise<void> {
     await sleep(1500);
   });
 
-  await run.phase('4. Chế độ xây dựng', async () => {
-    w.build.toggle();
-    await sleep(2500);
-    w.build.toggle();
-    await sleep(1000);
-  });
-
   const route = (w.life.traffic as unknown as { routes: Route[] }).routes[0];
   let uid = '';
   await run.phase('5. Mua xe', async () => {

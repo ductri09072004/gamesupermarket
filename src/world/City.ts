@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ROAD_WIDTH, WALK_WIDTH } from '../config/city';
+import { MAIN_PARK_STRIP, WALK_WIDTH } from '../config/city';
 import { activeQuality } from '../config/quality';
 import type { AABB } from './Colliders';
 import { buildCityInstances, type Scheduled } from './CityInstances';
@@ -11,6 +11,8 @@ import { cityLayout, type CityLayout, type Rect } from './CityLayout';
 import { buildDepot } from './Depot';
 import { CityWater } from './CityWater';
 import { buildBusStop } from './BusStop';
+import { alleyFloorMaterial, buildAlleys } from './AlleyView';
+import { buildStreetSigns } from './StreetSignView';
 import { applyPbr, pbrSet } from './Materials';
 import { buildShopSigns } from './ShopSigns';
 import { vendorsPackUp } from '../systems/WeatherSystem';
@@ -91,7 +93,9 @@ export class City {
     this.scheduled = inst.scheduled;
     buildTanks(extra.tanks, this.group);
     buildRoadDamage(L.damage, this.group);
+    this.lampMats.push(...buildAlleys(L.alleys, L.alleyDecor, alleyFloorMaterial(), this.group));
     buildWires(L.wiring, this.group);
+    buildStreetSigns(L.signs, this.group);
     this.signMats = [...buildShopSigns(shown, this.group), buildBusStop(L.busStop, this.group)];
     this.kiosk = buildDepot(L, this.group);
     // đèn đường thật (PointLight) chỉ cho vài cột gần cửa hàng — còn lại chỉ phát sáng (emissive)
@@ -114,8 +118,11 @@ export class City {
     const lines: THREE.Matrix4[] = [];
     for (let i = 0; i <= 6; i++) lines.push(new THREE.Matrix4().makeScale(0.12, 1, 5.4).setPosition(L.lot.x0 + 0.3 + i * 3.4, -0.02, L.lot.z0 + 7));
     const road = L.roads[1];
-    const stripes = Math.floor((ROAD_WIDTH - 0.6) / 0.85) + 1;
-    for (let i = 0; i < stripes; i++) lines.push(new THREE.Matrix4().makeScale(3.4, 1, 0.45).setPosition(-5, -0.02, road.z0 + (ROAD_WIDTH - (stripes - 1) * 0.85) / 2 + i * 0.85));
+    const rw = road.z1 - road.z0;
+    const stripes = Math.floor((rw - 0.6) / 0.85) + 1;
+    for (let i = 0; i < stripes; i++) lines.push(new THREE.Matrix4().makeScale(3.4, 1, 0.45).setPosition(-5, -0.02, road.z0 + (rw - (stripes - 1) * 0.85) / 2 + i * 0.85));
+    // vạch đứt ngăn dải đỗ xe ven vỉa hè với làn xe chạy (bỏ chỗ vạch qua đường)
+    for (let x = -30; x < 110; x += 3) if (Math.abs(x + 1 - -5) > 3) lines.push(new THREE.Matrix4().makeScale(1.4, 1, 0.12).setPosition(x + 0.7, -0.02, road.z0 + MAIN_PARK_STRIP));
     const li = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), white, lines.length);
     lines.forEach((mm, i) => li.setMatrixAt(i, mm));
     this.group.add(li);

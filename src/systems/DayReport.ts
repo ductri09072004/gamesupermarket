@@ -2,12 +2,17 @@ import { DEBT_DAYS_GAME_OVER, ELECTRICITY_BASE, RENT_PER_TILE, WAREHOUSE } from 
 import { getFurniture } from '../config/furniture';
 import type { SaveData } from '../core/GameState';
 import { round2 } from '../core/Random';
+import { dueAmount, dueLoans } from './LoanSystem';
 import { totalWages } from './StaffSystem';
 
 export interface Expenses {
   rent: number;
   electricity: number;
   wages: number;
+  /** Tiền lãi các khoản vay đến hạn hôm nay (tính vào chi phí) */
+  interest: number;
+  /** Gốc các khoản vay đến hạn hôm nay (trả nợ, không phải chi phí) */
+  loanPrincipal: number;
 }
 
 export interface DayReport {
@@ -37,7 +42,10 @@ export function computeExpenses(d: SaveData): Expenses {
   const warehouseTiles = d.warehouseUnlocked ? WAREHOUSE.w * WAREHOUSE.d : 0;
   const rent = round2((d.storeW * d.storeH + warehouseTiles) * RENT_PER_TILE);
   const electricity = round2(ELECTRICITY_BASE + d.furniture.reduce((a, f) => a + getFurniture(f.type).electricity, 0));
-  return { rent, electricity, wages: round2(totalWages(d.staff)) };
+  const due = dueLoans(d.loans ?? [], d.day);
+  const loanPrincipal = round2(due.reduce((a, l) => a + l.principal, 0));
+  const interest = round2(due.reduce((a, l) => a + dueAmount(l) - l.principal, 0));
+  return { rent, electricity, wages: round2(totalWages(d.staff)), interest, loanPrincipal };
 }
 
 export function nextDebtDays(money: number, debtDays: number): number {
@@ -51,7 +59,7 @@ export function isGameOver(debtDays: number, enabled: boolean): boolean {
 /** Tạo báo cáo (gọi sau khi đã trừ chi phí). */
 export function buildReport(d: SaveData, expenses: Expenses): DayReport {
   const s = d.stats;
-  const totalExpenses = round2(expenses.rent + expenses.electricity + expenses.wages);
+  const totalExpenses = round2(expenses.rent + expenses.electricity + expenses.wages + expenses.interest);
   const grossProfit = round2(s.revenue - s.cogs);
   return {
     day: d.day,

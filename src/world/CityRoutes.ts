@@ -1,4 +1,3 @@
-import { ROAD_WIDTH } from '../config/city';
 import type { Rect } from './CityLayout';
 
 /** Tuyến khép kín (xe chạy / người đi bộ): polyline đã bo góc, kèm độ dài tích luỹ để tra vị trí theo quãng đường. */
@@ -86,11 +85,8 @@ function corners(r: Rect, reverse: boolean) {
  * Vòng xe chạy quanh mỗi khối phố theo tim đường, lệch sang làn phải.
  * Mọi vòng cùng chiều → trên đường chung giữa 2 khối, xe 2 bên đi ngược chiều ở 2 làn khác nhau.
  */
-export function carLoops(blocks: Rect[], laneOffset = LANE_OFFSET, radius = 5): Route[] {
-  const h = ROAD_WIDTH / 2;
-  return blocks.map((b) => {
-    // đi theo chiều (x0,z0)→(x1,z0)…: bên phải hướng đi là phía trong khối → thu vào LANE_OFFSET từ tim đường
-    const center = { x0: b.x0 - h, x1: b.x1 + h, z0: b.z0 - h, z1: b.z1 + h };
+export function carLoops(centers: Rect[], laneOffset = LANE_OFFSET, radius = 5): Route[] {
+  return centers.map((center) => {
     const lane = { x0: center.x0 + laneOffset, x1: center.x1 - laneOffset, z0: center.z0 + laneOffset, z1: center.z1 - laneOffset };
     return roundedLoop(corners(lane, false), radius);
   });

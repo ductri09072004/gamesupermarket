@@ -46,7 +46,7 @@ export function showMainMenu(handlers: MenuHandlers, settings: Settings, onSetti
       h('button', { class: 'btn block big', text: 'Cài đặt', onClick: () => showSettings(settings, onSettings) }),
       installButton(),
       h('button', { class: 'btn ghost block', text: 'Chế độ developer', onClick: chooseSlot('dev') }),
-      h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / đặt hàng · <kbd>F</kbd> mở thùng · <kbd>Q</kbd> thả · <kbd>M</kbd> dời kệ · <kbd>B</kbd> xây dựng · <kbd>T</kbd> tua nhanh 3× · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
+      h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / mở thùng (giữ 2 giây: dời kệ) · <kbd>C</kbd> đóng · <kbd>G</kbd> đặt · <kbd>R</kbd> quăng thùng · <kbd>F</kbd> lên/xuống xe · <kbd>M</kbd> bản đồ · <kbd>Enter</kbd> kết thúc ngày · <kbd>T</kbd> tua nhanh 3× · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
     ]);
   };
   const render = () => root.replaceChildren(build());
@@ -60,7 +60,6 @@ export interface PauseHandlers {
   onEndDay?(): void;
   onResume(): void;
   onSave(): void;
-  onBuild(): void;
   onSettings(): void;
   onQuit(): void;
 }
@@ -75,7 +74,6 @@ export function showPauseMenu(h2: PauseHandlers): void {
   const body = h('div', { class: 'pause-menu' }, [
     h('button', { class: 'btn primary block big', text: 'Tiếp tục chơi', onClick: act(() => {}) }),
     h2.canEndDay ? h('button', { class: 'btn block big', text: 'Kết thúc ngày', onClick: act(() => h2.onEndDay?.(), false) }) : null,
-    h('button', { class: 'btn block big', html: `${icon('hammer', 16)}<span>Xây dựng</span><kbd>B</kbd>`, onClick: act(h2.onBuild, false) }),
     h('button', { class: 'btn block big', html: `${icon('save', 16)}<span>Lưu game</span>`, onClick: act(h2.onSave) }),
     h('button', { class: 'btn block big', html: `${icon('gear', 16)}<span>Cài đặt</span>`, onClick: act(h2.onSettings, false) }),
     h('button', { class: 'btn block big danger', html: `${icon('exit', 16)}<span>Về menu chính</span>`, onClick: act(h2.onQuit, false) }),

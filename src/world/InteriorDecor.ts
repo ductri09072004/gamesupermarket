@@ -89,7 +89,7 @@ export function counterProps(w: number, d: number, h: number): THREE.Group {
   const g = new THREE.Group();
   put(g, 'lucky_cat', -w / 2 + 0.25, h, d / 2 - 0.2, 0);
   put(g, 'candy_jar', -w / 2 + 0.6, h, d / 2 - 0.2, 0);
-  put(g, 'lottery', -w / 2 + 0.95, h, d / 2 - 0.22, 0.3);
+  put(g, 'lottery', -w / 2 + 0.78, h, d / 2 - 0.1, 0.3); // chừa chỗ giữa quầy cho tờ hoá đơn
   return g;
 }
 

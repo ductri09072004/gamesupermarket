@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FEEL } from '../config/feel';
 import { getFurniture } from '../config/furniture';
+import { BOX_PHYSICS } from '../config/physics';
 import type { BoxData } from '../core/GameState';
 import { boxDims } from '../config/boxes';
 import { BoxModel } from '../entities/Box';
@@ -77,11 +78,32 @@ export class Actions {
     c.sound('thud', new THREE.Vector3(x, 0.1, z));
   }
 
-  toggleOpen(uid?: string): void {
+  /** Quăng thùng đang cầm về phía trước (phím R): bay thẳng theo hướng nhìn rồi rơi, va chạm thật. */
+  throwBox(): void {
+    const c = this.c;
+    const b = this.heldBox;
+    if (!b) return;
+    const fwd = c.player.forward.clone().setY(0).normalize();
+    const from = new THREE.Vector3(c.player.x + fwd.x * 0.5, c.player.y + c.player.eye - 0.25, c.player.z + fwd.z * 0.5);
+    b.location = 'floor';
+    b.holderId = null;
+    b.pose = undefined;
+    b.gx = Math.round(from.x * 100) / 100;
+    b.gy = Math.round(from.z * 100) / 100;
+    c.held.hold(null);
+    c.player.carrying = false;
+    c.s.bus.emit('boxes:changed', {});
+    c.physics.launch(b.uid, from, fwd, BOX_PHYSICS.hurlSpeed, BOX_PHYSICS.hurlLift);
+    c.boxes.update(0);
+    c.sound('whoosh', from);
+  }
+
+  /** Mở / đóng thùng (thùng đang cầm, hoặc thùng `uid`). */
+  setOpen(open: boolean, uid?: string): void {
     const c = this.c;
     const b = uid ? c.s.state.box(uid) : this.heldBox;
-    if (!b) return;
-    b.open = !b.open;
+    if (!b || b.open === open) return;
+    b.open = open;
     c.held.refresh();
     c.s.bus.emit('boxes:changed', {});
     c.sound('paper');

@@ -18,8 +18,8 @@ Object.assign(BUILDINGS, VN_HOUSES);
 export const isVnHouse = (model: string): boolean => model in VN_HOUSES;
 /** Biến thể màu xe máy: bộ lọc canvas áp lên texture gốc (xanh ngọc) → đỏ, xanh dương, vàng, trắng, đen */
 export const SCOOTER_FILTERS = ['none', 'hue-rotate(200deg)', 'hue-rotate(80deg) saturate(1.3)', 'hue-rotate(-100deg)', 'saturate(0) brightness(1.35)', 'saturate(0) brightness(0.45)'];
-/** Màu sơn nhà phố Việt: trắng, vàng, xanh ngọc, hồng cam, xanh trời, be */
-export const VN_PASTELS = [0xffffff, 0xf7e3a1, 0xc9e7d3, 0xf5c9b8, 0xcfe0f2, 0xf1dcc0];
+/** Màu sơn nhà phố Việt đã phai: vàng kem, vàng đất, be, xanh bạc hà, hồng cam, xanh trời, nâu nhạt, trắng ngà */
+export const VN_PASTELS = [0xf7e3a1, 0xe8c98a, 0xf1dcc0, 0xd8e6cf, 0xf0c8b0, 0xcfdfe8, 0xe3d2b0, 0xffffff];
 
 /** Nhà mặt phố thấp tầng làm cửa hiệu cạnh siêu thị — toàn nhà ống Việt cho phố trước mặt người chơi */
 export const SHOP_BUILDINGS = ['vn_tube_1', 'vn_tube_2', 'vn_tube_hanoi', 'vn_house_2f', 'vn_house_urban', 'vn_tube_4', 'vn_tube_5', 'vn_house_urban2', 'vn_tube_6'];
@@ -110,9 +110,27 @@ export const PROPS = ['Streetlight_Single', 'Streetlight_Double', 'TrafficLight'
 
 /** Hẻm chật: mặt đường chỉ vừa 1 làn ô tô (~1.9m) + xe máy lách sát lề */
 export const ROAD_WIDTH = 4.6;
+/** Đường trước cửa hàng rộng 1,5 làn: 1 làn chạy xe (4.6m) + nửa làn ven vỉa hè (2.3m) để đỗ xe trước cửa */
+export const MAIN_ROAD_WIDTH = ROAD_WIDTH * 1.5;
+export const MAIN_PARK_STRIP = MAIN_ROAD_WIDTH - ROAD_WIDTH;
 export const WALK_WIDTH = 3;
 /** Khoảng cách đèn đường / cây dọc vỉa hè (m) */
 export const LAMP_SPACING = 26;
 export const TREE_SPACING = 13;
 /** Hạt giống cố định → thành phố giống nhau mỗi lần chơi */
 export const CITY_SEED = 20240917;
+
+/** Hẻm nhỏ giữa các nhà: vừa 2 xe máy đi ngược chiều (2 × 0.62m + chừa tay lái) */
+export const ALLEY = {
+  width: 1.5,
+  /** Khoảng cách tối thiểu giữa 2 hẻm song song (m) */
+  spacing: 18,
+  /** Hạt giống riêng — không làm xáo trộn bố cục nhà */
+  seed: 5151,
+} as const;
+
+/** Tên đường (biển tên đường ở ngã tư / đầu đường): ba đường ngang (đường chính trước cửa hàng là giữa) và bốn đường dọc */
+export const STREET_NAMES = {
+  horizontal: ['NGUYỄN TRÃI', 'LÊ LỢI', 'TRẦN PHÚ'],
+  vertical: ['HAI BÀ TRƯNG', 'PHAN CHU TRINH', 'LÝ THƯỜNG KIỆT', 'NGUYỄN HUỆ'],
+} as const;

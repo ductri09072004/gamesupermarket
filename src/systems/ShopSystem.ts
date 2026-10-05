@@ -40,6 +40,9 @@ export function expansionPacks(): ExpansionPack[] {
 
 type R = { ok: boolean; reason?: string };
 
+/** Giỏ nội thất: loại → số lượng */
+export type FurnitureCart = Record<string, number>;
+
 export class ShopSystem {
   readonly packs = expansionPacks();
 
@@ -76,16 +79,38 @@ export class ShopSystem {
     return { ok: true };
   }
 
+  /** Tổng tiền giỏ nội thất (loại → số lượng). */
+  furnitureCartTotal(cart: FurnitureCart): number {
+    let t = 0;
+    for (const [type, n] of Object.entries(cart)) t += getFurniture(type).price * n;
+    return Math.round(t * 100) / 100;
+  }
+
+  /** Mua cả giỏ nội thất: trả tiền một lần, xe tải chở các thùng tới trước cửa hàng. */
+  buyFurnitureCart(cart: FurnitureCart): R {
+    const items = Object.entries(cart).filter(([, n]) => n > 0);
+    if (items.length === 0) return { ok: false, reason: 'Giỏ hàng trống' };
+    for (const [type] of items) {
+      const def = getFurniture(type);
+      if (!def.buyable) return { ok: false, reason: 'Không bán' };
+      if (!this.state.hasLicense(def.licenseRequired)) return { ok: false, reason: 'Cần giấy phép' };
+      if (def.warehouseOnly && !this.state.data.warehouseUnlocked) return { ok: false, reason: 'Cần mở kho' };
+    }
+    const total = this.furnitureCartTotal(cart);
+    if (!this.economy.spend(total, 'Mua nội thất')) return { ok: false, reason: 'Không đủ tiền' };
+    const types = items.flatMap(([type, n]) => Array<string>(n).fill(type));
+    // có hệ thống giao hàng → xe tải chở thùng tới; không thì vào kho nội thất như cũ
+    if (this.orders) this.orders.orderFurniture(types);
+    else this.state.data.furnitureStock.push(...types);
+    this.bus.emit('furniture:changed', {});
+    return { ok: true };
+  }
+
+  /** Mua 1 món (giỏ một phần tử). */
   buyFurniture(type: string): R {
     const c = this.canBuyFurniture(type);
     if (!c.ok) return c;
-    const def = getFurniture(type);
-    this.economy.spend(def.price, `Mua ${def.name}`);
-    // có hệ thống giao hàng → xe tải chở thùng tới; không thì vào kho nội thất như cũ
-    if (this.orders) this.orders.orderFurniture(type);
-    else this.state.data.furnitureStock.push(type);
-    this.bus.emit('furniture:changed', {});
-    return { ok: true };
+    return this.buyFurnitureCart({ [type]: 1 });
   }
 
   sellFurniture(type: string): number {

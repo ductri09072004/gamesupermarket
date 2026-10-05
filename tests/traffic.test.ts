@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ROAD_WIDTH } from '../src/config/city';
+import { MAIN_PARK_STRIP, MAIN_ROAD_WIDTH } from '../src/config/city';
 import { BUS, MOTO_TRAFFIC, RUSH_HOURS, TRAFFIC, YIELD } from '../src/config/traffic';
 import { mulberry32 } from '../src/core/Random';
 import { Traffic } from '../src/game/Traffic';
 import { busDue, busPassengers, busTimes, trafficDensity, wearsRaincoat } from '../src/systems/TrafficSystem';
 import { rectsOverlap, cityLayout } from '../src/world/CityLayout';
-import { carLoops, LANE_OFFSET, onRoad, poseAt } from '../src/world/CityRoutes';
+import { carLoops, onRoad, poseAt } from '../src/world/CityRoutes';
 
 const far = { x: -500, z: -500 };
 
@@ -64,7 +64,7 @@ describe('lịch xe buýt', () => {
 });
 
 describe('trạm xe buýt trong bố cục', () => {
-  it('mái trạm nằm trên vỉa hè cửa hàng, không đè nhà / cây / cột / đèn nào; xe đỗ trên làn sát lề', () => {
+  it('mái trạm nằm trên vỉa hè cửa hàng, không đè nhà / cây / cột / đèn nào; xe đỗ giữa làn xe chạy', () => {
     const L = cityLayout(10, 12);
     const s = L.busStop.shelter;
     expect(onRoad(L.roads, (s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2)).toBe(false);
@@ -75,12 +75,12 @@ describe('trạm xe buýt trong bố cục', () => {
       if (c.tag === 'busstop') continue;
       expect(rectsOverlap({ x0: c.minX, x1: c.maxX, z0: c.minZ, z1: c.maxZ }, s), `va chạm với ${c.tag}`).toBe(false);
     }
-    expect(L.busStop.bay.z).toBeCloseTo(road.z0 + ROAD_WIDTH / 2 - LANE_OFFSET, 6);
+    expect(L.busStop.bay.z).toBeCloseTo(road.z0 + MAIN_ROAD_WIDTH / 2 + MAIN_PARK_STRIP / 2, 6);
   });
 
   it('xe buýt đỗ đúng làn ô tô của khối phố cạnh cửa hàng', () => {
     const { L } = makeTraffic();
-    const routes = carLoops(L.blocks);
+    const routes = carLoops(L.loopCenters);
     const best = Math.min(...routes.map((r) => {
       let d = Infinity;
       for (let t = 0; t < r.total; t += 0.5) {

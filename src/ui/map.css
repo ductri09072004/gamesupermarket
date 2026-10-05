@@ -1,0 +1,33 @@
+/* Bản đồ nhỏ ở góc phải + bản đồ lớn (phím M) — tông xanh tôn / kem của game */
+.minimap { position: absolute; right: 12px; top: 12px; width: 124px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; z-index: 8; }
+.minimap .mm-disc { position: relative; width: 124px; height: 124px; border-radius: 50%; overflow: hidden; border: 3px solid #3b2616; background: #2a2f26; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 2px #f3e6c8; }
+.minimap .mm-canvas { width: 100%; height: 100%; display: block; }
+.minimap .mm-n { position: absolute; left: 50%; top: 3px; transform: translateX(-50%); font: 800 10px "Be Vietnam Pro", Arial, sans-serif; color: #f3e6c8; text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; }
+.minimap .mm-info { max-width: 190px; padding: 2px 9px; border-radius: 10px; font: 700 10px "Be Vietnam Pro", Arial, sans-serif; color: #f3e6c8; background: rgba(29, 74, 63, 0.9); border: 1px solid rgba(243, 230, 200, 0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.minimap .mm-info.active { background: rgba(185, 120, 20, 0.94); color: #fff8e0; }
+.tutorial { top: 176px !important; }
+#ui-root:has(.hud-dev) .tutorial { top: 206px !important; }
+.hud-dev { margin-top: 150px; }
+.tutorial .tut-step { margin: 6px 0 2px; font-weight: 700; font-size: 13px; line-height: 1.35; }
+#ui-root.mode-focus > .minimap { display: none; }
+
+.map-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(12, 18, 14, 0.78); display: flex; align-items: center; justify-content: center; padding: 18px; }
+.mp-panel { width: min(1180px, 100%); height: min(760px, 100%); display: flex; flex-direction: column; background: #f3e6c8; border: 4px solid #3b2616; border-radius: 8px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); color: #3b2616; overflow: hidden; }
+.mp-head { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #1d4a3f; color: #f6d57a; }
+.mp-head b { font: 400 20px "Alfa Slab One", "Be Vietnam Pro", Arial, sans-serif; }
+.mp-hint { flex: 1; font: 600 12px "Be Vietnam Pro", Arial, sans-serif; color: #e8dcb8; }
+.mp-clear, .mp-close { font: 700 12px "Be Vietnam Pro", Arial, sans-serif; padding: 4px 10px; border: 2px solid #3b2616; border-radius: 4px; background: #f3e6c8; color: #3b2616; cursor: pointer; }
+.mp-clear:hover, .mp-close:hover { background: #fff6dc; }
+.mp-body { flex: 1; min-height: 0; display: flex; }
+.mp-map { position: relative; flex: 1; min-width: 0; background: #2a2f26; }
+.mp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+.mp-canvas:active { cursor: grabbing; }
+.mp-tip { position: absolute; display: none; pointer-events: none; padding: 3px 8px; background: #1d4a3f; color: #fff6dc; font: 700 12px "Be Vietnam Pro", Arial, sans-serif; border-radius: 4px; white-space: nowrap; z-index: 2; }
+.mp-list { width: 260px; overflow-y: auto; padding: 8px; background: #efe0bd; border-left: 3px solid #3b2616; }
+.mp-group summary { cursor: pointer; font: 800 12px "Be Vietnam Pro", Arial, sans-serif; padding: 4px 0; }
+.mp-poi { display: block; width: 100%; text-align: left; margin: 2px 0; padding: 4px 8px; font: 600 12px "Be Vietnam Pro", Arial, sans-serif; color: #3b2616; background: #fbf3dc; border: 1px solid #b59a68; border-radius: 4px; cursor: pointer; }
+.mp-poi:hover { background: #fff; border-color: #b8402d; }
+.mp-route { padding: 6px 12px; font: 700 13px "Be Vietnam Pro", Arial, sans-serif; background: #e8d6a6; border-top: 3px solid #3b2616; }
+
+/* Vòng tiến độ giữ chuột 2 giây để dời nội thất */
+.crosshair .ch-ring { display: none; position: absolute; left: 50%; top: 3px; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; -webkit-mask: radial-gradient(circle, transparent 11px, #000 12px); mask: radial-gradient(circle, transparent 11px, #000 12px); pointer-events: none; }

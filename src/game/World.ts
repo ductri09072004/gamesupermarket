@@ -12,7 +12,6 @@ import { HeldItem } from '../player/HeldItem';
 import { Interaction } from '../player/Interaction';
 import { PlayerController } from '../player/PlayerController';
 import { ProductInstances } from '../products/ProductInstances';
-import { BuildMode } from '../build/BuildMode';
 import type { AABB } from '../world/Colliders';
 import { Decor } from '../world/Decor';
 import { City } from '../world/City';
@@ -33,6 +32,8 @@ import { Driving } from './Driving';
 import { StaffManager } from './StaffManager';
 import { SelfCheckoutManager } from './SelfCheckoutManager';
 import { StoreLighting } from './StoreLighting';
+import { groundAt } from '../world/Alleys';
+import { Waypoint } from './Waypoint';
 import { VehicleManager } from './VehicleManager';
 import { TutorialArrow } from './TutorialArrow';
 import { tutorialTarget } from './tutorialTarget';
@@ -72,7 +73,6 @@ export class World implements GameCtx {
   readonly checkout: CheckoutController;
   readonly selfCheckout: SelfCheckoutManager;
   readonly lights: StoreLighting;
-  readonly build: BuildMode;
   readonly sign = new OpenSign();
   readonly arrow = new TutorialArrow();
   readonly vehicles: VehicleManager;
@@ -83,6 +83,8 @@ export class World implements GameCtx {
   readonly security: SecurityManager;
   readonly crates: CrateManager;
   readonly trucks: DeliveryTrucks;
+  /** Điểm đến chọn trên bản đồ + mũi tên chỉ đường */
+  readonly waypoint: Waypoint;
   readonly fp: FpPlace;
   readonly physics: BoxPhysics;
   mode: Mode = 'play';
@@ -124,16 +126,18 @@ export class World implements GameCtx {
     this.security = new SecurityManager(this, this.customers, this.mess);
     this.staff = new StaffManager(this, this.customers, this.selfCheckout, this.mess, this.security);
     this.checkout = new CheckoutController(this, this.customers, this.staff);
-    this.vehicles = new VehicleManager(s, () => this.city.layout.lotSpots);
+    // hẻm có dốc lên xuống: chân người chơi bám theo độ cao sàn hẻm
+    this.player.terrain = (x, z) => groundAt(this.city.layout.alleys, x, z);
+    this.vehicles = new VehicleManager(s, () => this.city.layout.frontSpots);
     this.driving = new Driving(this);
     s.padSpots = () => this.city.padSpots();
-    this.build = new BuildMode(this, () => this.peopleCells(), () => this.customers.onFurnitureChanged());
     this.fp = new FpPlace(this, () => this.peopleCells(), () => this.customers.onFurnitureChanged());
     this.crates = new CrateManager(s);
     this.physics = new BoxPhysics(s, () => this.colliders(), (u) => this.boxes.isAnimating(u));
     this.boxes.physicsPose = (u) => this.physics.pose(u);
     this.player.onPush = (u, dx, dz) => this.physics.push(u, dx, dz, this.player.y, 1 / 60);
     this.life.traffic.statics = () => this.colliders();
+    this.waypoint = new Waypoint(this);
     this.trucks = new DeliveryTrucks(this, () => this.city.layout);
     for (const o of d.orders) o.dispatched = false; // đơn chờ xe từ lần chơi trước → gọi xe tải lại
     s.orders.onDue = (o) => this.trucks.dispatch(o);
@@ -141,7 +145,7 @@ export class World implements GameCtx {
     this.sign.group.position.set(sp.x, 0, sp.z - 0.45);
     this.sign.set(d.storeOpen, false);
     this.root.add(this.store.group, this.exterior.group, this.city.group, this.decor.group, this.furniture.group, this.boxes.group, this.effects.group,
-      this.customers.group, this.staff.group, this.sign.group, this.arrow.group, this.vehicles.group, this.lights.lightSwitch.group, this.life.group, this.weather.group, this.mess.group, this.security.group, this.crates.group, this.trucks.group);
+      this.customers.group, this.staff.group, this.sign.group, this.arrow.group, this.vehicles.group, this.lights.lightSwitch.group, this.life.group, this.weather.group, this.mess.group, this.security.group, this.crates.group, this.trucks.group, this.waypoint.group);
     this.scene.add(this.root);
     this.setInteractionRoots();
     this.store.onDoorOpen = () => this.sound('door', this.store.doorCenter.clone().setY(1.2), 0.9);
@@ -176,7 +180,7 @@ export class World implements GameCtx {
     if (!v || this.driving.uid === uid) return;
     const sp = this.vehicles.freeSpot(uid);
     Object.assign(v, { x: sp.x, z: sp.z, yaw: sp.yaw });
-    this.toast('📍 Xe đã về bãi đỗ cạnh cửa hàng', 'success');
+    this.toast('📍 Xe đã về chỗ đỗ trước cửa hàng', 'success');
   }
 
   setInteractionRoots(): void {
@@ -213,6 +217,7 @@ export class World implements GameCtx {
     this.life.update(dt, onRoad, !!this.driving.uid, this.camera.position, this.trucks.obstacles());
     s.walkingVendorNear = this.life.pedestrians.vendorNear;
     this.crates.update(dt);
+    this.waypoint.update(dt);
     this.physics.update(dt, drivePusher(this), this.player);
     if (playing) this.fp.update();
     this.tween.update(dt);
@@ -232,7 +237,6 @@ export class World implements GameCtx {
     this.security.update(sim > 0 ? dt : 0);
     this.staff.update(sim, dt);
     this.checkout.update(dt);
-    this.build.update();
     this.boxes.update(dt);
     this.furniture.update(dt);
     this.decor.update(dt);
@@ -271,8 +275,6 @@ export class World implements GameCtx {
   destroy(): void {
     this.offs.forEach((o) => o());
     this.checkout.exit();
-    this.build.exit();
-    this.build.destroy();
     this.driving.destroy();
     this.vehicles.destroy();
     this.life.destroy();

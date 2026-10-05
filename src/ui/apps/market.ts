@@ -7,6 +7,7 @@ import { WHOLESALE_PRICE_FACTOR } from '../../config/vehicles';
 import { boxLoadUnits } from '../../systems/VehicleSystem';
 import type { AppContext } from '../computer';
 import { h, money } from '../dom';
+import { productImg } from '../productThumb';
 
 const carts: Record<'online' | 'wholesale', Cart> = { online: {}, wholesale: {} };
 
@@ -36,7 +37,7 @@ export function renderMarket(body: HTMLElement, ctx: AppContext, wholesale = fal
         ctx.rerender();
       };
       grid.append(h('div', { class: `product-card ${unlocked ? '' : 'locked'} ${n > 0 ? 'in-cart' : ''}` }, [
-        h('div', { class: 'swatch big', text: unlocked ? p.icon : '🔒', style: { background: p.color } }),
+        h('div', { class: 'pc-photo' }, [productImg(p.id, 84, !unlocked)]),
         h('div', { class: 'pc-name', text: p.name }),
         h('div', { class: 'muted', text: `${p.unitsPerBox} món/thùng · ${STORAGE_LABEL[p.storage]}${acceptsProduct(getFurniture('vending'), p) ? ' · 🥤 máy bán hàng' : ''}` }),
         h('div', { class: 'pc-price', text: `${money(boxCost(p) * factor)}/thùng${boxLoadUnits(p.id) > 1 ? ' · 📦 cồng kềnh' : ''}` }),
@@ -55,7 +56,7 @@ export function renderMarket(body: HTMLElement, ctx: AppContext, wholesale = fal
   const canBuy = total > 0 && s.economy.canAfford(total);
   const lines = Object.entries(cart).map(([id, n]) => {
     const p = PRODUCTS.find((x) => x.id === id)!;
-    return h('div', { class: 'cart-line' }, [h('span', { text: `${p.icon} ${p.name} ×${n}` }), h('b', { text: money(boxCost(p) * n * factor) })]);
+    return h('div', { class: 'cart-line' }, [h('span', { class: 'cart-prod' }, [productImg(p.id, 26), ` ${p.name} ×${n}`]), h('b', { text: money(boxCost(p) * n * factor) })]);
   });
   const orders = s.data.orders.map((o) => h('div', { class: 'cart-line muted' }, [
     h('span', { text: `🚚 ${o.items.reduce((a, i) => a + i.boxes, 0)} thùng` }),

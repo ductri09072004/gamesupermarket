@@ -37,6 +37,10 @@ export class PlayerController {
   y = 0;
   /** Độ cao mặt đỡ dưới chân (sàn hoặc nóc thùng) */
   groundH = 0;
+  /** Độ cao nền đất tại (x, z) — hẻm có dốc lên xuống; mặc định phẳng */
+  terrain: (x: number, z: number) => number = () => 0;
+  /** Độ cao nền đất dưới chân (không tính thùng hàng) */
+  private terrainH = 0;
   /** Thùng hàng quanh đây (World cập nhật mỗi bước từ vật lý) */
   supports: Support[] = [];
   /** Đi tì vào thùng cao → đẩy nó (hướng đơn vị) */
@@ -81,7 +85,12 @@ export class PlayerController {
       this.onJump();
     }
     this.jumpHeld = wantJump;
-    // bước lên thùng: nâng chân lên mượt (không dựng đứng camera)
+    // đi xuống dốc: bám theo mặt dốc thay vì rơi tự do từng chút một
+    if (this.terrainH > 0.001 && this.vy <= 0 && this.y > this.groundH && this.y - this.groundH < 0.14) {
+      this.y = this.groundH;
+      return;
+    }
+    // bước lên thùng / lên dốc: nâng chân lên mượt (không dựng đứng camera)
     if (this.y < this.groundH && this.vy <= 0) {
       this.y = Math.min(this.groundH, this.y + dt * 3.2);
       return;
@@ -117,7 +126,7 @@ export class PlayerController {
       if (k.isDown('KeyS') || k.isDown('ArrowDown')) fz += 1;
       if (k.isDown('KeyA') || k.isDown('ArrowLeft')) fx -= 1;
       if (k.isDown('KeyD') || k.isDown('ArrowRight')) fx += 1;
-      this.crouching = k.isDown('ControlLeft') || k.isDown('ControlRight') || k.isDown('KeyC');
+      this.crouching = k.isDown('ControlLeft') || k.isDown('ControlRight');
     }
     const len = Math.hypot(fx, fz);
     let target = 0;
@@ -156,7 +165,8 @@ export class PlayerController {
     this.speed = moved / dt;
     this.x = p.x;
     this.z = p.z;
-    this.groundH = groundHeight(this.x, this.z, PLAYER_RADIUS, this.y, this.supports);
+    this.terrainH = this.terrain(this.x, this.z);
+    this.groundH = Math.max(this.terrainH, groundHeight(this.x, this.z, PLAYER_RADIUS, this.y, this.supports));
     const eyeTarget = this.crouching ? CROUCH_EYE_HEIGHT : EYE_HEIGHT;
     this.eye += (eyeTarget - this.eye) * (1 - Math.exp(-dt * 10));
     // headbob + bước chân

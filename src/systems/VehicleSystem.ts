@@ -63,7 +63,7 @@ export class VehicleSystem {
     const v: VehicleData = { uid: this.state.newUid('v'), type: def.id, variant: k?.id, x: spot.x, z: spot.z, yaw: spot.yaw, cargo: [] };
     this.state.data.vehicles.push(v);
     this.bus.emit('vehicles:changed', {});
-    this.bus.emit('toast', { message: `${def.icon} Đã mua ${def.name}! Xe đang đỗ ở bãi cạnh cửa hàng.`, kind: 'success' });
+    this.bus.emit('toast', { message: `${def.icon} Đã mua ${def.name}! Xe đang đỗ sát vỉa hè trước cửa hàng.`, kind: 'success' });
     return { ok: true, vehicle: v };
   }
 

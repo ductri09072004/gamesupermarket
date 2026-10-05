@@ -14,6 +14,7 @@ import { InventorySystem } from '../systems/InventorySystem';
 import { OrderSystem } from '../systems/OrderSystem';
 import { StaffSystem } from '../systems/StaffSystem';
 import { VehicleSystem } from '../systems/VehicleSystem';
+import { LoanSystem } from '../systems/LoanSystem';
 import { ShopSystem } from '../systems/ShopSystem';
 import { DaySystem } from '../systems/DaySystem';
 import { CleanlinessSystem } from '../systems/CleanlinessSystem';
@@ -36,6 +37,7 @@ export class Services {
   padSpots: () => Array<{ gx: number; gy: number }> = () => [];
   readonly staff: StaffSystem;
   readonly shop: ShopSystem;
+  readonly loans: LoanSystem;
   readonly day: DaySystem;
   readonly cleanliness: CleanlinessSystem;
   /** Hồ sơ đang chơi (đặt bằng saveSlots.setActive trước khi dựng Services) */
@@ -60,6 +62,7 @@ export class Services {
     this.orders = new OrderSystem(this.state, this.bus, this.economy, this.inventory, this.rng, () => this.grid.deliverySpots(), () => this.grid.crateSpots());
     this.staff = new StaffSystem(this.state, this.bus, this.rng);
     this.shop = new ShopSystem(this.state, this.bus, this.economy, this.orders);
+    this.loans = new LoanSystem(this.state, this.bus, this.economy);
     this.vehicles = new VehicleSystem(this.state, this.bus, this.economy);
     this.cleanliness = new CleanlinessSystem(this.state, this.bus, this.rng, this.progression);
     this.day = new DaySystem(this);

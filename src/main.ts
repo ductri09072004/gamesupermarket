@@ -8,6 +8,7 @@ import './ui/toolRetro.css';
 import './ui/pcXp.css';
 import './ui/driveHud.css';
 import './ui/perf.css';
+import './ui/map.css';
 import { Game } from './game/Game';
 import { watchInstall } from './ui/install';
 

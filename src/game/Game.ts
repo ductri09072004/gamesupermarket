@@ -16,7 +16,11 @@ import { loadHdriEnvironment } from '../engine/Environment';
 import { Gallery } from '../products/Gallery';
 import { labelTexture } from '../products/LabelTexture';
 import { packaging } from '../products/PackagingFactory';
+import { buildVehicleModel } from '../entities/VehicleModels';
+import { FurnitureView } from '../entities/Shelf';
+import type { VehicleType } from '../config/vehicles';
 import { showMainMenu } from '../ui/menu';
+import { setThumbSources } from '../ui/productThumb';
 import { slotCapacity } from '../systems/SlotLayout';
 import { DebugPanel } from './Debug';
 import { GameUI } from './GameUI';
@@ -59,6 +63,15 @@ export class Game {
       this.update(dt);
       this.updMs += performance.now() - t;
     }, (dt) => this.render(dt));
+    // ảnh nội thất / xe trong máy tính = chụp từ chính mô hình 3D (cần asset đã nạp nên tạo lười)
+    setThumbSources({
+      furniture: (type) => {
+        const view = new FurnitureView({ uid: 'thumb', type, gx: 0, gy: 0, rot: 0, slots: [], boxes: [] }, this.assets, () => ({ price: 0, market: 0, cost: 0 }));
+        view.root.remove(view.model);
+        return view.model;
+      },
+      vehicle: (type, variant) => buildVehicleModel(type as VehicleType, variant).group,
+    });
     perf.env = this.describeEnv();
     (window as unknown as { __game: Game }).__game = this;
   }
@@ -228,7 +241,7 @@ export class Game {
       w.camera.lookAt(c);
     }
     w.update(dt, this.menu || !!this.ui?.isUiOpen() || this.gallery.active);
-    this.ui?.update();
+    this.ui?.update(dt);
   }
 
   /** Máy chậm kéo dài (khung hình > 45ms trong ~8s chơi) → gợi ý chuyển sang chế độ nhẹ hơn, đúng một lần mỗi phiên. */

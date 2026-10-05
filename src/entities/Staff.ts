@@ -193,10 +193,9 @@ export class StaffNpc extends Walker implements StaffBody {
     if (this.timer > 0) return;
     this.customer = null;
     const total = itemsTotal(cu.basketItems);
-    const cash = s.rng() < 0.6;
-    const paid = cash ? customerCashPayment(total, s.rng) : total;
-    const change = cash ? sumCents(optimalChange(Math.round(paid * 100) - Math.round(total * 100))) : 0;
-    const r = completeSale(s, cu.id, cu.basketItems, cash ? 'cash' : 'card', paid, change, Math.max(25, this.serviceTotal), { gx: cc.x, gy: cc.z });
+    const paid = customerCashPayment(total, s.rng);
+    const change = sumCents(optimalChange(Math.round(paid * 100) - Math.round(total * 100)));
+    const r = completeSale(s, cu.id, cu.basketItems, paid, change, Math.max(25, this.serviceTotal), { gx: cc.x, gy: cc.z });
     this.world.saleFx(r.revenue, new THREE.Vector3(cc.x, 1.5, cc.z));
     const bag = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.3, 0.16), new THREE.MeshStandardMaterial({ color: 0xc8a27a, roughness: 0.9 }));
     const g = new THREE.Group();

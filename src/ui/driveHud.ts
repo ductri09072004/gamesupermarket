@@ -77,7 +77,7 @@ export class DriveHud {
       h('div', { class: 'dh-side' }, [
         h('div', { class: 'dh-plate' }, [this.nameEl, h('div', { class: 'dh-lamps' }, [this.lampD, this.lampR])]),
         h('div', { class: 'dh-cargo' }, [h('span', { text: 'CHỞ' }), this.cargoEl, this.cargoUnit]),
-        h('div', { class: 'dh-keys', html: '<kbd>W</kbd><kbd>S</kbd> ga / lùi · <kbd>A</kbd><kbd>D</kbd> lái · <kbd>Space</kbd> phanh tay · <kbd>E</kbd> xuống xe' }),
+        h('div', { class: 'dh-keys', html: '<kbd>W</kbd><kbd>S</kbd> ga / lùi · <kbd>A</kbd><kbd>D</kbd> lái · <kbd>Space</kbd> phanh tay · <kbd>F</kbd> xuống xe' }),
       ]),
     ]);
     this.needle = this.root.querySelector('.dh-needle') as SVGGElement;

@@ -4,7 +4,7 @@ import {
 } from '../config/constants';
 import type { Services } from '../core/Services';
 import { formatMoney, round2 } from '../core/Random';
-import { settleSale, type CheckoutItem, type PaymentMethod, type SaleResult } from './CheckoutSystem';
+import { settleSale, type CheckoutItem, type SaleResult } from './CheckoutSystem';
 
 export function checkoutReputation(durationS: number): number {
   if (durationS <= FAST_CHECKOUT_S) return REP_FAST_CHECKOUT;
@@ -17,14 +17,13 @@ export function completeSale(
   s: Services,
   customerId: string,
   items: CheckoutItem[],
-  method: PaymentMethod,
   paid: number,
   changeGivenCents: number,
   durationS: number,
   at: { gx: number; gy: number },
 ): SaleResult {
-  const r = settleSale(items, method, paid, changeGivenCents);
-  s.economy.addMoney(r.netCash, method === 'card' ? 'Bán hàng (thẻ)' : 'Bán hàng (tiền mặt)');
+  const r = settleSale(items, paid, changeGivenCents);
+  s.economy.addMoney(r.netCash, 'Bán hàng (tiền mặt)');
   s.economy.recordSale(r.revenue, r.cogs, items.length);
   if (r.changeLoss > 0) {
     s.data.stats.changeLoss = round2(s.data.stats.changeLoss + r.changeLoss);

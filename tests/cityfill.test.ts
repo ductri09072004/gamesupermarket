@@ -15,6 +15,7 @@ describe('lấp kín khối phố bằng nhà Việt', () => {
       const open: Rect[] = [
         { x0: WAREHOUSE_LOT.x0 - 0.6, x1: W + 0.6, z0: -4, z1: F }, L.lot, { ...L.depot.shed, z1: F },
         { x0: L.depot.shed.x0 - 2, x1: L.depot.shed.x1 + 2, z0: L.depot.shed.z0, z1: F }, L.depot.pad,
+        ...L.alleys.map((a) => a.rect), // hẻm là chỗ trống có chủ đích
       ];
       let total = 0;
       let empty = 0;

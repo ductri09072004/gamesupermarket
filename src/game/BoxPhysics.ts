@@ -124,7 +124,8 @@ export class BoxPhysics {
   }
 
   /** Người chơi thả thùng: xuất hiện trước mặt ở tầm tay rồi rơi, hơi văng về trước. */
-  launch(uid: string, from: THREE.Vector3, dir: THREE.Vector3): void {
+  /** Thả / quăng thùng: `speed` m/s theo hướng ngang `dir`, `vy` m/s theo phương đứng. */
+  launch(uid: string, from: THREE.Vector3, dir: THREE.Vector3, speed = P.throwSpeed, vy = 0.5): void {
     this.syncBoxes();
     const body = this.bodies.get(uid);
     if (!body) return;
@@ -132,7 +133,7 @@ export class BoxPhysics {
     body.position.set(from.x, from.y, from.z);
     tmpQ.setFromAxisAngle(up, Math.atan2(dir.x, dir.z));
     body.quaternion.set(tmpQ.x, tmpQ.y, tmpQ.z, tmpQ.w);
-    body.velocity.set(dir.x * P.throwSpeed, 0.5, dir.z * P.throwSpeed);
+    body.velocity.set(dir.x * speed, vy, dir.z * speed);
     body.angularVelocity.set((Math.random() - 0.5) * 2, 0, (Math.random() - 0.5) * 2);
     body.wakeUp();
   }

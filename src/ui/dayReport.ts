@@ -10,6 +10,7 @@ export function showDayReport(r: DayReport, onNext: () => void): void {
     ['Tiền thuê mặt bằng', -r.expenses.rent, 'money', 'neg'],
     ['Tiền điện', -r.expenses.electricity, 'money', 'neg'],
     ['Lương nhân viên', -r.expenses.wages, 'money', 'neg'],
+    ...(r.expenses.interest > 0 ? [['Lãi vay ngân hàng', -r.expenses.interest, 'money', 'neg'] as [string, number, 'money', string]] : []),
     ['Thối tiền dư', -r.changeLoss, 'money', 'neg'],
     ['Lợi nhuận ròng', r.netProfit, 'money', 'total'],
   ];
@@ -31,6 +32,7 @@ export function showDayReport(r: DayReport, onNext: () => void): void {
     stats,
     table,
     h('div', { class: `report-balance ${r.moneyEnd < 0 ? 'neg' : ''}` }, ['Số dư cuối ngày: ', h('b', { text: money(r.moneyEnd) })]),
+    r.expenses.loanPrincipal > 0 ? h('div', { class: 'muted', text: `🏦 Đã trả gốc vay ${money(r.expenses.loanPrincipal)} (không tính vào lợi nhuận).` }) : null,
     r.vendorLost > 0 ? h('div', { class: 'muted', text: `🥖 Hàng rong ngoài vỉa hè giành mất ${r.vendorLost} món — bán rẻ hơn giá thị trường để giữ khách.` }) : null,
     r.debtDays > 0 && !r.gameOver ? h('div', { class: 'warn', text: `⚠ Bạn đang nợ ${r.debtDays} ngày. Nợ quá 3 ngày sẽ phá sản!` }) : null,
   ]);

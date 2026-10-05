@@ -116,7 +116,7 @@ export const RESTOCK_THRESHOLD = 0.3;
 export const STAFF_HELP_S = 2.5;
 
 // Máy tự tính tiền
-/** Khách tự quét 1 món (chậm hơn thu ngân) rồi tự chạm thẻ thanh toán tại máy */
+/** Khách tự quét 1 món (chậm hơn thu ngân) rồi tự nhét tiền giấy vào khe thanh toán tại máy */
 export const SELF_SCAN_S = 2.0;
 export const SELF_PAY_S = 3;
 /** Xác suất khách lúng túng = BASE + PER_ITEM × số món (+ ELDER nếu lớn tuổi), tối đa MAX */
@@ -158,8 +158,10 @@ export const SAVE_SLOTS = 5;
 export const SAVE_VERSION = 5;
 
 // Thu ngân
-/** 50.000 · 20.000 · 10.000 · 5.000 · 1.000 · 200 · 100 · 50 · 10 đồng */
-export const DENOMINATIONS = [50, 20, 10, 5, 1, 0.2, 0.1, 0.05, 0.01];
+/** Chỉ còn tiền giấy (đơn vị nội bộ = 1.000đ): 100.000 · 50.000 · 20.000 · 10.000 · 5.000 · 2.000 · 1.000 · 500 · 200 đồng */
+export const DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.5, 0.2];
+/** Tờ nhỏ nhất (200đ): thối thiếu dưới mức này vẫn tính là đúng (không có tiền lẻ hơn để thối) */
+export const MIN_NOTE = 0.2;
 
 /** Cường độ ánh sáng môi trường khi dùng HDRI thật (RoomEnvironment code dùng 0.35). */
 export const ENV_INTENSITY = 0.5;
@@ -170,3 +172,19 @@ export const CONTACT_SHADOW_OPACITY = 0.55;
 
 /** Lịch mùa: cứ yearDays ngày game là 1 "năm"; trang trí Tết bật tetBefore ngày cuối năm + tetAfter ngày đầu năm */
 export const SEASON = { yearDays: 30, tetBefore: 4, tetAfter: 2 };
+
+// Ngân hàng: vay vốn (đơn vị nội bộ = 1.000đ)
+export const LOAN = {
+  /** Hạn mức vay tối đa = limitPerLevel × cấp người chơi (tổng dư nợ gốc) */
+  limitPerLevel: 1000,
+  /** Số khoản vay đang còn cùng lúc */
+  maxActive: 3,
+  /** Mỗi lần vay tối thiểu */
+  minAmount: 100,
+  /** Gói vay: kỳ hạn (ngày game) và lãi suất đơn theo ngày. Kỳ hạn dài lãi cao hơn. */
+  terms: [
+    { days: 3, dailyRate: 0.01, name: 'Ngắn hạn' },
+    { days: 7, dailyRate: 0.012, name: 'Trung hạn' },
+    { days: 14, dailyRate: 0.015, name: 'Dài hạn' },
+  ],
+} as const;

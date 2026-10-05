@@ -7,17 +7,17 @@ import { textCanvas } from '../products/LabelTexture';
 import { block, mat } from './FurnitureModels';
 import { plastic, powder, rblock, steel, wood } from './DisplayMaterials';
 import { mergedModel } from './MergeStatic';
-import { coinStack, moneyStack } from './MoneyModels';
+import { moneyStack } from './MoneyModels';
 import { counterProps } from '../world/InteriorDecor';
 
 export interface CounterParts {
   group: THREE.Group;
   beltTex: THREE.Texture;
   laser: THREE.Mesh;
-  lcd: { canvas: HTMLCanvasElement; tex: THREE.CanvasTexture };
+  /** Tờ hoá đơn viết tay đặt trên quầy (vẽ lại mỗi khi quét món / đổi tiền) */
+  receipt: { canvas: HTMLCanvasElement; tex: THREE.CanvasTexture };
   drawer: THREE.Group;
   trays: THREE.Mesh[];
-  posKeys: THREE.Mesh[];
   /** Điểm cục bộ quan trọng trên mặt quầy */
   beltStart: THREE.Vector3;
   beltEnd: THREE.Vector3;
@@ -25,7 +25,6 @@ export interface CounterParts {
   bagPoint: THREE.Vector3;
   paidPoint: THREE.Vector3;
   changePoint: THREE.Vector3;
-  cardPoint: THREE.Vector3;
   cashierView: THREE.Vector3;
   cashierLook: THREE.Vector3;
 }
@@ -33,7 +32,7 @@ export interface CounterParts {
 const std = (key: string, color: number, r = 0.5, m = 0) => mat(key, () => new THREE.MeshStandardMaterial({ color, roughness: r, metalness: m }));
 
 function denomLabel(d: number): string {
-  return `${formatVnd(d)}${d >= 1 ? '' : 'đ'}`;
+  return `${formatVnd(d)}đ`;
 }
 
 function counterSign(): THREE.Material {
@@ -86,10 +85,6 @@ function counterShell(def: FurnitureDef): THREE.Group {
   // khung treo túi
   for (const x of [0.53, 0.83]) g.add(rblock(railMat, x - 0.008, x + 0.008, h, h + 0.36, -d / 2 + 0.3, -d / 2 + 0.316, 0.004, false));
   g.add(rblock(railMat, 0.52, 0.84, h + 0.345, h + 0.36, -d / 2 + 0.3, -d / 2 + 0.316, 0.004, false));
-  // máy quẹt thẻ phía khách + cột màn hình
-  g.add(rblock(dark, 0.86, 0.96, h, h + 0.015, -d / 2 + 0.04, -d / 2 + 0.16, 0.005, false));
-  g.add(rblock(plastic(0x15191d, 0.4), 0.875, 0.945, h + 0.015, h + 0.13, -d / 2 + 0.09, -d / 2 + 0.12, 0.008, false));
-  g.add(rblock(dark, 0.905, 0.935, h, h + 0.3, 0.02, 0.05, 0.006));
   return g;
 }
 
@@ -121,87 +116,59 @@ export function buildCounter(def: FurnitureDef): CounterParts {
   bag.add(block(paper, -0.14, -0.135, 0, 0.3, -0.09, 0.09, false), block(paper, 0.135, 0.14, 0, 0.3, -0.09, 0.09, false));
   bag.position.set(0.68, h, -d / 2 + 0.22);
   g.add(bag);
-  // cột màn hình LCD
-  const LX = 0.92;
-  const lcdCanvas = document.createElement('canvas');
-  lcdCanvas.width = 512;
-  lcdCanvas.height = 256;
-  const lcdTex = new THREE.CanvasTexture(lcdCanvas);
-  lcdTex.colorSpace = THREE.SRGBColorSpace;
-  const lcdMat = new THREE.MeshBasicMaterial({ map: lcdTex });
-  const lcdGroup = new THREE.Group();
-  lcdGroup.add(rblock(powder(0x111827, 0.4), -0.2, 0.2, -0.11, 0.11, -0.02, 0.02, 0.01));
-  const lcd = new THREE.Mesh(new THREE.PlaneGeometry(0.37, 0.19), lcdMat);
-  lcd.position.z = 0.021;
-  const lcdFront = new THREE.Mesh(new THREE.PlaneGeometry(0.37, 0.19), lcdMat);
-  lcdFront.position.z = -0.021;
-  lcdFront.rotation.y = Math.PI;
-  lcdGroup.add(lcd, lcdFront);
-  lcdGroup.position.set(LX - 0.12, h + 0.4, 0.035);
-  lcdGroup.rotation.y = -0.5;
-  g.add(lcdGroup);
-  // ngăn kéo tiền (phía thu ngân)
+  // hoá đơn viết tay: tờ giấy đặt trên cuốn sổ nhỏ, ngay trước mặt thu ngân
+  const receiptCanvas = document.createElement('canvas');
+  receiptCanvas.width = 512;
+  receiptCanvas.height = 640;
+  const receiptTex = new THREE.CanvasTexture(receiptCanvas);
+  receiptTex.colorSpace = THREE.SRGBColorSpace;
+  receiptTex.anisotropy = 8;
+  const pad = new THREE.Group();
+  pad.add(rblock(powder(0x6b4a2a, 0.8), -0.15, 0.15, 0, 0.012, -0.18, 0.18, 0.004));
+  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.27, 0.34), new THREE.MeshStandardMaterial({ map: receiptTex, roughness: 0.95 }));
+  sheet.rotation.x = -Math.PI / 2;
+  sheet.position.y = 0.0135;
+  sheet.receiveShadow = true;
+  pad.add(sheet);
+  pad.position.set(0.0, h, 0.2);
+  pad.rotation.y = 0.07;
+  g.add(pad);
+  // khay tiền giấy đặt trên mặt quầy, bên phải thu ngân: hàng xa là tờ lớn, hàng gần (sát tay) là tờ nhỏ hay dùng
   const drawer = new THREE.Group();
   const trayMat = std('tray', 0x3a2a1c, 0.7);
-  drawer.add(block(trayMat, -0.3, 0.3, 0, 0.1, -0.2, 0.2));
+  drawer.add(block(trayMat, 0, 0.475, 0, 0.018, 0, 0.39));
   const trays: THREE.Mesh[] = [];
-  DENOMINATIONS.forEach((den, i) => {
-    const bill = den >= 1;
-    const col = bill ? i : i - 5;
-    // nhãn mệnh giá ở mép gần người thu ngân (+Z); phần còn lại của khay là xấp tiền / cột xu
-    const tex = textCanvas(128, 64, (c) => {
-      c.fillStyle = '#3a2a1c';
-      c.fillRect(0, 0, 128, 64);
-      c.fillStyle = bill ? '#d9c9a0' : '#d8b04a';
-      c.fillRect(0, bill ? 46 : 40, 128, 24);
-      c.fillStyle = '#3b2616';
-      c.font = '900 22px "Nunito", Arial';
-      c.textAlign = 'center';
-      c.textBaseline = 'middle';
-      c.fillText(denomLabel(den), 64, bill ? 57 : 52);
-    });
-    const t = new THREE.Mesh(new THREE.BoxGeometry(bill ? 0.1 : 0.12, 0.012, bill ? 0.2 : 0.1), [
-      trayMat, trayMat, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }), trayMat, trayMat, trayMat,
-    ]);
-    const x = bill ? -0.24 + col * 0.12 : -0.21 + col * 0.14;
-    t.position.set(x, 0.105, bill ? 0.08 : -0.11);
-    t.userData = { kind: 'tray', denom: den };
-    drawer.add(t);
-    // tiền trong khay: xấp tiền có băng giấy / các cột xu (không bắt chuột — chỉ khay bắt)
-    if (bill) {
-      const stack = moneyStack(den);
-      stack.position.set(x, 0.111, 0.058);
-      drawer.add(stack);
-    } else {
-      [[-0.028, -0.03, 6], [0.028, -0.03, 4], [-0.028, 0.025, 3], [0.028, 0.025, 5]].forEach(([dx, dz, n]) => {
-        const cs = coinStack(den, n);
-        cs.position.set(x + dx, 0.111, -0.11 + dz);
-        drawer.add(cs);
+  const rows: number[][] = [DENOMINATIONS.slice(0, 5), DENOMINATIONS.slice(5)];
+  rows.forEach((row, r) => {
+    row.forEach((den, i) => {
+      // nhãn mệnh giá ở mép gần người thu ngân (+Z); phần còn lại của khay là xấp tiền
+      const tex = textCanvas(128, 64, (c) => {
+        c.fillStyle = '#3a2a1c';
+        c.fillRect(0, 0, 128, 64);
+        c.fillStyle = '#d9c9a0';
+        c.fillRect(0, 44, 128, 20);
+        c.fillStyle = '#3b2616';
+        c.font = '900 20px "Nunito", Arial';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(denomLabel(den), 64, 55, 120);
       });
-    }
-    trays.push(t);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(0.084, 0.012, 0.185), [
+        trayMat, trayMat, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }), trayMat, trayMat, trayMat,
+      ]);
+      const x = 0.044 + i * 0.0875 + (r === 1 ? 0.0875 / 2 : 0);
+      const z = r === 0 ? 0.1 : 0.292;
+      t.position.set(x, 0.024, z);
+      t.userData = { kind: 'tray', denom: den };
+      drawer.add(t);
+      const stack = moneyStack(den);
+      stack.position.set(x, 0.03, z - 0.02);
+      drawer.add(stack);
+      trays.push(t);
+    });
   });
-  drawer.position.set(0.1, h - 0.16, d / 2 - 0.2);
+  drawer.position.set(0.51, h, 0.005);
   g.add(drawer);
-  // máy POS
-  const pos = new THREE.Group();
-  pos.add(rblock(powder(0xcfc5a8, 0.55), -0.07, 0.07, 0, 0.03, -0.11, 0.11, 0.008));
-  const posScreen = block(mat('posScreen', () => new THREE.MeshStandardMaterial({ color: 0xffb000, emissive: 0x7a4a00, emissiveIntensity: 0.7 })), -0.055, 0.055, 0.03, 0.033, -0.1, -0.05, false);
-  pos.add(posScreen);
-  const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', 'back', 'clear', 'enter'];
-  const posKeys: THREE.Mesh[] = [];
-  keys.forEach((k, i) => {
-    const r = Math.floor(i / 3);
-    const c = i % 3;
-    const color = k === 'enter' ? 0x4f7a43 : k === 'clear' ? 0xa8402e : k === 'back' ? 0xc99a3b : 0xe8dec0;
-    const key = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.012, 0.026), mat(`key${color}`, () => new THREE.MeshStandardMaterial({ color, roughness: 0.5 })));
-    key.position.set(-0.042 + c * 0.042, 0.036, -0.03 + r * 0.03);
-    key.userData = { kind: 'poskey', key: k };
-    pos.add(key);
-    posKeys.push(key);
-  });
-  pos.position.set(0.72, h, d / 2 - 0.2);
-  g.add(pos);
   // máy tính tiền (model Poly Haven) ở góc trái phía thu ngân, quay mặt về thu ngân
   const register = prop('cash_register');
   if (register) {
@@ -211,16 +178,15 @@ export function buildCounter(def: FurnitureDef): CounterParts {
     g.add(register);
   }
   return {
-    group: g, beltTex, laser, lcd: { canvas: lcdCanvas, tex: lcdTex }, drawer, trays, posKeys,
+    group: g, beltTex, laser, receipt: { canvas: receiptCanvas, tex: receiptTex }, drawer, trays,
     beltStart: new THREE.Vector3(-w / 2 + 0.15, h + 0.02, -d / 2 + 0.22),
     beltEnd: new THREE.Vector3(-0.05, h + 0.02, -d / 2 + 0.22),
     scanPoint: new THREE.Vector3(0.23, h + 0.08, -d / 2 + 0.23),
     bagPoint: new THREE.Vector3(0.68, h + 0.05, -d / 2 + 0.22),
     paidPoint: new THREE.Vector3(0.45, h + 0.005, -d / 2 + 0.1),
-    changePoint: new THREE.Vector3(0.45, h + 0.005, d / 2 - 0.35),
-    cardPoint: new THREE.Vector3(0.6, h + 0.005, d / 2 - 0.3),
-    // góc nhìn từ trên cao, lùi ra sau: thấy cả băng chuyền, màn hình, máy POS lẫn ngăn kéo tiền ở nửa dưới màn hình
-    cashierView: new THREE.Vector3(0.2, h + 1.05, d / 2 + 0.75),
-    cashierLook: new THREE.Vector3(0.2, h - 0.1, -d / 2 + 0.4),
+    changePoint: new THREE.Vector3(0.3, h + 0.005, 0.1),
+    // góc nhìn từ trên cao, lùi ra sau: thấy cả băng chuyền, hoá đơn lẫn khay tiền ở nửa dưới màn hình
+    cashierView: new THREE.Vector3(0.1, h + 1.05, d / 2 + 0.75),
+    cashierLook: new THREE.Vector3(0.1, h - 0.1, -d / 2 + 0.4),
   };
 }

@@ -2,19 +2,20 @@ import { LICENSES } from '../../config/licenses';
 import { PRODUCTS } from '../../config/products';
 import type { AppContext } from '../computer';
 import { h, money } from '../dom';
+import { licenseImg, productImg } from '../productThumb';
 
 export function renderLicenses(body: HTMLElement, ctx: AppContext): void {
   const { s } = ctx;
   const list = h('div', { class: 'card-grid' });
   for (const l of LICENSES) {
     const st = s.shop.licenseStatus(l.id);
-    const products = PRODUCTS.filter((p) => p.licenseId === l.id).map((p) => p.icon).join(' ');
+    const products = PRODUCTS.filter((p) => p.licenseId === l.id).map((p) => productImg(p.id, 30));
     const label = st === 'owned' ? '✔ Đã sở hữu' : st === 'locked-level' ? `🔒 Cần cấp ${l.levelRequired}` : st === 'locked-prev' ? `🔒 Cần giấy phép ${LICENSES[l.requires ?? 0]!.name}` : `Mua ${money(l.price)}`;
     list.append(h('div', { class: `shop-card ${st === 'owned' ? 'owned' : st !== 'available' ? 'locked' : ''}` }, [
-      h('div', { class: 'shop-icon', text: l.icon }),
+      h('div', { class: 'pc-photo' }, [licenseImg(l.id, 96, st !== 'owned' && st !== 'available')]),
       h('b', { text: l.name }),
       h('div', { class: 'muted small', text: l.description }),
-      h('div', { class: 'emoji-row', text: products }),
+      h('div', { class: 'emoji-row thumb-row' }, products),
       h('button', {
         class: 'btn primary', text: label, disabled: st !== 'available' || !s.economy.canAfford(l.price),
         onClick: () => {

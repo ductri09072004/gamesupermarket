@@ -11,7 +11,8 @@ import { itemsTotal, type CheckoutItem } from '../systems/CheckoutSystem';
 import { completeSale } from '../systems/SalesSystem';
 import { rollHelpIndex } from '../systems/SelfCheckoutSystem';
 import { adjacentTiles, counterTiles, footprintCells, type GridPoint } from '../world/Footprint';
-import { bagMesh, cardMesh } from './CheckoutProps';
+import { moneyMesh } from '../entities/MoneyModels';
+import { bagMesh } from './CheckoutProps';
 import type { GameCtx } from './Ctx';
 import type { CustomerManager } from './CustomerManager';
 import { drawKioskScreen, type KioskScreenState } from './KioskScreen';
@@ -137,12 +138,12 @@ export class SelfCheckoutManager implements KioskHelpApi {
     }
   }
 
-  /** Khách rút thẻ chạm vào đầu đọc: bíp xác nhận. */
+  /** Khách rút tờ tiền giấy nhét vào khe thanh toán: bíp xác nhận. */
   private tapCard(k: FurnitureData, ss: Session): void {
     const view = this.c.furniture.get(k.uid);
     if (!view?.kiosk) return;
-    const card = cardMesh();
-    // thẻ dựng đứng, mặt in hướng về khách
+    const card = moneyMesh(20);
+    // tờ tiền dựng đứng, mặt in hướng về khách
     card.quaternion.setFromRotationMatrix(view.root.matrixWorld).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)));
     ss.card = card;
     const hand = ss.customer.human.handR.getWorldPosition(new THREE.Vector3());
@@ -181,8 +182,8 @@ export class SelfCheckoutManager implements KioskHelpApi {
     const s = this.c.s;
     const total = itemsTotal(ss.items);
     const at = this.at(k.uid, new THREE.Vector3(0, 1.5, -0.5));
-    // máy chỉ nhận thẻ: khách tự chạm thẻ, không cần thu ngân
-    const r = completeSale(s, ss.customer.id, ss.items, 'card', total, 0, ss.elapsed, { gx: at.x, gy: at.z });
+    // máy chỉ nhận tiền giấy vừa đủ: khách tự nhét tiền, không cần thu ngân
+    const r = completeSale(s, ss.customer.id, ss.items, total, 0, ss.elapsed, { gx: at.x, gy: at.z });
     if (ss.card) {
       const card = ss.card;
       ss.card = null;

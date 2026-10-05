@@ -271,3 +271,29 @@ kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 3px;
 #ui-root.mode-focus > .tutorial { display: none; }
 
 /* ---------- Lái xe: xem driveHud.css ---------- */
+
+/* Tờ hoá đơn viết tay (bản đọc được) ở góc dưới trái khi đứng quầy */
+.cs-receipt { position: absolute; left: 14px; bottom: 14px; width: 250px; pointer-events: none; z-index: 12; opacity: 0; transform: translateY(12px) rotate(-1.5deg); transition: opacity 0.25s, transform 0.25s; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
+.cs-receipt.show { opacity: 1; transform: rotate(-1.5deg); }
+.cs-receipt-canvas { display: block; width: 100%; height: auto; border-radius: 2px; }
+
+/* Ảnh sản phẩm = mô hình 3D chụp sẵn (ui/productThumb) */
+.prod-thumb-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.prod-thumb { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(40, 24, 8, 0.35)); }
+.prod-thumb-wrap.locked .prod-thumb { filter: grayscale(1) brightness(0.55) contrast(0.9); opacity: 0.7; }
+.prod-thumb-lock { position: absolute; right: -2px; bottom: -2px; font-size: 16px; }
+.pc-photo { display: flex; align-items: center; justify-content: center; height: 96px; margin-bottom: 4px; border-radius: 6px; background: radial-gradient(circle at 50% 40%, rgba(255, 250, 236, 0.9), rgba(214, 196, 160, 0.55)); }
+.cart-prod { display: inline-flex; align-items: center; gap: 4px; }
+.thumb-row { display: flex; flex-wrap: wrap; gap: 2px; }
+.prod-thumb-wrap.no-thumb .prod-thumb { display: none; }
+.prod-thumb-wrap.no-thumb::before { content: attr(data-fallback); }
+.license-thumb { display: inline-block; }
+
+/* Ngân hàng: vay vốn */
+.loan-box { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid rgba(0, 0, 0, 0.25); border-radius: 6px; background: rgba(255, 255, 255, 0.35); margin: 6px 0 10px; }
+.loan-amount { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+.loan-range { width: 100%; }
+.loan-terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+.loan-term { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; padding: 8px; border: 2px solid rgba(0, 0, 0, 0.25); border-radius: 6px; background: rgba(255, 255, 255, 0.5); cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.loan-term.on { border-color: #2e7d32; background: rgba(120, 190, 120, 0.3); }
+.loan-line { align-items: center; gap: 8px; }

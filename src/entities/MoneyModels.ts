@@ -2,11 +2,9 @@ import { formatVnd } from '../core/Random';
 import * as THREE from 'three';
 import { textCanvas } from '../products/LabelTexture';
 
-/** Kích thước thật (m): tờ tiền 156 × 66mm, đồng xu 1.75mm dày. */
+/** Kích thước thật (m): tờ tiền 156 × 66mm. */
 const NOTE_W = 0.156;
 const NOTE_H = 0.066;
-const COIN_R = 0.012;
-const COIN_T = 0.0018;
 
 interface Palette {
   paper: string;
@@ -16,11 +14,15 @@ interface Palette {
 
 /** Màu giấy & mực từng mệnh giá (nhạt như tiền thật, không loè loẹt). */
 const PALETTES: Record<number, Palette> = {
-  1: { paper: '#dde6d3', ink: '#3f6a48', accent: '#7a8f7b' },
-  5: { paper: '#dcd6e4', ink: '#5b447f', accent: '#8f7eb0' },
+  0.2: { paper: '#e2d6bf', ink: '#6b4a2a', accent: '#a98558' },
+  0.5: { paper: '#e8d3d0', ink: '#8a3a35', accent: '#c07a72' },
+  1: { paper: '#dad7e0', ink: '#5a4f7a', accent: '#8f86ad' },
+  2: { paper: '#d6dcd0', ink: '#4f6f5b', accent: '#8aa393' },
+  5: { paper: '#d3dcea', ink: '#2f5f8a', accent: '#7ea0c4' },
   10: { paper: '#eadfc4', ink: '#a5601f', accent: '#c98a3f' },
-  20: { paper: '#d9e6d8', ink: '#2f6b4c', accent: '#c99a7b' },
+  20: { paper: '#d2e3e8', ink: '#1d6c80', accent: '#6fb0bf' },
   50: { paper: '#ecd6dc', ink: '#8f3552', accent: '#c46b86' },
+  100: { paper: '#d9e6d8', ink: '#2f6b4c', accent: '#7fb092' },
 };
 
 /** Số ngẫu nhiên có hạt giống — cùng mệnh giá luôn ra cùng hoa văn. */
@@ -152,70 +154,14 @@ function bentGeometry(v: number): THREE.PlaneGeometry {
 const noteMat = new Map<number, THREE.MeshStandardMaterial>();
 let noteCount = 0;
 
-function coinFace(denom: number): THREE.CanvasTexture {
-  const copper = denom < 0.05;
-  const base = copper ? ['#e0a06a', '#b8733d', '#8c4f24'] : denom === 0.05 ? ['#dfe3e6', '#aab2b8', '#7c858c'] : ['#f4f5f6', '#c4c9ce', '#8f979d'];
-  const t = textCanvas(128, 128, (g) => {
-    const grad = g.createRadialGradient(50, 46, 6, 64, 64, 66);
-    grad.addColorStop(0, base[0]);
-    grad.addColorStop(0.65, base[1]);
-    grad.addColorStop(1, base[2]);
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 128, 128);
-    g.strokeStyle = 'rgba(0,0,0,0.35)';
-    g.lineWidth = 3;
-    g.beginPath();
-    g.arc(64, 64, 58, 0, Math.PI * 2);
-    g.stroke();
-    g.strokeStyle = 'rgba(255,255,255,0.35)';
-    g.lineWidth = 1.5;
-    g.beginPath();
-    g.arc(64, 64, 50, 0, Math.PI * 2);
-    g.stroke();
-    g.fillStyle = 'rgba(0,0,0,0.5)';
-    g.font = '900 46px "Nunito", Arial';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(formatVnd(denom), 64, 66, 100);
-    g.fillStyle = 'rgba(255,255,255,0.45)';
-    g.fillText(formatVnd(denom), 62, 64, 100);
-  });
-  t.anisotropy = 8;
-  return t;
-}
-
-const coinMats = new Map<number, THREE.Material[]>();
-const coinGeo = new THREE.CylinderGeometry(COIN_R, COIN_R, COIN_T, 40);
-/** Đường kính tương đối của đồng xu: 200đ lớn nhất, 10đ nhỏ nhất */
-const COIN_SCALE: Record<number, number> = { 0.2: 1.0, 0.1: 0.8, 0.05: 0.88, 0.01: 0.75 };
-
-function coinMaterials(denom: number): THREE.Material[] {
-  let m = coinMats.get(denom);
-  if (!m) {
-    const copper = denom < 0.05;
-    const face = new THREE.MeshStandardMaterial({ map: coinFace(denom), metalness: 0.85, roughness: 0.32 });
-    const side = new THREE.MeshStandardMaterial({ color: copper ? 0xa8652f : 0xb9c0c6, metalness: 0.9, roughness: 0.4 });
-    m = [side, face, face];
-    coinMats.set(denom, m);
-  }
-  return m;
-}
-
-/** Tờ tiền (hơi cong, có hoạ tiết & số sê-ri) hoặc đồng xu (có số, viền) theo mệnh giá. */
+/** Tờ tiền giấy (hơi cong, có hoạ tiết & số sê-ri) theo mệnh giá. */
 export function moneyMesh(denom: number): THREE.Mesh {
-  if (denom >= 1) {
-    let m = noteMat.get(denom);
-    if (!m) {
-      m = new THREE.MeshStandardMaterial({ map: noteTexture(denom), roughness: 0.85, side: THREE.DoubleSide });
-      noteMat.set(denom, m);
-    }
-    const mesh = new THREE.Mesh(bentGeometry(noteCount++ % 3), m);
-    mesh.castShadow = true;
-    return mesh;
+  let m = noteMat.get(denom);
+  if (!m) {
+    m = new THREE.MeshStandardMaterial({ map: noteTexture(denom), roughness: 0.85, side: THREE.DoubleSide });
+    noteMat.set(denom, m);
   }
-  const mesh = new THREE.Mesh(coinGeo, coinMaterials(denom));
-  const s = COIN_SCALE[denom] ?? 0.85;
-  mesh.scale.set(s, 1, s);
+  const mesh = new THREE.Mesh(bentGeometry(noteCount++ % 3), m);
   mesh.castShadow = true;
   return mesh;
 }
@@ -259,16 +205,3 @@ export function moneyStack(denom: number): THREE.Group {
   return g;
 }
 
-/** Cột đồng xu xếp chồng (n đồng). */
-export function coinStack(denom: number, n: number): THREE.Group {
-  const g = new THREE.Group();
-  const geo = new THREE.CylinderGeometry(COIN_R, COIN_R, COIN_T * n, 32);
-  const [side, face] = coinMaterials(denom);
-  const m = new THREE.Mesh(geo, [side, face, face]);
-  const s = COIN_SCALE[denom] ?? 0.85;
-  m.scale.set(s, 1, s);
-  m.position.y = (COIN_T * n) / 2;
-  m.castShadow = true;
-  g.add(m);
-  return g;
-}

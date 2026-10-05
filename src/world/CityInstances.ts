@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BUILDINGS, isVnHouse, SCOOTER_FILTERS, VN_PASTELS } from '../config/city';
 import { BIKE_MODELS } from '../config/fleet';
 import { cityModel } from './CityModels';
+import { applyHouseWear } from './HouseWear';
 import type { Placement } from './CityLayout';
 
 const CHUNK = 70;
@@ -123,6 +124,7 @@ export function buildCityInstances(placements: Placement[], group: THREE.Group):
       if (first.model === 'vn_scooter') {
         material = Array.isArray(material) ? material.map((m) => scooterMaterial(m, first.variant)) : scooterMaterial(material, first.variant);
       }
+      if (vnHouse && (material as THREE.Material).name === 'vn_house_base') applyHouseWear(material as THREE.MeshStandardMaterial);
       // đèn đường (Quaternius 'Light') và đèn âm trần nhà phố Việt (emissive mạnh) → sáng theo đêm
       for (const m of [material].flat()) {
         const sm = m as THREE.MeshStandardMaterial;

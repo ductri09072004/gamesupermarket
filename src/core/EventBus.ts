@@ -46,7 +46,6 @@ export interface GameEvents {
   'ui:pointerLock': { locked: boolean };
   'player:interact': { kind: string };
   'checkout:mode': { active: boolean; counterUid: string | null };
-  'build:mode': { active: boolean };
   'tutorial:done': { step: string };
   'weather:changed': { icon: string; rain: number; flood: number };
   /** Xe máy tông người chơi đi bộ: vận tốc văng (m/s) và tốc độ xe */

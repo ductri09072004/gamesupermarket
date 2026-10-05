@@ -28,26 +28,33 @@ Cấu hình build nằm ở [`vercel.json`](./vercel.json).
 
 ## Điều khiển
 
-| Phím | Chức năng |
+| Phím / chuột | Chức năng |
 | --- | --- |
-| `W A S D` | Đi · `Shift` chạy · `Space` nhảy · `Ctrl` (hoặc `C`) ngồi xổm để nhìn tầng kệ thấp |
+| `W A S D` | Đi · `Shift` chạy · `Space` nhảy · `Ctrl` ngồi xổm để nhìn tầng kệ thấp |
 | Chuột | Nhìn (click vào màn hình để khoá chuột) |
-| `E` | Nhặt thùng · dùng máy tính · vào quầy thu ngân · bật/tắt biển Mở cửa · đặt giá (nhìn nhãn giá hoặc ngăn kệ) |
-| Chuột trái / phải | Cầm thùng đã mở, nhìn vào ngăn kệ: đặt 1 món (giữ để đặt liên tục) / lấy lại 1 món |
-| `F` · `Q` | Mở/đóng thùng · thả thùng (thả lên nóc thùng khác để xếp chồng) |
-| `Tab` | Mở app Pricing chỉnh giá nhanh |
-| `M` | Nhìn vào kệ/nội thất rồi nhấn M để dời nhanh — kệ đang có hàng vẫn dời được, hàng đi theo kệ |
-| `B` | Build mode: camera nhìn từ trên, `R` xoay, click đặt/nhấc, `Delete` bán lại 50% (hàng còn trên kệ tự đóng vào thùng) |
-| `T` | Tua nhanh 3× (bật/tắt) · `N` kết thúc ngày (sau 22:00) |
-| Ở quầy | Click món trên băng chuyền (hoặc `Space`) để quét · click khay tiền để thối · bấm phím máy POS hoặc gõ số + `Enter` |
+| **Chuột trái** | Nhặt thùng · **mở thùng đang cầm** · đặt 1 món lên kệ khi nhìn vào ngăn (giữ để đặt liên tục) · đặt giá (nhìn nhãn giá / kệ) · dùng máy tính · vào quầy thu ngân · lật biển Mở/Đóng cửa · bật/tắt đèn · lau rác · nhặt đồ rơi |
+| **Giữ chuột trái 2 giây** | Nhìn vào kệ / nội thất rồi giữ → dời chỗ (vòng tiến độ quanh tâm ngắm; hàng đi theo kệ) |
+| Chuột phải | Lấy lại 1 món từ ngăn về thùng |
+| `C` · `G` · `R` | **Đóng** thùng đang cầm · **đặt** thùng xuống (lên nóc thùng khác thì xếp chồng) · **quăng** thùng về phía trước |
+| `F` | Lên xe (nhìn vào xe) / xuống xe (khi đang lái) |
+| Chuột trái vào xe | Tay trống: **dỡ** 1 thùng từ xe xuống tay · tay đang cầm thùng: **chất** thùng lên xe |
+| `Tab` | Mở app Bảng giá nhanh |
+| `M` | Mở bản đồ lớn (cuộn: thu phóng, kéo: di chuyển, **nhấp đúp**: chỉ đường) |
+| `Enter` | Kết thúc ngày (sau 22:00, khi hết khách) — có thông báo trên màn hình |
+| `T` | Tua nhanh 3× (bật/tắt) |
+| Ở quầy | Click món trên băng chuyền (hoặc `Space`) để quét · click khay tiền để thối · `Enter` xác nhận · `Backspace` bỏ tờ vừa lấy · `Esc` rời quầy |
+| `E` | Phím tương tác dự phòng (giống chuột trái, trừ mở thùng) |
+| Lái xe | `W S` ga / lùi · `A D` lái · `Space` phanh tay · `F` xuống xe |
 | `Esc` · `F3` · `F4` | Menu · debug (FPS, draw calls, triangles, đường đi khách) · Product Gallery |
+
+(Đã bỏ chế độ xây dựng `B`: đặt nội thất bằng cách bê thùng nội thất giao tới và lắp; dời bằng giữ chuột trái.)
 
 ## Điểm chính
 
 - **56 mặt hàng** chia 7 nhóm giấy phép (thêm **Thời trang**: áo thun, hoodie, quần jean, váy, mũ, tất; **Điện tử**: tai nghe, củ sạc, pin dự phòng, chuột, bóng đèn LED, pin AA, loa, đồng hồ thông minh), **sản phẩm sinh bằng code**: 10 kiểu (hộp bo góc, lon, chai, hũ, túi phồng, hộp sữa mái nhà, tuýp, áo/váy treo móc, quần treo kẹp, mũ lưỡi trai) với kích thước thật; nhãn canvas có tên hãng hư cấu, hoạ tiết, dung tích và mã vạch **EAN-13 đúng chuẩn**. Hiển thị trên kệ bằng `InstancedMesh` (1 mesh / sản phẩm).
 - **Nội thất chuyên dụng**: *Giá treo quần áo* (3 thanh treo face-out, cần giấy phép Thời trang), *Tủ kính điện tử* (kệ kính 4 tầng có đèn LED, cần giấy phép Điện tử), *Máy bán hàng tự động* (16 ngăn lò xo, nhận đồ uống/đồ kệ vừa ngăn — khách tự mua & trả tiền ngay tại máy, không qua quầy).
 - **Kệ theo tầng & ngăn**: mỗi ngăn tự tính lưới vị trí theo kích thước sản phẩm; khung highlight + bóng mờ món kế tiếp; món bay vào kệ với tween, lắc nhẹ, tiếng "tộc" đổi cao độ.
-- **Quầy thu ngân 3D**: khách đặt từng món lên băng chuyền, món bay qua máy quét (laser nháy, bíp), màn hình LCD canvas, ngăn kéo tiền trượt ra với các khay mệnh giá, tiền thối xếp trên quầy, máy POS có phím bấm được.
+- **Quầy thu ngân 3D**: khách đặt từng món lên băng chuyền, món bay qua máy quét (laser nháy, bíp), **hoá đơn viết tay** trên quầy (ghi món đã quét, tổng, tiền khách đưa, tiền phải thối), **khay tiền giấy** bên phải mặt quầy với các khay mệnh giá, chỉ tiền giấy (200đ → 100.000đ), tiền thối xếp trên quầy; lẻ dưới 200đ không phải thối.
 - **Không khí**: tone mapping ACES, bóng đổ, môi trường phòng (PMREM), dải đèn trần phát sáng + bloom, cửa gỗ hai cánh (chống mở lúc mở tiệm, đóng khi đóng cửa), ánh sáng ngoài trời đổi theo giờ, đèn đường & biển hiệu sáng ban đêm, âm thanh 3D (tiếng máy lạnh tủ đông, chuông cửa, bước chân, nhạc nền, tiếng đám đông).
 - Logic cũ (tiền, giá, khách, kho, thời gian, lưu game) được giữ lại trong `src/systems` — không import Three.
 
@@ -72,14 +79,14 @@ Môi trường build không truy cập được kenney.nl / polyhaven nên **m�
 src/
   config/     constants, feel (game feel), products (shape/size/brand/label), furniture (size/tầng/ngăn), licenses, staff
   core/       EventBus, GameState, SaveSystem (version 3), Services, Random
-  systems/    logic thuần: Time, Economy, Inventory, SlotLayout, Order, Pricing, Checkout, Customer, Staff, Build, Shop, Day
+  systems/    logic thuần: Time, Economy, Inventory, SlotLayout, Order, Pricing, Checkout, Customer, Staff, Shop, Day
   engine/     Renderer (ACES, shadow), Post (Outline, Bloom, GTAO, SMAA/FXAA), Loop (fixed-step 60Hz), Input (pointer lock), Audio, SoundBank, Assets
   world/      NavGrid (0.5m), Pathfinding (A* + string-pulling), Colliders (AABB), Store, Exterior, Decor, Lighting, Queue
   products/   PackagingFactory, LabelTexture, Ean13, ProductInstances, Gallery
   player/     PlayerController, Interaction (raycast), HeldItem, CameraTween
   entities/   Shelf (FurnitureView), FurnitureModels, CheckoutCounter, Box, Human, Walker, Customer, Staff, Basket, Bubble, OpenSign
   game/       Game, World, GameUI, PlayInput, Actions, Checkout, CashDrawer, Customer/Staff/Furniture/Box managers, Effects
-  build/      BuildMode
+  build/      FpPlace (bê / dời nội thất)
   ui/         DOM overlay: HUD, máy tính & apps, bảng giá nổi, thanh thu ngân, báo cáo ngày, menu, cài đặt, tutorial
 tests/        vitest
 ```
@@ -88,6 +95,19 @@ tests/        vitest
 
 - **F3** trong game: đồ thị thời gian từng khung (xanh ≤ 20ms, vàng, cam > 25ms, đỏ > 50ms; cột xanh dương = CPU logic), FPS, "1% thấp", số khung giật, draw calls. Vạch trắng = sự kiện (lên xe, mở menu...).
 - **F7** đặt lại bộ đo · **F8** tải báo cáo JSON (máy/GPU, thống kê, kết luận đạt/không, 40 khung chậm nhất kèm sự kiện xung quanh).
-- **Bench tự động**: mở `http://localhost:5173/?bench=drive` (hoặc địa chỉ đã deploy kèm `?bench=drive`) trong một **tab Chrome/Edge đang hiển thị**, không thu nhỏ. Game tự chạy kịch bản ~75 giây (đứng tiệm → mở cửa → máy tính → xây dựng → mua xe → lên xe → lái một vòng → xuống xe), in bảng kết quả theo từng pha và tải file JSON. Không ghi đè bản lưu nào.
+- **Bench tự động**: mở `http://localhost:5173/?bench=drive` (hoặc địa chỉ đã deploy kèm `?bench=drive`) trong một **tab Chrome/Edge đang hiển thị**, không thu nhỏ. Game tự chạy kịch bản ~75 giây (đứng tiệm → mở cửa → máy tính → mua xe → lên xe → lái một vòng → xuống xe), in bảng kết quả theo từng pha và tải file JSON. Không ghi đè bản lưu nào.
 - Ngưỡng và kết luận đạt/không nằm ở `src/config/perf.ts`, logic thống kê ở `src/systems/PerfStats.ts` (có test).
 - Laptop có 2 GPU: Windows → Settings → System → Display → Graphics → thêm trình duyệt → "High performance" để chạy bằng GPU rời. Báo cáo ghi rõ GPU nào đang được dùng.
+
+### Ngân hàng & mua sắm trong máy tính
+- **Vay vốn** (app Ngân hàng): hạn mức = 1.000.000đ × cấp người chơi; 3 gói kỳ hạn (3 / 7 / 14 ngày, lãi 1,0 / 1,2 / 1,5 %/ngày, lãi đơn), tối đa 3 khoản cùng lúc. Đáo hạn cuối ngày tự trừ gốc + lãi (thiếu tiền thì ghi nợ như chi phí khác); tất toán sớm chỉ tính lãi số ngày đã vay. Lãi vay xuất hiện trong báo cáo cuối ngày.
+- **Nội thất** thêm vào giỏ như hàng hoá, bấm Mua mới trả tiền (một đơn, xe tải giao các thùng).
+- Ảnh sản phẩm / nội thất / xe / giấy phép trong máy tính là mô hình 3D thật chụp sẵn (`src/ui/productThumb.ts`).
+
+### Phố & hẻm
+- **Đường trước cửa hàng rộng 1,5 làn** (6,9m): 1 làn chạy xe + nửa làn ven vỉa hè làm chỗ đỗ, có vạch đứt ngăn. Xe mua về (và "Gọi về trước cửa hàng") đỗ song song sát vỉa hè ngay trước cửa hàng.
+- **Hẻm nhỏ giữa các nhà** (`src/world/Alleys.ts`, rộng 1,5m — vừa 2 xe máy): hẻm **thông hai đầu**, hẻm **cụt** (bít bằng mặt hông nhà), **ngõ nhánh** rẽ từ hẻm lớn; sàn **dốc lên xuống** (người chơi đi bám theo dốc). Dấu vết sinh hoạt: cây chậu, dây phơi quần áo, túi/thùng rác, xô, dép, bàn thờ treo tường có đèn đỏ ban đêm, đèn lồng, xe máy dựng sát tường, bộ ghế đẩu + bàn cuối hẻm cụt.
+
+### Bản đồ & chỉ đường
+- **Bản đồ nhỏ** ở góc phải màn hình (lấy người chơi làm tâm, hiện tên điểm đến + quãng đường còn lại); bấm vào hoặc nhấn `M` để mở bản đồ lớn.
+- Bản đồ lớn có đường, nhà, hẻm, cửa hàng, kho sỉ, trạm buýt, tên đường và danh sách địa điểm (ngã tư, đầu từng hẻm, xe của bạn). **Nhấp đúp** lên bản đồ để chỉ đường: game tìm đường đi bộ (A* trên lưới thành phố, đi được cả vào hẻm), vẽ đường vàng trên bản đồ và **mũi tên vàng + cột sáng** ngoài đời thật; tới nơi sẽ báo.

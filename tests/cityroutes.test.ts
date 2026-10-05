@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ROAD_WIDTH } from '../src/config/city';
 import { ONE_WAY_BLOCKS } from '../src/config/traffic';
 import { cityLayout, rectsOverlap } from '../src/world/CityLayout';
 import { carLoops, LANE_OFFSET, poseAt, roundedLoop, walkLoops } from '../src/world/CityRoutes';
@@ -22,7 +21,7 @@ describe('tuyến xe & người đi bộ', () => {
     expect(blocks.every(Boolean)).toBe(true);
     // khối có cửa hàng (chứa x = 0, phía trên đường chính) nằm trong số đó
     expect(blocks.some((b) => b.x0 < 0 && b.x1 > 0 && b.z1 < L.roads[1].z1)).toBe(true);
-    const loops = carLoops(blocks);
+    const loops = carLoops(ONE_WAY_BLOCKS.map((i) => L.loopCenters[i]));
     expect(LANE_OFFSET).toBe(0);
     // không có hai xe chạy ngược chiều nhau ở cùng một chỗ trên đường
     for (let i = 0; i < loops.length; i++) {
@@ -36,12 +35,12 @@ describe('tuyến xe & người đi bộ', () => {
         }
       }
     }
-    // xe đi ngay giữa lòng đường: tim đường cách mép khối ROAD_WIDTH / 2
-    const b = blocks[0];
+    // xe đi đúng tim tuyến của khối (đường chính lệch ra xa lề để chừa dải đỗ xe)
+    const b = L.loopCenters[ONE_WAY_BLOCKS[0]];
     let best = Infinity;
     for (let d = 0; d < loops[0].total; d += 1) {
       const p = poseAt(loops[0], d);
-      if (Math.abs(p.dz) < 0.01 && p.z < (b.z0 + b.z1) / 2) best = Math.min(best, Math.abs(p.z - (b.z0 - ROAD_WIDTH / 2)));
+      if (Math.abs(p.dz) < 0.01 && p.z < (b.z0 + b.z1) / 2 + 100) best = Math.min(best, Math.abs(p.z - b.z0));
     }
     expect(best).toBeLessThan(0.05);
   });

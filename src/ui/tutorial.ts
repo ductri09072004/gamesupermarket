@@ -5,13 +5,13 @@ const STEPS: Array<[string, string]> = [
   ['pc', 'Bấm vào máy tính'],
   ['order', 'Đặt hàng trên máy tính (mục Đặt hàng)'],
   ['pickup', 'Bấm nhặt thùng ở vỉa hè'],
-  ['stock', 'Mở thùng (F), nhìn ngăn kệ & bấm chuột trái'],
+  ['stock', 'Bấm chuột trái để mở thùng, nhìn ngăn kệ & bấm chuột trái'],
   ['price', 'Đặt giá (nhìn nhãn giá + E)'],
   ['open', 'Bấm lật biển Mở cửa cạnh cửa ra vào'],
   ['checkout', 'Bấm vào quầy & tính tiền cho khách'],
 ];
 
-/** Checklist hướng dẫn ngày đầu ở góc phải. */
+/** Hướng dẫn ngày đầu ở góc phải: chỉ hiện nhiệm vụ hiện tại, xong mới tới nhiệm vụ kế. */
 export class Tutorial {
   private root: HTMLElement | null = null;
   private off: () => void;
@@ -40,15 +40,14 @@ export class Tutorial {
 
   private render(): void {
     const t = this.s.data.tutorial;
-    const list = h('ol', {}, STEPS.map(([k, label]) => h('li', { class: t[k] ? 'done' : '' }, [label])));
-    const next = STEPS.find(([k]) => !t[k]);
+    const idx = STEPS.findIndex(([k]) => !t[k]);
+    const cur = STEPS[idx];
     const el = h('div', { class: 'tutorial' }, [
       h('div', { class: 'tut-head' }, [
-        h('b', { text: 'Hướng dẫn ngày 1' }),
+        h('b', { text: idx < 0 ? 'Hoàn thành!' : `Nhiệm vụ ${idx + 1}/${STEPS.length}` }),
         h('button', { class: 'win-close', text: '✕', title: 'Ẩn hướng dẫn', onClick: () => { t.dismissed = true; this.remove(); } }),
       ]),
-      list,
-      next ? h('div', { class: 'tut-next', text: `Tiếp theo: ${next[1]}` }) : null,
+      cur ? h('div', { class: 'tut-step', text: cur[1] }) : null,
     ]);
     if (this.root) this.root.replaceWith(el);
     else uiRoot().append(el);

@@ -60,10 +60,10 @@ export class OrderSystem {
   /** Có đặt thì đơn tới hạn sẽ gọi hàm này (xe tải chạy tới rồi mới deliver); không đặt → giao ngay. */
   onDue: ((order: OrderData) => void) | null = null;
 
-  /** Nội thất đã trả tiền → đơn giao hàng dạng thùng lắp đặt. */
-  orderFurniture(type: string): OrderData {
+  /** Nội thất đã trả tiền → một đơn giao hàng dạng thùng lắp đặt (mỗi món một thùng). */
+  orderFurniture(types: string[]): OrderData {
     const order: OrderData = {
-      id: this.state.newUid('o'), items: [], furniture: [type], total: 0,
+      id: this.state.newUid('o'), items: [], furniture: [...types], total: 0,
       remainingMs: DELIVERY_MIN_MS + this.rng() * (DELIVERY_MAX_MS - DELIVERY_MIN_MS),
     };
     this.state.data.orders.push(order);

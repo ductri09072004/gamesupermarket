@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ROAD_WIDTH } from '../config/city';
+import { MAIN_PARK_STRIP, ROAD_WIDTH } from '../config/city';
 import type { OrderData } from '../core/GameState';
 import { buildTruck, type TruckModel } from '../entities/TruckModel';
 import type { AABB } from '../world/Colliders';
@@ -51,7 +51,8 @@ export class DeliveryTrucks {
   constructor(private c: GameCtx, private layout: () => CityLayout) {}
 
   private get laneZ(): number {
-    return this.layout().roads[1].z0 + ROAD_WIDTH / 2 - LANE_OFFSET - TRUCK_CURB_SHIFT;
+    // làn xe chạy của đường chính (sau dải đỗ xe 2.3m ven vỉa hè), xe tải nép về phía lề
+    return this.layout().roads[1].z0 + MAIN_PARK_STRIP + ROAD_WIDTH / 2 - LANE_OFFSET - TRUCK_CURB_SHIFT;
   }
 
   dispatch(order: OrderData): void {

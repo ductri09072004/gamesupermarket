@@ -11,6 +11,7 @@ import { showSettings } from '../ui/settings';
 import { mountToasts } from '../ui/toast';
 import { Tutorial } from '../ui/tutorial';
 import { uiRoot } from '../ui/dom';
+import { MapUI } from '../ui/mapUI';
 import { PlayInput } from './PlayInput';
 import type { World } from './World';
 
@@ -29,6 +30,7 @@ export class GameUI {
   readonly clickToPlay: ClickToPlay;
   readonly tutorial: Tutorial;
   readonly play: PlayInput;
+  readonly map: MapUI;
   private modals = new Set<string>();
   private cleanups: Array<() => void> = [];
   private s: Services;
@@ -40,7 +42,14 @@ export class GameUI {
       openPc: (app) => this.openPc(app as AppId | undefined),
       openPrice: (uid, slot) => this.openPrice(uid, slot),
       isUiOpen: () => this.isUiOpen(),
+      toggleMap: () => this.toggleMap(),
+      holdProgress: (p) => this.crosshair.setHold(p),
     });
+    this.map = new MapUI(w);
+    this.map.onClose = () => {
+      this.setModal('map', false);
+      this.relock();
+    };
     this.hud = new Hud(s, {
       onMenu: () => this.openPause(),
       onEndDay: () => this.endDay(),
@@ -58,12 +67,9 @@ export class GameUI {
         this.w.player.launch(vx, vz);
         s.bus.emit('toast', { message: '🛵 Bị xe máy tông! Lần sau tránh xa lòng đường nhé.', kind: 'error' });
       }),
-      s.bus.on('day:closing', () => s.bus.emit('toast', { message: '22:00 — hết giờ bán. Tiễn khách cuối rồi nhấn N để kết thúc ngày.', kind: 'info' })),
+      s.bus.on('day:closing', () => s.bus.emit('toast', { message: '22:00 — hết giờ bán. Tiễn nốt khách cuối nhé.', kind: 'info' })),
+      s.bus.on('day:canEnd', ({ canEnd }) => { if (canEnd) s.bus.emit('toast', { message: '🌙 Hết khách rồi — nhấn Enter để kết thúc ngày', kind: 'success' }); }),
       s.bus.on('game:over', () => showGameOver(s.data.day, () => host.quitToMenu())),
-      s.bus.on('build:mode', ({ active }) => {
-        uiRoot().classList.toggle('mode-focus', active);
-        if (!active) setTimeout(() => this.relock(), 700);
-      }),
       s.bus.on('checkout:mode', ({ active }) => {
         uiRoot().classList.toggle('mode-focus', active);
         if (!active) setTimeout(() => this.relock(), 500);
@@ -75,11 +81,13 @@ export class GameUI {
     w.input.onMouseDown((e) => {
       if ((w.mode === 'play' || w.mode === 'drive') && !this.isUiOpen() && !w.input.locked && !w.input.dragLook && (e.target as HTMLElement).tagName === 'CANVAS') this.relock();
       // chuột trái = tương tác (khi đã khoá chuột; chế độ kéo-để-nhìn xử lý lúc nhả chuột)
-      else if (e.button === 0 && w.input.locked) this.play.onPrimaryClick();
+      else if (e.button === 0 && w.input.locked) this.play.onPrimaryDown();
+      else if (e.button === 0 && w.input.dragLook && (e.target as HTMLElement).tagName === 'CANVAS') this.play.onPrimaryDownDrag();
       else if (e.button === 2 && w.fp.active && w.mode === 'play' && !this.isUiOpen()) w.fp.cancel();
     });
     w.input.onMouseUp((e) => {
-      if (e.button === 0 && !w.input.locked && w.input.dragLook && !w.input.dragged && (e.target as HTMLElement).tagName === 'CANVAS') this.play.onPrimaryClick();
+      if (e.button === 0 && w.input.locked) this.play.onPrimaryUp(true);
+      else if (e.button === 0 && w.input.dragLook && (e.target as HTMLElement).tagName === 'CANVAS') this.play.onPrimaryUp(false, w.input.dragged);
     });
     w.input.onLock((locked) => {
       if (locked) this.clickToPlay.hide();
@@ -91,6 +99,17 @@ export class GameUI {
       s.bus.emit('toast', { message: '👋 Chào mừng tới Tạp Hoá Đầu Hẻm! Làm theo hướng dẫn góc phải — mũi tên vàng chỉ chỗ cần tới.', kind: 'info' });
     }
     this.clickToPlay.show();
+  }
+
+  /** Mở / đóng bản đồ lớn (phím M). */
+  toggleMap(): void {
+    if (this.map.isOpen) {
+      this.map.close();
+      return;
+    }
+    if (this.isUiOpen() || (this.w.mode !== 'play' && this.w.mode !== 'drive')) return;
+    this.setModal('map', true);
+    this.map.open();
   }
 
   isUiOpen(): boolean {
@@ -133,7 +152,6 @@ export class GameUI {
   openPc(app?: AppId): void {
     const w = this.w;
     if (w.mode === 'checkout') return;
-    if (w.mode === 'build' && app !== 'furniture') w.build.exit();
     if (!this.pc.isOpen) this.setModal('pc', true);
     this.pc.open(app ?? undefined);
   }
@@ -156,7 +174,6 @@ export class GameUI {
       onEndDay: () => { this.setModal('pause', false); this.endDay(); },
       onResume: () => { this.setModal('pause', false); this.relock(); },
       onSave: () => this.save(),
-      onBuild: () => { this.setModal('pause', false); this.w.build.toggle(); },
       onSettings: () => showSettings(this.s.data.settings, () => this.updateSettings(() => {}), () => { this.setModal('pause', false); this.relock(); }),
       onQuit: () => { this.setModal('pause', false); this.save(); this.host.quitToMenu(); },
     });
@@ -167,7 +184,6 @@ export class GameUI {
     const w = this.w;
     if (!s.day.canEndDay() || this.modals.has('report')) return;
     if (w.checkout.active) w.checkout.exit();
-    if (w.build.active) w.build.exit();
     this.setModal('report', true);
     w.saveSnapshot();
     const report = s.day.endDay();
@@ -187,20 +203,19 @@ export class GameUI {
     if (e.code === 'F3') { e.preventDefault(); this.host.toggleDebug(); return; }
     if (e.code === 'F7') { e.preventDefault(); perf.reset(); perf.mark('đo lại'); this.s.bus.emit('toast', { message: 'Đã đặt lại bộ đo hiệu năng', kind: 'info' }); return; }
     if (e.code === 'F8') { e.preventDefault(); perf.download(); this.s.bus.emit('toast', { message: 'Đã xuất báo cáo hiệu năng (file JSON)', kind: 'success' }); return; }
+    if (e.code === 'KeyM' && w.mode === 'drive' && !this.isUiOpen()) { this.toggleMap(); return; }
     if (e.code === 'F4') { e.preventDefault(); this.host.toggleGallery(); return; }
-    if (e.code === 'KeyN' && w.mode === 'play' && !this.isUiOpen() && this.s.day.canEndDay()) { this.endDay(); return; }
-    if (w.build.active && !this.isUiOpen() && w.build.onKey(e)) {
-      e.preventDefault();
-      return;
-    }
+    if ((e.code === 'Enter' || e.code === 'NumpadEnter') && w.mode === 'play' && !this.isUiOpen() && this.s.day.canEndDay()) { this.endDay(); return; }
     if (e.code !== 'Escape' || e.defaultPrevented) return;
     if (this.pc.isOpen) { this.pc.close(); return; }
     if (this.isUiOpen() || (w.mode !== 'play' && w.mode !== 'drive')) return;
     this.openPause();
   }
 
-  update(): void {
+  update(dt = 1 / 60): void {
     const w = this.w;
+    this.map.update();
+    this.play.updateHold(dt);
     const show = w.mode === 'play' && !this.isUiOpen();
     this.crosshair.setVisible(show);
     if (show) this.crosshair.set(this.play.hints(), w.interaction.target.kind !== 'none');
@@ -210,6 +225,7 @@ export class GameUI {
     uiRoot().classList.remove('mode-focus');
     this.cleanups.forEach((c) => c());
     this.hud.destroy();
+    this.map.destroy();
     this.pc.close();
     this.tutorial.destroy();
     this.crosshair.destroy();

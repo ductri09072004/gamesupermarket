@@ -16,7 +16,7 @@ import type { FurnitureManager } from './FurnitureManager';
 import type { FpPlace } from '../build/FpPlace';
 import type { BoxPhysics } from './BoxPhysics';
 
-export type Mode = 'play' | 'pc' | 'checkout' | 'build' | 'modal' | 'gallery' | 'drive';
+export type Mode = 'play' | 'pc' | 'checkout' | 'modal' | 'gallery' | 'drive';
 
 /** Tham chiếu dùng chung giữa các phần của ván chơi. */
 export interface GameCtx {
