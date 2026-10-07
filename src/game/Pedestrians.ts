@@ -12,6 +12,8 @@ import { walkingVendorsOut } from '../systems/VendorSystem';
 import type { CityLayout } from '../world/CityLayout';
 import { poseAt, walkLoops, type Route } from '../world/CityRoutes';
 import { buildVendorGear, type VendorGear } from './VendorGear';
+import type { Crosswalk } from '../world/Crosswalks';
+import { canStartCrossing } from '../world/TrafficSignals';
 
 interface Walker {
   human: HumanBody;
@@ -24,6 +26,7 @@ interface Walker {
   z: number;
   /** Gánh hàng rong: đồ nghề, giây còn đứng rao, hẹn giờ rao tiếp */
   vendor?: { gear: VendorGear; pause: number; callT: number };
+  crossing?: { path: Crosswalk; progress: number; reverse: boolean; active: boolean; wait: number };
 }
 
 const pick = <T>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
@@ -50,12 +53,15 @@ export class Pedestrians {
   /** Gánh hàng rong cất tiếng rao tại (x, z) */
   onCall: (x: number, z: number) => void = () => {};
   private clock = 0;
+  signalTime = 0;
+  canCross: (c: Crosswalk) => boolean = () => true;
 
   reset(L: CityLayout): void {
     this.clear();
     this.front.z = L.roads[1].z0;
     this.detours = L.stalls.map((s) => ({ x0: s.x0, x1: s.x1, z0: s.z0, z1: s.z1, target: s.curb + s.dir * 0.7, hours: s.hours }));
     const routes = walkLoops(L.blocks, PEDESTRIANS.inset);
+    const crossings = [...L.crosswalks].sort((a, b) => Math.hypot(a.from.x - DOOR_X, a.from.z - this.front.z) - Math.hypot(b.from.x - DOOR_X, b.from.z - this.front.z));
     for (let i = 0; i < PEDESTRIANS.count; i++) {
       const route = routes[i % routes.length];
       const look = { shirt: pick(SHIRTS), pants: pick(PANTS), skin: pick(SKINS), hair: pick(HAIRS), female: Math.random() < 0.5, model: pick(CUSTOMER_MODELS) };
@@ -64,6 +70,9 @@ export class Pedestrians {
         human, route, d: Math.random() * route.total, speed: PEDESTRIANS.speed * (0.8 + Math.random() * 0.4),
         curb: i % 2 === 0 ? 0.75 : 1.25, x: 0, z: 0,
       };
+      if (i < Math.floor(PEDESTRIANS.count / 3) && crossings.length) {
+        w.crossing = { path: crossings[i % crossings.length], progress: 0, reverse: i % 2 === 0, active: false, wait: i * 0.7 };
+      }
       this.group.add(human.root);
       this.list.push(w);
     }
@@ -117,17 +126,29 @@ export class Pedestrians {
     let near = false;
     for (const [i, w] of this.list.entries()) {
       const v = w.vendor;
-      if (v ? !vendors : i >= out) {
+      if ((v ? !vendors : i >= out) && !w.crossing?.active) {
         w.human.root.visible = false;
         continue;
       }
-      const p = poseAt(w.route, w.d);
+      const crossing = w.crossing;
+      if (crossing) {
+        crossing.wait = Math.max(0, crossing.wait - dt);
+        if (!crossing.active && crossing.wait <= 0 && canStartCrossing(this.signalTime, crossing.path.offset, crossing.path.length, w.speed) && this.canCross(crossing.path)) crossing.active = true;
+      }
+      const from = crossing ? (crossing.reverse ? crossing.path.to : crossing.path.from) : null;
+      const to = crossing ? (crossing.reverse ? crossing.path.from : crossing.path.to) : null;
+      const p = crossing && from && to ? {
+        x: from.x + (to.x - from.x) * crossing.progress,
+        z: from.z + (to.z - from.z) * crossing.progress,
+        dx: (to.x - from.x) / crossing.path.length,
+        dz: (to.z - from.z) / crossing.path.length,
+      } : poseAt(w.route, w.d);
       // người chơi chắn ngay trước mặt → đứng chờ
       const rx = player.x - p.x;
       const rz = player.z - p.z;
       const along = rx * p.dx + rz * p.dz;
       const blocked = along > 0 && along < 1.1 && Math.abs(rx * p.dz - rz * p.dx) < 0.6;
-      let speed = blocked ? 0 : w.speed;
+      let speed = blocked || (crossing && !crossing.active) ? 0 : w.speed;
       if (v) {
         v.callT -= dt;
         v.pause = Math.max(0, v.pause - dt);
@@ -140,8 +161,17 @@ export class Pedestrians {
         near ||= Math.abs(w.x - DOOR_X) < WALKING_VENDOR.nearDoor && Math.abs(w.z - this.front.z) < 5;
       }
       w.d += speed * dt;
+      if (crossing?.active) {
+        crossing.progress = Math.min(1, crossing.progress + speed * dt / crossing.path.length);
+        if (crossing.progress >= 1) {
+          crossing.progress = 0;
+          crossing.reverse = !crossing.reverse;
+          crossing.active = false;
+          crossing.wait = 4 + Math.random() * 3;
+        }
+      }
       w.x = p.x;
-      w.z = this.nudge(w, p.x, p.z);
+      w.z = crossing ? p.z : this.nudge(w, p.x, p.z);
       const root = w.human.root;
       const dist = Math.hypot(w.x - camera.x, w.z - camera.z);
       root.visible = dist < PEDESTRIANS.hideDist;
@@ -163,6 +193,10 @@ export class Pedestrians {
     }
     this.list = [];
     this.vendorNear = false;
+  }
+
+  occupiedCrosswalks(): Set<number> {
+    return new Set(this.list.filter((w) => w.crossing?.active).map((w) => w.crossing!.path.id));
   }
 
   destroy(): void {

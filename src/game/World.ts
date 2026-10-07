@@ -215,6 +215,7 @@ export class World implements GameCtx {
     const onRoad = this.driving.uid ? this.driving.state : this.player;
     this.trucks.update(s.time.paused ? 0 : dt, [...this.life.traffic.positions(), onRoad]);
     this.life.update(dt, onRoad, !!this.driving.uid, this.camera.position, this.trucks.obstacles());
+    this.city.setSignalTime(this.life.signalTime);
     s.walkingVendorNear = this.life.pedestrians.vendorNear;
     this.crates.update(dt);
     this.waypoint.update(dt);

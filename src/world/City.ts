@@ -17,6 +17,8 @@ import { applyPbr, pbrSet } from './Materials';
 import { buildShopSigns } from './ShopSigns';
 import { vendorsPackUp } from '../systems/WeatherSystem';
 import { asphaltTexture, concreteTexture, grassTexture } from './Textures';
+import { TrafficSignalView } from './TrafficSignalView';
+import { PedestrianSignalView } from './PedestrianSignalView';
 
 /** Mặt phẳng nằm ngang phủ rect, UV theo toạ độ thế giới / tile (m) → vật liệu dùng chung, không cần repeat riêng. */
 function worldPlane(r: Rect, y: number, tile: number): THREE.BufferGeometry {
@@ -57,10 +59,14 @@ export class City {
   private kiosk: THREE.Object3D | null = null;
   private wetMats: Array<{ mat: THREE.MeshStandardMaterial; rough: number; dark: number }> = [];
   private water: CityWater | null = null;
+  private signals: TrafficSignalView | null = null;
+  private pedestrianSignals: PedestrianSignalView | null = null;
   /** Gọi sau mỗi lần dựng lại (xe & người đi bộ cần tuyến mới) */
   onBuilt: (L: CityLayout) => void = () => {};
 
   build(D: number, storeW: number): void {
+    this.signals?.dispose();
+    this.pedestrianSignals?.dispose();
     this.group.clear();
     this.lights = [];
     const L = cityLayout(D, storeW);
@@ -86,6 +92,10 @@ export class City {
     this.group.add(this.water.mesh);
     // siêu nhẹ: chỉ dựng khu phố quanh cửa hàng (xa hơn đã chìm trong sương mù); va chạm vẫn đủ
     const R = activeQuality().cityRadius;
+    this.signals = new TrafficSignalView(L.signals.filter((s) => Math.hypot(s.x - storeW / 2, s.z - D / 2) <= R));
+    this.group.add(this.signals.group);
+    this.pedestrianSignals = new PedestrianSignalView(L.crosswalks.filter((c) => Math.hypot(c.from.x - storeW / 2, c.from.z - D / 2) <= R));
+    this.group.add(this.pedestrianSignals.group);
     const shown = R === Infinity ? L.placements : L.placements.filter((p) => Math.hypot(p.x - storeW / 2, p.z - D / 2) <= R);
     const extra = houseDetails(shown);
     const inst = buildCityInstances([...shown, ...extra.props], this.group);
@@ -116,6 +126,18 @@ export class City {
     // vạch đỗ xe trong bãi + vạch qua đường trước cửa hàng
     const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.7 });
     const lines: THREE.Matrix4[] = [];
+    for (const c of L.crosswalks) {
+      const r = c.rect;
+      const acrossX = c.axis === 'z';
+      const length = acrossX ? r.x1 - r.x0 : r.z1 - r.z0;
+      for (let d = 0.3; d < length - 0.2; d += 0.8) {
+        lines.push(new THREE.Matrix4().makeScale(acrossX ? 0.45 : 2.4, 1, acrossX ? 2.4 : 0.45)
+          .setPosition(acrossX ? r.x0 + d : (r.x0 + r.x1) / 2, -0.015, acrossX ? (r.z0 + r.z1) / 2 : r.z0 + d));
+      }
+      const stop = c.approach > 0 ? (acrossX ? r.z0 : r.x0) - 0.6 : (acrossX ? r.z1 : r.x1) + 0.6;
+      lines.push(new THREE.Matrix4().makeScale(acrossX ? length : 0.18, 1, acrossX ? 0.18 : length)
+        .setPosition(acrossX ? (r.x0 + r.x1) / 2 : stop, -0.015, acrossX ? stop : (r.z0 + r.z1) / 2));
+    }
     for (let i = 0; i <= 6; i++) lines.push(new THREE.Matrix4().makeScale(0.12, 1, 5.4).setPosition(L.lot.x0 + 0.3 + i * 3.4, -0.02, L.lot.z0 + 7));
     const road = L.roads[1];
     const rw = road.z1 - road.z0;
@@ -169,6 +191,11 @@ export class City {
       mat.color.setScalar(1 - dark * wet);
     }
     this.water?.update(flood, t);
+  }
+
+  setSignalTime(time: number): void {
+    this.signals?.update(time);
+    this.pedestrianSignals?.update(time);
   }
 
   /** hour: giờ game — bật/tắt hàng rong theo khung giờ bán; rain: hàng rong dọn về khi mưa. */

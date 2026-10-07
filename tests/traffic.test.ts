@@ -99,8 +99,9 @@ describe('dòng xe máy & xe buýt chạy trên phố', () => {
     expect(tr.count('moto')).toBe(MOTO_TRAFFIC.max / 2);
     expect(tr.count('car')).toBe(TRAFFIC.maxCars / 2);
     expect(tr.count('moto')).toBeGreaterThan(tr.count('car'));
-    // khoảng cách từ tim đường: xe máy 3.5m, ô tô 2m (đường chính trước cửa hàng, đi qua giữa hai khối)
-    const centerZ = (L.roads[1].z0 + L.roads[1].z1) / 2;
+    // Tim tuyến ô tô lệch khỏi tim đường chính để chừa dải đỗ xe.
+    // So theo tim tuyến này để xe máy ở cả hai chiều đều có độ lệch đúng.
+    const centerZ = (L.roads[1].z0 + L.roads[1].z1) / 2 + MAIN_PARK_STRIP / 2;
     const lateral = (kind: 'car' | 'moto') => {
       const xs = (tr as unknown as { cars: Array<{ kind: string; x: number; z: number; dz: number }> }).cars
         .filter((c) => c.kind === kind && Math.abs(c.dz) < 0.05 && Math.abs(c.z - centerZ) < 4.5).map((c) => Math.abs(c.z - centerZ));
