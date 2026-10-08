@@ -11,10 +11,7 @@ import { QUALITY_PROFILES } from '../config/quality';
 import type { Quality } from '../core/GameState';
 import { FEEL } from '../config/feel';
 
-/**
- * GTAO bỏ qua thêm sprite (bong bóng, số tiền nổi) và mesh trong suốt không ghi depth (kính, bóng giả):
- * mặc định chúng bị vẽ vào G-buffer pháp tuyến như bề mặt đặc → AO làm chúng thành mảng đen.
- */
+/** Skip sprites and transparent decals in the AO normal buffer. */
 class GameGTAOPass extends GTAOPass {
   _overrideVisibility(): void {
     const cache = (this as unknown as { _visibilityCache: THREE.Object3D[] })._visibilityCache;
@@ -23,67 +20,80 @@ class GameGTAOPass extends GTAOPass {
       const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
       const skip = (o as THREE.Points).isPoints || (o as THREE.Line).isLine || (o as THREE.Sprite).isSprite
         || (!!mat && !Array.isArray(mat) && mat.transparent && !mat.depthWrite);
-      if (skip) {
-        o.visible = false;
-        cache.push(o);
-      }
+      if (skip) { o.visible = false; cache.push(o); }
     });
   }
 }
 
-/** EffectComposer: cảnh chính → (AO) → viền vật đang nhìn → vật đang cầm → bloom → AA → output. */
+/** Allocate only active effects, preserving each quality preset's rendering. */
 export class Post {
-  readonly composer: EffectComposer;
-  readonly outline: OutlinePass;
-  private bloom: UnrealBloomPass;
-  private smaa: SMAAPass;
-  private fxaa: FXAAPass;
-  private gtao: GTAOPass;
-  private heldPass: RenderPass;
+  readonly outline = { selectedObjects: [] as THREE.Object3D[] };
+  private composer: EffectComposer | null = null;
+  private outlinePass: OutlinePass | null = null;
+  private quality: Quality = 'lite';
+  private pixelRatio = 1;
+  private width = 1;
+  private height = 1;
 
-  constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, heldScene: THREE.Scene, camera: THREE.PerspectiveCamera, heldCamera: THREE.PerspectiveCamera) {
+  constructor(private renderer: THREE.WebGLRenderer, private scene: THREE.Scene, private heldScene: THREE.Scene,
+    private camera: THREE.PerspectiveCamera, private heldCamera: THREE.PerspectiveCamera) {
     const size = renderer.getSize(new THREE.Vector2());
-    this.composer = new EffectComposer(renderer);
-    this.composer.addPass(new RenderPass(scene, camera));
-    this.gtao = new GameGTAOPass(scene, camera, size.x, size.y);
-    this.gtao.blendIntensity = 1;
-    // bán kính ~ khoảng hở giữa các tầng kệ để lòng kệ, gầm quầy, góc tường tối lại
-    this.gtao.updateGtaoMaterial({ radius: 0.35 });
-    this.composer.addPass(this.gtao);
-    this.outline = new OutlinePass(size.clone(), scene, camera);
-    this.outline.edgeStrength = 4;
-    this.outline.edgeThickness = 1.2;
-    this.outline.edgeGlow = 0;
-    this.outline.visibleEdgeColor.set(FEEL.outlineColor);
-    this.outline.hiddenEdgeColor.set(0x777777);
-    this.composer.addPass(this.outline);
-    this.heldPass = new RenderPass(heldScene, heldCamera);
-    this.heldPass.clear = false;
-    this.heldPass.clearDepth = true;
-    this.composer.addPass(this.heldPass);
-    this.bloom = new UnrealBloomPass(size.clone(), 0.3, 0.35, 1.6);
-    this.composer.addPass(this.bloom);
-    this.composer.addPass(new OutputPass());
-    this.smaa = new SMAAPass();
-    this.composer.addPass(this.smaa);
-    this.fxaa = new FXAAPass();
-    this.composer.addPass(this.fxaa);
+    this.width = size.x; this.height = size.y;
+  }
+
+  get renderTarget(): THREE.WebGLRenderTarget | null { return this.composer?.readBuffer ?? null; }
+
+  private clearPipeline(): void {
+    if (this.composer) {
+      for (const pass of this.composer.passes) pass.dispose();
+      this.composer.dispose();
+    }
+    this.composer = null;
+    this.outlinePass = null;
   }
 
   setQuality(q: Quality): void {
+    if (this.quality === q && this.composer) return;
+    this.clearPipeline();
+    this.quality = q;
     const p = QUALITY_PROFILES[q];
-    this.gtao.enabled = p.gtao;
-    this.bloom.enabled = p.bloom;
-    this.smaa.enabled = p.smaa;
-    this.fxaa.enabled = p.fxaa;
+    const size = new THREE.Vector2(this.width, this.height);
+    const composer = this.composer = new EffectComposer(this.renderer);
+    composer.addPass(new RenderPass(this.scene, this.camera));
+    if (p.gtao) {
+      const ao = new GameGTAOPass(this.scene, this.camera, size.x, size.y);
+      ao.blendIntensity = 1;
+      ao.updateGtaoMaterial({ radius: 0.35 });
+      composer.addPass(ao);
+    }
+    {
+      const outline = this.outlinePass = new OutlinePass(size, this.scene, this.camera);
+      outline.edgeStrength = 4; outline.edgeThickness = 1.2;
+      outline.visibleEdgeColor.set(FEEL.outlineColor); outline.hiddenEdgeColor.set(0x777777);
+      composer.addPass(outline);
+    }
+    const held = new RenderPass(this.heldScene, this.heldCamera);
+    held.clear = false; held.clearDepth = true;
+    composer.addPass(held);
+    if (p.bloom) composer.addPass(new UnrealBloomPass(size, 0.3, 0.35, 1.6));
+    composer.addPass(new OutputPass());
+    if (p.smaa) composer.addPass(new SMAAPass());
+    if (p.fxaa) composer.addPass(new FXAAPass());
+    this.setSize(this.width, this.height, this.pixelRatio);
   }
 
   setSize(w: number, h: number, pixelRatio: number): void {
-    this.composer.setPixelRatio(pixelRatio);
-    this.composer.setSize(w, h);
+    this.width = w; this.height = h; this.pixelRatio = pixelRatio;
+    this.composer?.setPixelRatio(pixelRatio);
+    this.composer?.setSize(w, h);
   }
 
   render(dt: number): void {
-    this.composer.render(dt);
+    const targets = this.outline.selectedObjects;
+    if (this.outlinePass) {
+      this.outlinePass.selectedObjects = targets;
+      this.outlinePass.enabled = targets.length > 0;
+    }
+    this.composer?.render(dt);
   }
 }

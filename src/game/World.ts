@@ -215,6 +215,7 @@ export class World implements GameCtx {
     const onRoad = this.driving.uid ? this.driving.state : this.player;
     this.trucks.update(s.time.paused ? 0 : dt, [...this.life.traffic.positions(), onRoad]);
     this.life.update(dt, onRoad, !!this.driving.uid, this.camera.position, this.trucks.obstacles());
+    this.city.setSignalTime(this.life.signalTime);
     s.walkingVendorNear = this.life.pedestrians.vendorNear;
     this.crates.update(dt);
     this.waypoint.update(dt);
@@ -278,6 +279,7 @@ export class World implements GameCtx {
     this.driving.destroy();
     this.vehicles.destroy();
     this.life.destroy();
+    this.city.dispose();
     this.weather.destroy();
     this.trucks.destroy();
     this.crates.destroy();
@@ -294,6 +296,8 @@ export class World implements GameCtx {
     this.products.dispose();
     this.held.hold(null);
     this.root.removeFromParent();
+    this.r.unregisterShadowLight(this.lighting.ceiling);
+    this.r.unregisterShadowLight(this.lighting.sun);
     this.lighting.dispose();
     this.lights.dispose();
     this.r.post.outline.selectedObjects = [];

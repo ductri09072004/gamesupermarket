@@ -144,14 +144,11 @@
     "characters/mx_Alex.glb"
   ],
   "city": [
-    "city/BirchTree_1.glb",
+    "city/tree_small_02.glb",
+    "city/island_tree_01.glb",
+    "city/jacaranda_tree.glb",
     "city/Bush_1.glb",
     "city/Bush_2.glb",
-    "city/CommonTree_1.glb",
-    "city/CommonTree_2.glb",
-    "city/CommonTree_3.glb",
-    "city/CommonTree_4.glb",
-    "city/CommonTree_5.glb",
     "city/NormalCar1.glb",
     "city/NormalCar2.glb",
     "city/SUV.glb",

@@ -54,9 +54,9 @@ export const RUSH_HOURS: ReadonlyArray<readonly [number, number]> = [[7, 9], [17
 /** Mật độ xe theo giờ (nhân với số xe tối đa): cao điểm chủ yếu là xe máy đông lên (ô tô chỉ nhỉnh hơn một chút). */
 export const TRAFFIC_DENSITY = { rush: { car: 1.15, moto: 1.6 }, night: 0.3, earlyMorning: 0.7 };
 
-/** Dòng xe máy: đông hơn ô tô, luồn sát lề đường, đi lắc lư. Đơn vị: m, m/s, giây. */
+/** Xe máy NPC đã tắt (max = 0); thông số còn dùng cho mô hình và hành vi xe máy. */
 export const MOTO_TRAFFIC = {
-  max: 24,
+  max: 0,
   spawnEvery: 1.6,
   speed: 8.5,
   cornerSpeed: 5,
