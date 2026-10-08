@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { retainCityTexture } from './CityModels';
 
 /** Bộ map PBR của 1 "slot" vật liệu (floor, wall, concrete...) nạp từ manifest.textures. */
 export interface PbrSet {
@@ -32,7 +31,6 @@ export async function loadPbrTextures(entries: Record<string, TextureEntry>, bas
         t.anisotropy = 8;
         if (key === 'map') t.colorSpace = THREE.SRGBColorSpace;
         set[key] = t;
-        retainCityTexture(t);
       } catch {
         console.warn(`[Materials] Không nạp được ${path}`);
       }

@@ -142,7 +142,6 @@ export class Game {
   }
 
   private showMenu(): void {
-    this.loop.setMaxFps(30);
     const last = saveSlots.lastSlot();
     const saved = last === null ? null : saveSlots.system(last).load();
     const settings = saved?.settings ?? { ...DEFAULT_SETTINGS };
@@ -179,7 +178,6 @@ export class Game {
 
   /** slot: hồ sơ ghi tiến trình ván này (bỏ trống → hồ sơ gần nhất, hoặc ô trống đầu tiên) */
   startSession(data: SaveData, slot: number | null = saveSlots.lastSlot() ?? saveSlots.firstEmpty() ?? 1): void {
-    this.loop.setMaxFps(60);
     this.disposeWorld();
     bus.clear();
     perf.listen(bus);
@@ -264,10 +262,7 @@ export class Game {
     this.r.renderer.info.reset();
     const t0 = performance.now();
     if (this.gallery.active) this.gallery.render(this.r.renderer, dt);
-    else {
-      this.world?.city.culling.update(this.r.camera);
-      this.r.render(dt);
-    }
+    else this.r.render(dt);
     perf.frame(this.updMs, performance.now() - t0, this.r.info.render.calls, this.r.info.render.triangles);
     this.updMs = 0;
     const w = this.world;

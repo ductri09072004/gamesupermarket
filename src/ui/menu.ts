@@ -46,7 +46,7 @@ export function showMainMenu(handlers: MenuHandlers, settings: Settings, onSetti
       h('button', { class: 'btn block big', text: 'Cài đặt', onClick: () => showSettings(settings, onSettings) }),
       installButton(),
       h('button', { class: 'btn ghost block', text: 'Chế độ developer', onClick: chooseSlot('dev') }),
-      h('p', { class: 'menu-version', text: 'Phiên bản 1.0', style: { marginTop: '12px', fontSize: '12px', textAlign: 'center', opacity: '0.75' } }),
+      h('div', { class: 'menu-help', html: '<kbd>WASD</kbd> đi · <kbd>Shift</kbd> chạy · <kbd>Space</kbd> nhảy · <kbd>Ctrl</kbd> ngồi · <kbd>Chuột trái</kbd> tương tác / mở thùng (giữ 2 giây: dời kệ) · <kbd>C</kbd> đóng · <kbd>G</kbd> đặt · <kbd>R</kbd> quăng thùng · <kbd>F</kbd> lên/xuống xe · <kbd>M</kbd> bản đồ · <kbd>Enter</kbd> kết thúc ngày · <kbd>T</kbd> tua nhanh 3× · <kbd>F3</kbd> debug · <kbd>F4</kbd> xem sản phẩm' }),
     ]);
   };
   const render = () => root.replaceChildren(build());

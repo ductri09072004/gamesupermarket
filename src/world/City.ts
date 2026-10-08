@@ -17,10 +17,6 @@ import { applyPbr, pbrSet } from './Materials';
 import { buildShopSigns } from './ShopSigns';
 import { vendorsPackUp } from '../systems/WeatherSystem';
 import { asphaltTexture, concreteTexture, grassTexture } from './Textures';
-import { TrafficSignalView } from './TrafficSignalView';
-import { PedestrianSignalView } from './PedestrianSignalView';
-import { disposeCityResources } from './CityResources';
-import { CityCulling } from './CityCulling';
 
 /** Mặt phẳng nằm ngang phủ rect, UV theo toạ độ thế giới / tile (m) → vật liệu dùng chung, không cần repeat riêng. */
 function worldPlane(r: Rect, y: number, tile: number): THREE.BufferGeometry {
@@ -51,7 +47,6 @@ function mergedMesh(rects: Rect[], y: number, tile: number, mat: THREE.Material)
 
 /** Thành phố quanh cửa hàng: đường, vỉa hè, cỏ, bãi đỗ, kho sỉ và model nhà/cây/đèn. */
 export class City {
-  readonly culling = new CityCulling();
   readonly group = new THREE.Group();
   layout!: CityLayout;
   private lampMats: THREE.MeshStandardMaterial[] = [];
@@ -62,25 +57,20 @@ export class City {
   private kiosk: THREE.Object3D | null = null;
   private wetMats: Array<{ mat: THREE.MeshStandardMaterial; rough: number; dark: number }> = [];
   private water: CityWater | null = null;
-  private signals: TrafficSignalView | null = null;
-  private pedestrianSignals: PedestrianSignalView | null = null;
-  private surfaceTextures: THREE.Texture[] = [];
   /** Gọi sau mỗi lần dựng lại (xe & người đi bộ cần tuyến mới) */
   onBuilt: (L: CityLayout) => void = () => {};
 
   build(D: number, storeW: number): void {
-    this.dispose();
+    this.group.clear();
     this.lights = [];
     const L = cityLayout(D, storeW);
     this.layout = L;
     const b = L.bounds;
     const outer: Rect = { x0: b.x0 - 80, x1: b.x1 + 80, z0: b.z0 - 80, z1: b.z1 + 80 };
-    const paveTex = concreteTexture('#cdc9c1'), grassTex = grassTexture(), roadTex = asphaltTexture();
-    this.surfaceTextures.push(paveTex, grassTex, roadTex);
-    const pave = surface('pavement', paveTex, 0.85);
-    const grass = surface('grass', grassTex, 1);
+    const pave = surface('pavement', concreteTexture('#cdc9c1'), 0.85);
+    const grass = surface('grass', grassTexture(), 1);
     if (pbrSet('grass')) grass.color.set(0xb8d890); // ảnh cỏ gốc ngả vàng dưới nắng trưa
-    const road = surface('asphalt', roadTex, 0.9);
+    const road = surface('asphalt', asphaltTexture(), 0.9);
     this.wetMats = [{ mat: road, rough: road.roughness, dark: 0.45 }, { mat: pave, rough: pave.roughness, dark: 0.25 }];
     this.group.add(mergedMesh([outer], -0.04, 1.6, pave));
     const inner = L.blocks.map((k) => ({ x0: k.x0 + WALK_WIDTH, x1: k.x1 - WALK_WIDTH, z0: k.z0 + WALK_WIDTH, z1: k.z1 - WALK_WIDTH }));
@@ -91,14 +81,11 @@ export class City {
     this.group.add(mergedMesh([...L.roads, L.lot, { x0: L.lot.x0 + 4, x1: L.lot.x1 - 4, z0: L.lot.z1, z1: L.lot.z1 + WALK_WIDTH }, yard], -0.03, 3, road));
     this.addMarkings(L);
     this.addCurbs(L);
+    this.water?.dispose();
     this.water = new CityWater(L.roads);
     this.group.add(this.water.mesh);
     // siêu nhẹ: chỉ dựng khu phố quanh cửa hàng (xa hơn đã chìm trong sương mù); va chạm vẫn đủ
     const R = activeQuality().cityRadius;
-    this.signals = new TrafficSignalView(L.signals.filter((s) => Math.hypot(s.x - storeW / 2, s.z - D / 2) <= R));
-    this.group.add(this.signals.group);
-    this.pedestrianSignals = new PedestrianSignalView(L.crosswalks.filter((c) => Math.hypot(c.from.x - storeW / 2, c.from.z - D / 2) <= R));
-    this.group.add(this.pedestrianSignals.group);
     const shown = R === Infinity ? L.placements : L.placements.filter((p) => Math.hypot(p.x - storeW / 2, p.z - D / 2) <= R);
     const extra = houseDetails(shown);
     const inst = buildCityInstances([...shown, ...extra.props], this.group);
@@ -121,7 +108,6 @@ export class City {
       this.lights.push(l);
       this.group.add(l);
     }
-    if (!activeQuality().shadows) this.culling.collect(this.group);
     this.onBuilt(L);
   }
 
@@ -130,18 +116,6 @@ export class City {
     // vạch đỗ xe trong bãi + vạch qua đường trước cửa hàng
     const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.7 });
     const lines: THREE.Matrix4[] = [];
-    for (const c of L.crosswalks) {
-      const r = c.rect;
-      const acrossX = c.axis === 'z';
-      const length = acrossX ? r.x1 - r.x0 : r.z1 - r.z0;
-      for (let d = 0.3; d < length - 0.2; d += 0.8) {
-        lines.push(new THREE.Matrix4().makeScale(acrossX ? 0.45 : 2.4, 1, acrossX ? 2.4 : 0.45)
-          .setPosition(acrossX ? r.x0 + d : (r.x0 + r.x1) / 2, -0.015, acrossX ? (r.z0 + r.z1) / 2 : r.z0 + d));
-      }
-      const stop = c.approach > 0 ? (acrossX ? r.z0 : r.x0) - 0.6 : (acrossX ? r.z1 : r.x1) + 0.6;
-      lines.push(new THREE.Matrix4().makeScale(acrossX ? length : 0.18, 1, acrossX ? 0.18 : length)
-        .setPosition(acrossX ? (r.x0 + r.x1) / 2 : stop, -0.015, acrossX ? stop : (r.z0 + r.z1) / 2));
-    }
     for (let i = 0; i <= 6; i++) lines.push(new THREE.Matrix4().makeScale(0.12, 1, 5.4).setPosition(L.lot.x0 + 0.3 + i * 3.4, -0.02, L.lot.z0 + 7));
     const road = L.roads[1];
     const rw = road.z1 - road.z0;
@@ -195,26 +169,6 @@ export class City {
       mat.color.setScalar(1 - dark * wet);
     }
     this.water?.update(flood, t);
-  }
-
-  setSignalTime(time: number): void {
-    this.signals?.update(time);
-    this.pedestrianSignals?.update(time);
-  }
-
-  dispose(): void {
-    this.culling.clear();
-    this.signals?.group.removeFromParent();
-    this.pedestrianSignals?.group.removeFromParent();
-    this.water?.mesh.removeFromParent();
-    this.signals?.dispose(); this.signals = null;
-    this.pedestrianSignals?.dispose(); this.pedestrianSignals = null;
-    this.water?.dispose(); this.water = null;
-    disposeCityResources(this.group, this.surfaceTextures);
-    this.surfaceTextures = [];
-    this.group.clear();
-    this.lampMats = []; this.signMats = []; this.scheduled = []; this.wetMats = [];
-    this.lights = []; this.kiosk = null;
   }
 
   /** hour: giờ game — bật/tắt hàng rong theo khung giờ bán; rain: hàng rong dọn về khi mưa. */

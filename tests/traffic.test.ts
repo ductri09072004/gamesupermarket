@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAIN_PARK_STRIP, MAIN_ROAD_WIDTH } from '../src/config/city';
-import { BUS, RUSH_HOURS, TRAFFIC, YIELD } from '../src/config/traffic';
+import { BUS, MOTO_TRAFFIC, RUSH_HOURS, TRAFFIC, YIELD } from '../src/config/traffic';
 import { mulberry32 } from '../src/core/Random';
 import { Traffic } from '../src/game/Traffic';
 import { busDue, busPassengers, busTimes, trafficDensity, wearsRaincoat } from '../src/systems/TrafficSystem';
@@ -93,23 +93,26 @@ describe('trạm xe buýt trong bố cục', () => {
   });
 });
 
-describe('ô tô & xe buýt chạy trên phố', () => {
-  it('không tạo xe máy khi dựng phố, cập nhật giao thông hoặc dựng lại phố', () => {
+describe('dòng xe máy & xe buýt chạy trên phố', () => {
+  it('có xe máy nhiều hơn ô tô; xe máy đi sát lề hơn ô tô', () => {
     const { tr, L } = makeTraffic();
-    expect(tr.count('moto')).toBe(0);
+    expect(tr.count('moto')).toBe(MOTO_TRAFFIC.max / 2);
     expect(tr.count('car')).toBe(TRAFFIC.maxCars / 2);
-    for (const hour of [8, 13, 18, 23]) {
-      tr.hour = hour;
-      for (let i = 0; i < 1200; i++) {
-        tr.update(0.25, far, []);
-        expect(tr.count('moto')).toBe(0);
-      }
-      expect(tr.count('car')).toBeGreaterThan(0);
-    }
-    tr.reset(L);
-    expect(tr.count('moto')).toBe(0);
-    expect(tr.count('car')).toBeGreaterThan(0);
+    expect(tr.count('moto')).toBeGreaterThan(tr.count('car'));
+    // khoảng cách từ tim đường: xe máy 3.5m, ô tô 2m (đường chính trước cửa hàng, đi qua giữa hai khối)
+    const centerZ = (L.roads[1].z0 + L.roads[1].z1) / 2;
+    const lateral = (kind: 'car' | 'moto') => {
+      const xs = (tr as unknown as { cars: Array<{ kind: string; x: number; z: number; dz: number }> }).cars
+        .filter((c) => c.kind === kind && Math.abs(c.dz) < 0.05 && Math.abs(c.z - centerZ) < 4.5).map((c) => Math.abs(c.z - centerZ));
+      return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN;
+    };
+    // chạy một lúc để có xe trên đoạn này
+    for (let i = 0; i < 400; i++) tr.update(0.05, far, []);
+    const lm = lateral('moto');
+    const lc = lateral('car');
+    if (!Number.isNaN(lm) && !Number.isNaN(lc)) expect(lm).toBeGreaterThan(lc);
   });
+
   it('xe buýt xuất phát theo lịch, dừng ở trạm, xả hơi, thả khách rồi đi tiếp', () => {
     const { tr, L } = makeTraffic();
     const events: string[] = [];

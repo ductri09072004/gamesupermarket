@@ -1,19 +1,16 @@
 import * as THREE from 'three';
-import { cityModel, retainCityMaterial } from '../world/CityModels';
-import { disposeCityResources } from '../world/CityResources';
+import { cityModel } from '../world/CityModels';
 
 /** Đồ nghề của người bán rong đi bộ: nón lá + đòn gánh vắt vai với hai thúng hàng (gốc = chân người, mặt người -Z). */
 export interface VendorGear {
   group: THREE.Group;
   /** t: giây; walking: đang đi (đòn gánh nhún theo nhịp bước, đứng thì chỉ đung đưa nhẹ) */
   animate(t: number, walking: boolean): void;
-  dispose(): void;
 }
 
 const wicker = new THREE.MeshStandardMaterial({ color: 0xb98b4b, roughness: 0.9, side: THREE.DoubleSide });
 const bamboo = new THREE.MeshStandardMaterial({ color: 0xc9a25a, roughness: 0.7 });
 const rope = new THREE.MeshStandardMaterial({ color: 0x6b5233, roughness: 0.9 });
-for (const material of [wicker, bamboo, rope]) retainCityMaterial(material);
 const GOODS = [0xe4572e, 0xf3a712, 0x59a14f, 0xe9c46a];
 
 function basket(side: number, hex: number): THREE.Group {
@@ -56,7 +53,6 @@ export function buildVendorGear(seed: number): VendorGear {
   group.add(hat);
   return {
     group,
-    dispose() { disposeCityResources(group); group.removeFromParent(); },
     animate(t, walking) {
       const f = walking ? 1 : 0.25;
       pole.position.y = 1.32 + Math.sin(t * 10) * 0.018 * f;

@@ -11,8 +11,6 @@ import { streetLife, type StallArea } from './CityStreetLife';
 import { roadDamage, type RoadMark } from './RoadDamage';
 import { polePlan, type PoleSpot, type Wire } from './CityWires';
 import { STREET_LIFE } from '../config/city';
-import { planTrafficSignals, type TrafficSignal } from './TrafficSignals';
-import { planCrosswalks, type Crosswalk } from './Crosswalks';
 
 export interface Rect {
   x0: number;
@@ -55,8 +53,6 @@ export interface BusStop {
 }
 
 export interface CityLayout {
-  signals: TrafficSignal[];
-  crosswalks: Crosswalk[];
   /** Mặt đường, không chồng nhau (đường dọc cắt ở giao lộ) */
   roads: Rect[];
   /** Chỗ đỗ xe người chơi: dọc vỉa hè trước cửa hàng, trên nửa làn ven lề của đường chính */
@@ -205,15 +201,13 @@ export function cityLayout(D: number, W = 12): CityLayout {
       addSolid({ x0: p.x - 0.2, x1: p.x + 0.2, z0: p.z - 0.2, z1: p.z + 0.2 }, 'lamp');
     }
   }
-  const signals = planTrafficSignals(V_ROADS, hz, halves, HALF);
-  const crosswalks = planCrosswalks(signals, V_ROADS, hz, halves, HALF);
-  for (const c of crosswalks) for (const p of [c.from, c.to]) {
-    const x = p.x + (c.axis === 'x' ? 1.5 : 0);
-    const z = p.z + (c.axis === 'z' ? 1.5 : 0);
-    addSolid({ x0: x - 0.08, x1: x + 0.08, z0: z - 0.08, z1: z + 0.08 }, 'lamp');
-  }
-  for (const p of signals) {
-    addSolid({ x0: p.x - 0.2, x1: p.x + 0.2, z0: p.z - 0.2, z1: p.z + 0.2 }, 'lamp');
+  // đèn giao thông ở các góc giao lộ đường chính
+  for (const x of V_ROADS.slice(1, 3)) {
+    for (const [dx, dz, rot] of [[-1, -1, 0], [1, 1, Math.PI]] as const) {
+      const p = { x: x + dx * (HALF + 0.6), z: hz[1] + dz * (HALF_MAIN + 0.6) };
+      placements.push({ kind: 'prop', model: 'TrafficLight', x: p.x, z: p.z, rot, variant: 0 });
+      addSolid({ x0: p.x - 0.25, x1: p.x + 0.25, z0: p.z - 0.25, z1: p.z + 0.25 }, 'lamp');
+    }
   }
   // quán bánh mì, ghế đẩu nhựa, xe máy đỗ vỉa hè (hạt giống riêng → không xáo trộn bố cục nhà)
   // cột điện đặt trước (ưu tiên mép lề), né chỗ hàng rong & lối cửa siêu thị; xe máy đỗ sau sẽ né cột
@@ -243,10 +237,10 @@ export function cityLayout(D: number, W = 12): CityLayout {
   const signs = planStreetSigns({
     hz, halves, vRoads: V_ROADS, vHalf: HALF, bounds, blocks, alleys, walk,
     solids: colliders.map((c) => ({ x0: c.minX, x1: c.maxX, z0: c.minZ, z1: c.maxZ })),
-    avoidCorner: (x, z) => signals.some((p) => Math.hypot(p.x - x, p.z - z) < 0.6),
+    avoidCorner: (x, z) => V_ROADS.slice(1, 3).some((X) => Math.abs(x - X) < HALF + 1 && Math.abs(z - hz[1]) < HALF_MAIN + 1 && Math.sign(x - X) === Math.sign(z - hz[1])),
   });
   for (const p of signs.posts) addSolid({ x0: p.x - 0.1, x1: p.x + 0.1, z0: p.z - 0.1, z1: p.z + 0.1 }, 'sign');
-  return { crosswalks, signals, roads, centerLines, blocks, loopCenters, signs, alleys, alleyDecor: life.decor, lot, lotSpots, frontSpots, depot, placements, colliders, bounds, hz, stalls, damage, wiring, busStop };
+  return { roads, centerLines, blocks, loopCenters, signs, alleys, alleyDecor: life.decor, lot, lotSpots, frontSpots, depot, placements, colliders, bounds, hz, stalls, damage, wiring, busStop };
 }
 
 /** Các dải vỉa hè dọc đường: hàm at(t, lề) trả điểm cách mép đường `lề` mét. facing: hướng quay ra đường. */

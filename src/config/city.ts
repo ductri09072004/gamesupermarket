@@ -102,9 +102,7 @@ export const SHOP_SIGNS: Record<string, { sub: string; style: 'lightbox' | 'enam
   'GIẶT ỦI': { sub: 'Giặt sấy · Ủi · Lấy liền', style: 'alu', bg: '#1a5276', ink: '#ffffff', accent: '#9bd3f0' },
 };
 export const SHOP_NAMES = ['TIỆM BÁNH', 'CÀ PHÊ', 'NHÀ THUỐC', 'PHỞ 24H', 'TIỆM HOA', 'SỬA XE', 'TẠP HOÁ', 'TIỆM TÓC', 'TRÀ SỮA', 'GIẶT ỦI'];
-/** Poly Haven CC0: 60% cây gọn cao 6m, xen 20% tán rộng 4.8m và 20% jacaranda 7m. */
-export const TREES = ['tree_small_02', 'tree_small_02', 'tree_small_02', 'island_tree_01', 'jacaranda_tree'];
-export const TREE_LOD_DISTANCE = 45;
+export const TREES = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5', 'BirchTree_1'];
 export const BUSHES = ['Bush_1', 'Bush_2'];
 /** Ô tô đỗ trong bãi & chạy ngoài phố: xe cổ (Volga, Willys, Cadillac…) — cùng bộ với xe người chơi có thể mua */
 export const PARKED_CARS = NPC_CAR_MODELS.map((v) => v.model);

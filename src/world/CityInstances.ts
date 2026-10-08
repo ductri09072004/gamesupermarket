@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import { BUILDINGS, isVnHouse, SCOOTER_FILTERS, VN_PASTELS } from '../config/city';
 import { BIKE_MODELS } from '../config/fleet';
-import { cityModel, retainCityMaterial } from './CityModels';
+import { cityModel } from './CityModels';
 import { applyHouseWear } from './HouseWear';
 import type { Placement } from './CityLayout';
-import { buildStreetTreeInstances } from './StreetTreeInstances';
 
 const CHUNK = 70;
 const tmp = new THREE.Matrix4();
@@ -47,7 +46,6 @@ export function scooterMaterial(base: THREE.Material, variant: number): THREE.Ma
     if (mat.emissiveMap) mat.emissiveMap = tex;
   }
   m = mat;
-  retainCityMaterial(m);
   variantMats.set(key, m);
   return m;
 }
@@ -117,10 +115,6 @@ export function buildCityInstances(placements: Placement[], group: THREE.Group):
       }
       continue;
     }
-    if (first.kind === 'tree') {
-      buildStreetTreeInstances(scene, list, group);
-      continue;
-    }
     scene.updateMatrixWorld(true);
     scene.traverse((o) => {
       const mesh = o as THREE.Mesh;
@@ -137,7 +131,6 @@ export function buildCityInstances(placements: Placement[], group: THREE.Group):
         if (m.name === 'Light' || (vnHouse && sm.emissiveIntensity >= 2)) lamps.add(sm);
       }
       const inst = new THREE.InstancedMesh(mesh.geometry, material, list.length);
-      inst.userData.cityStatic = true;
       list.forEach((p, i) => {
         q.setFromAxisAngle(up, p.rot);
         place.compose(new THREE.Vector3(p.x, p.y ?? 0, p.z), q, new THREE.Vector3(p.sx ?? 1, 1, p.sz ?? 1));

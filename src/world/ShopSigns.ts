@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 import { BUILDINGS, SHOP_SIGNS } from '../config/city';
 import { mulberry32 } from '../core/Random';
-import { cityModel, retainCityMaterial } from './CityModels';
+import { cityModel } from './CityModels';
 import type { Placement } from './CityLayout';
 import { signMaterial, type SignSpec } from './SignFactory';
 
 const COLORS = ['#c0392b', '#1f7a6d', '#6c3483', '#d35400', '#1a5276', '#7d6608', '#117864', '#943126'];
 const edgeMat = new THREE.MeshStandardMaterial({ color: 0x555b62, roughness: 0.5, metalness: 0.6 });
-retainCityMaterial(edgeMat);
 
 /** Mái hiên bằng model (vải hoặc tôn sóng) co giãn theo bề rộng biển, nhuộm màu của tiệm. */
 function awning(kind: 'awning_cloth' | 'awning_tin', width: number, color: string): THREE.Object3D | null {

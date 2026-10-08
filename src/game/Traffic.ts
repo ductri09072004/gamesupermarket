@@ -14,7 +14,6 @@ import { carModel, busModel, motoModel, type VehicleKind } from './TrafficModels
 import { carBody, stepKnock, type Knock } from './TrafficKnock';
 import { hitByMoto, motoThreats, steerMoto } from './TrafficMoto';
 import { targetSpeed } from './TrafficSpeed';
-import { redStopDistance, routeCrossingStops, type CrossingStop, type Crosswalk } from '../world/Crosswalks';
 
 interface Stop {
   /** Quãng đường (trên tuyến) tới điểm dừng */
@@ -76,9 +75,6 @@ export class Traffic {
   private spawnT = 1;
   private motoT = 1;
   private clock = 0;
-  signalTime = 0;
-  occupiedCrosswalks = new Set<number>();
-  private crossingStops = new Map<Route, CrossingStop[]>();
   private rng = Math.random;
   private service = new BusService();
   /** 1 = bình thường; mưa / ngập nước → chạy chậm lại (CityLife đặt) */
@@ -97,14 +93,12 @@ export class Traffic {
   private curbZ = Infinity;
 
   reset(L: CityLayout): void {
-    this.crossingStops.clear();
     this.curbZ = L.roads[1].z0;
     for (const c of this.cars) c.obj.removeFromParent();
     this.cars = [];
     const centers = ONE_WAY_BLOCKS.map((i) => L.loopCenters[i]).filter(Boolean);
     this.routes = carLoops(centers);
     this.motoRoutes = carLoops(centers, MOTO_TRAFFIC.lane, MOTO_TRAFFIC.cornerR);
-    for (const route of [...this.routes, ...this.motoRoutes]) this.crossingStops.set(route, routeCrossingStops(route, L.crosswalks));
     this.service.reset(this.routes, L.busStop.bay);
     // vào game đã có sẵn một nửa số xe cho phố khỏi vắng
     const k = activeQuality().traffic;
@@ -218,7 +212,6 @@ export class Traffic {
   /** obstacles: người chơi đi bộ, xe người chơi… (lat = nửa bề ngang cần né). onFoot: người chơi đang đi bộ (có thể bị xe máy tông). */
   update(dt: number, player: { x: number; z: number }, obstacles: Array<{ x: number; z: number; lat: number }>, onFoot = false): void {
     this.clock += dt;
-    this.signalTime += dt;
     this.hitCool = Math.max(0, this.hitCool - dt);
     if (onFoot && this.hitCool <= 0) {
       const v = hitByMoto(this.cars, player.x, player.z);
@@ -248,18 +241,10 @@ export class Traffic {
       if (c.kind === 'moto') {
         if (steerMoto(c, motoThreats(c, this.cars, obstacles), dt).honk) this.onSound('horn', c.x, c.z);
       }
-      const stopDistance = redStopDistance(c.route, c.d, c.hl, this.crossingStops.get(c.route) ?? [], this.signalTime, this.occupiedCrosswalks);
-      const target = Math.min(targetSpeed(c, this.cars, obstacles, this.speedScale), Math.sqrt(2 * TRAFFIC.brake * stopDistance));
-      // Chờ tín hiệu là hợp lệ: không leo lề hoặc tự gỡ kẹt để vượt đèn.
-      if (stopDistance < 45) {
-        c.blockedNow = false;
-        c.blockedT = 0;
-        c.yieldLeft = 0;
-      }
+      const target = targetSpeed(c, this.cars, obstacles, this.speedScale);
       const dv = target - c.speed;
       c.speed += Math.max(-TRAFFIC.brake * dt, Math.min(TRAFFIC.accel * dt, dv));
-      const step = Math.min(Math.max(0, c.speed) * dt, stopDistance);
-      if (step === stopDistance) c.speed = 0;
+      const step = Math.max(0, c.speed) * dt;
       c.d += step;
       c.life -= step;
       yieldStep(c, dt, step);
@@ -294,18 +279,6 @@ export class Traffic {
 
   positions(): Array<{ x: number; z: number }> {
     return this.cars;
-  }
-
-  /** Người đi bộ chỉ bắt đầu khi xe cuối cùng đã rời vạch, kể cả xe đang bị văng. */
-  crosswalkClear(crosswalk: Crosswalk): boolean {
-    const r = crosswalk.rect;
-    return this.cars.every((c) => {
-      const x = c.knock?.body.x ?? c.x;
-      const z = c.knock?.body.z ?? c.z;
-      const hx = c.knock ? c.hl : Math.abs(c.dx) * c.hl + Math.abs(c.dz) * c.hw;
-      const hz = c.knock ? c.hl : Math.abs(c.dz) * c.hl + Math.abs(c.dx) * c.hw;
-      return x + hx + 0.3 < r.x0 || x - hx - 0.3 > r.x1 || z + hz + 0.3 < r.z0 || z - hz - 0.3 > r.z1;
-    });
   }
 
   count(kind?: VehicleKind): number {

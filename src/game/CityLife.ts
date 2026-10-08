@@ -19,13 +19,11 @@ export class CityLife {
   private rain = 0;
   private ear = { x: 0, z: 0 };
   private bus: EventBus<GameEvents> | null = null;
-  signalTime = 0;
 
   /** Buýt thả khách (cửa xe x, z, số người) — World nối với CustomerManager */
   onPassengers: (x: number, z: number, n: number) => void = () => {};
 
   constructor() {
-    this.pedestrians.canCross = (c) => this.traffic.crosswalkClear(c);
     this.group.add(this.traffic.group, this.pedestrians.group);
     this.traffic.onSound = (name, x, z) => this.bus?.emit('sound', { name, pos: { x, y: 1.5, z }, volume: 0.9 });
     this.traffic.onPassengers = (x, z, n) => this.onPassengers(x, z, n);
@@ -62,10 +60,6 @@ export class CityLife {
   }
 
   update(dt: number, player: { x: number; z: number }, driving: boolean, camera: THREE.Vector3, extra: Array<{ x: number; z: number; lat: number }> = []): void {
-    this.traffic.signalTime = this.signalTime;
-    this.signalTime += dt;
-    this.pedestrians.signalTime = this.signalTime;
-    this.traffic.occupiedCrosswalks = this.pedestrians.occupiedCrosswalks();
     this.traffic.update(dt, player, [{ x: player.x, z: player.z, lat: driving ? 2 : 1.4 }, ...extra], !driving);
     this.ear = camera;
     this.pedestrians.update(dt, player, camera);
