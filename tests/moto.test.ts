@@ -86,6 +86,8 @@ function lone(): { tr: Traffic; car: Inner['cars'][number] } {
   const tr = new Traffic();
   (tr as unknown as { rng: () => number }).rng = mulberry32(7);
   tr.reset(cityLayout(10, 12));
+  // NPC xe máy đã tắt; tạo fixture riêng để tiếp tục kiểm tra thuật toán né/va chạm.
+  (tr as unknown as { spawn: (kind: 'moto', player: null) => void }).spawn('moto', null);
   const inner = tr as unknown as Inner;
   const car = inner.cars.find((c) => c.kind === 'moto')!;
   inner.cars = [car];

@@ -21,12 +21,12 @@ describe('chất lượng đồ hoạ', () => {
     }
   });
 
-  it('siêu nhẹ: không bóng, không đèn điểm, không bloom / AO, nhưng vẫn độ phân giải thật và có khử răng cưa', () => {
+  it('siêu nhẹ giữ độ phân giải và khử răng cưa của preset gốc', () => {
     const p = QUALITY_PROFILES.lite;
     expect(p.bloom || p.gtao).toBe(false);
     expect(p.shadows || p.pointLights).toBe(false);
-    expect(p.pixelRatio).toBeGreaterThanOrEqual(1);
-    expect(p.smaa || p.fxaa).toBe(true);
+    expect(p.pixelRatio).toBe(1);
+    expect(p.smaa).toBe(true);
     expect(p.farPlane).toBeLessThan(QUALITY_PROFILES.low.farPlane);
     // sương mù phải kín trước khi tới mặt phẳng cắt xa (khỏi thấy nhà "biến mất" đột ngột)
     expect(120 * p.fogScale).toBeLessThan(p.farPlane);

@@ -19,6 +19,8 @@ import { vendorsPackUp } from '../systems/WeatherSystem';
 import { asphaltTexture, concreteTexture, grassTexture } from './Textures';
 import { TrafficSignalView } from './TrafficSignalView';
 import { PedestrianSignalView } from './PedestrianSignalView';
+import { disposeCityResources } from './CityResources';
+import { CityCulling } from './CityCulling';
 
 /** Mặt phẳng nằm ngang phủ rect, UV theo toạ độ thế giới / tile (m) → vật liệu dùng chung, không cần repeat riêng. */
 function worldPlane(r: Rect, y: number, tile: number): THREE.BufferGeometry {
@@ -49,6 +51,7 @@ function mergedMesh(rects: Rect[], y: number, tile: number, mat: THREE.Material)
 
 /** Thành phố quanh cửa hàng: đường, vỉa hè, cỏ, bãi đỗ, kho sỉ và model nhà/cây/đèn. */
 export class City {
+  readonly culling = new CityCulling();
   readonly group = new THREE.Group();
   layout!: CityLayout;
   private lampMats: THREE.MeshStandardMaterial[] = [];
@@ -61,22 +64,23 @@ export class City {
   private water: CityWater | null = null;
   private signals: TrafficSignalView | null = null;
   private pedestrianSignals: PedestrianSignalView | null = null;
+  private surfaceTextures: THREE.Texture[] = [];
   /** Gọi sau mỗi lần dựng lại (xe & người đi bộ cần tuyến mới) */
   onBuilt: (L: CityLayout) => void = () => {};
 
   build(D: number, storeW: number): void {
-    this.signals?.dispose();
-    this.pedestrianSignals?.dispose();
-    this.group.clear();
+    this.dispose();
     this.lights = [];
     const L = cityLayout(D, storeW);
     this.layout = L;
     const b = L.bounds;
     const outer: Rect = { x0: b.x0 - 80, x1: b.x1 + 80, z0: b.z0 - 80, z1: b.z1 + 80 };
-    const pave = surface('pavement', concreteTexture('#cdc9c1'), 0.85);
-    const grass = surface('grass', grassTexture(), 1);
+    const paveTex = concreteTexture('#cdc9c1'), grassTex = grassTexture(), roadTex = asphaltTexture();
+    this.surfaceTextures.push(paveTex, grassTex, roadTex);
+    const pave = surface('pavement', paveTex, 0.85);
+    const grass = surface('grass', grassTex, 1);
     if (pbrSet('grass')) grass.color.set(0xb8d890); // ảnh cỏ gốc ngả vàng dưới nắng trưa
-    const road = surface('asphalt', asphaltTexture(), 0.9);
+    const road = surface('asphalt', roadTex, 0.9);
     this.wetMats = [{ mat: road, rough: road.roughness, dark: 0.45 }, { mat: pave, rough: pave.roughness, dark: 0.25 }];
     this.group.add(mergedMesh([outer], -0.04, 1.6, pave));
     const inner = L.blocks.map((k) => ({ x0: k.x0 + WALK_WIDTH, x1: k.x1 - WALK_WIDTH, z0: k.z0 + WALK_WIDTH, z1: k.z1 - WALK_WIDTH }));
@@ -87,7 +91,6 @@ export class City {
     this.group.add(mergedMesh([...L.roads, L.lot, { x0: L.lot.x0 + 4, x1: L.lot.x1 - 4, z0: L.lot.z1, z1: L.lot.z1 + WALK_WIDTH }, yard], -0.03, 3, road));
     this.addMarkings(L);
     this.addCurbs(L);
-    this.water?.dispose();
     this.water = new CityWater(L.roads);
     this.group.add(this.water.mesh);
     // siêu nhẹ: chỉ dựng khu phố quanh cửa hàng (xa hơn đã chìm trong sương mù); va chạm vẫn đủ
@@ -118,6 +121,7 @@ export class City {
       this.lights.push(l);
       this.group.add(l);
     }
+    if (!activeQuality().shadows) this.culling.collect(this.group);
     this.onBuilt(L);
   }
 
@@ -196,6 +200,21 @@ export class City {
   setSignalTime(time: number): void {
     this.signals?.update(time);
     this.pedestrianSignals?.update(time);
+  }
+
+  dispose(): void {
+    this.culling.clear();
+    this.signals?.group.removeFromParent();
+    this.pedestrianSignals?.group.removeFromParent();
+    this.water?.mesh.removeFromParent();
+    this.signals?.dispose(); this.signals = null;
+    this.pedestrianSignals?.dispose(); this.pedestrianSignals = null;
+    this.water?.dispose(); this.water = null;
+    disposeCityResources(this.group, this.surfaceTextures);
+    this.surfaceTextures = [];
+    this.group.clear();
+    this.lampMats = []; this.signMats = []; this.scheduled = []; this.wetMats = [];
+    this.lights = []; this.kiosk = null;
   }
 
   /** hour: giờ game — bật/tắt hàng rong theo khung giờ bán; rain: hàng rong dọn về khi mưa. */

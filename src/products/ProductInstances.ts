@@ -68,7 +68,7 @@ export class ProductInstances {
     m = new THREE.InstancedMesh(pk.geometry, pk.materials, cap);
     m.castShadow = false;
     m.receiveShadow = true;
-    m.frustumCulled = false;
+    m.frustumCulled = true;
     m.name = `products:${productId}`;
     this.scene.add(m);
     this.meshes.set(productId, m);

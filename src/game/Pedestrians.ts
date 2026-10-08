@@ -188,6 +188,7 @@ export class Pedestrians {
 
   private clear(): void {
     for (const w of this.list) {
+      w.vendor?.gear.dispose();
       w.human.root.removeFromParent();
       w.human.dispose();
     }

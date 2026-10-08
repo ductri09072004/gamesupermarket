@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { retainCityTexture } from './CityModels';
 import { mulberry32 } from '../core/Random';
 import { textCanvas } from '../products/LabelTexture';
 import { drawWear } from './SignWear';
@@ -229,6 +230,7 @@ export function signTexture(s: SignSpec): THREE.CanvasTexture {
   });
   tex.anisotropy = 8;
   cache.set(key, tex);
+  retainCityTexture(tex);
   return tex;
 }
 

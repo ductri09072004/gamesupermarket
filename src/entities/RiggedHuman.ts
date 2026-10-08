@@ -184,6 +184,10 @@ export class RiggedHuman implements HumanBody {
 
   dispose(): void {
     this.mixer.stopAllAction();
+    this.mixer.uncacheRoot(this.mixer.getRoot());
+    const skeletons = new Set<THREE.Skeleton>();
+    this.root.traverse(o => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) skeletons.add((o as THREE.SkinnedMesh).skeleton); });
+    for (const skeleton of skeletons) skeleton.dispose();
     this.root.removeFromParent();
   }
 }

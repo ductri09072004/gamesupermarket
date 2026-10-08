@@ -58,6 +58,12 @@ export class Renderer {
     this.applyShadowSize();
   }
 
+  unregisterShadowLight(l: THREE.DirectionalLight | THREE.SpotLight): void {
+    this.shadowLights = this.shadowLights.filter(light => light !== l);
+    l.shadow.map?.dispose();
+    l.shadow.map = null;
+  }
+
   private applyShadowSize(): void {
     const p = QUALITY_PROFILES[this.quality];
     const s = p.shadowMap;
@@ -73,6 +79,7 @@ export class Renderer {
   setQuality(q: Quality): void {
     this.quality = q;
     setActiveQuality(q);
+    this.renderer.shadowMap.enabled = QUALITY_PROFILES[q].shadows;
     this.post.setQuality(q);
     this.applyShadowSize();
     this.resize();
@@ -106,7 +113,7 @@ export class Renderer {
    */
   precompile(): void {
     const prev = this.renderer.getRenderTarget();
-    this.renderer.setRenderTarget(this.post.composer.readBuffer);
+    this.renderer.setRenderTarget(this.post.renderTarget);
     this.renderer.compile(this.scene, this.camera);
     this.renderer.compile(this.heldScene, this.heldCamera);
     this.renderer.setRenderTarget(prev);

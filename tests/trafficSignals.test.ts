@@ -30,7 +30,7 @@ describe('đèn giao thông', () => {
     expect(canStartCrossing(46, 0, 8.7, 0)).toBe(false);
   });
 
-  for (const kind of ['car', 'moto', 'bus'] as const) it(`${kind}: không vượt vạch đỏ, không leo lề và chạy lại khi xanh`, () => {
+  for (const kind of ['car', 'bus'] as const) it(`${kind}: không vượt vạch đỏ, không leo lề và chạy lại khi xanh`, () => {
     const L = cityLayout(10);
     const traffic = new Traffic();
     traffic.reset(L);

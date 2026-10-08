@@ -279,6 +279,7 @@ export class World implements GameCtx {
     this.driving.destroy();
     this.vehicles.destroy();
     this.life.destroy();
+    this.city.dispose();
     this.weather.destroy();
     this.trucks.destroy();
     this.crates.destroy();
@@ -295,6 +296,8 @@ export class World implements GameCtx {
     this.products.dispose();
     this.held.hold(null);
     this.root.removeFromParent();
+    this.r.unregisterShadowLight(this.lighting.ceiling);
+    this.r.unregisterShadowLight(this.lighting.sun);
     this.lighting.dispose();
     this.lights.dispose();
     this.r.post.outline.selectedObjects = [];
